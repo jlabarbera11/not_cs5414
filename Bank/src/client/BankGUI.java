@@ -57,14 +57,18 @@ public class BankGUI extends JFrame implements ActionListener {
       button.setActionCommand("deposit");
       panel.add(button);
       
+      layout.putConstraint(SpringLayout.WEST, title, 5, SpringLayout.NORTH, accountLabel);
       layout.putConstraint(SpringLayout.WEST, accountLabel, 5, SpringLayout.WEST, panel);
-      layout.putConstraint(SpringLayout.NORTH, accountLabel, 5, SpringLayout.NORTH, panel);
+      layout.putConstraint(SpringLayout.NORTH, accountLabel, 5, SpringLayout.SOUTH, title);
       layout.putConstraint(SpringLayout.WEST, depositAccount, 5, SpringLayout.EAST, accountLabel);
-      layout.putConstraint(SpringLayout.NORTH, depositAccount, 5, SpringLayout.NORTH, panel);
+      layout.putConstraint(SpringLayout.NORTH, depositAccount, 5, SpringLayout.SOUTH, title);
       layout.putConstraint(SpringLayout.WEST, amountLabel, 5, SpringLayout.WEST, panel);
       layout.putConstraint(SpringLayout.NORTH, depositAmount, 5, SpringLayout.SOUTH, depositAccount);
       layout.putConstraint(SpringLayout.NORTH, amountLabel, 10, SpringLayout.SOUTH, accountLabel);
       layout.putConstraint(SpringLayout.WEST, depositAmount, 10, SpringLayout.EAST, amountLabel);
+      layout.putConstraint(SpringLayout.SOUTH, amountLabel, 10, SpringLayout.NORTH, button);
+      
+      //layout.putConstraint(SpringLayout.SOUTH, amountLabel, 10, SpringLayout.NORTH, button);
       
 
       //panel.add(new JLabel(" "));
@@ -153,7 +157,7 @@ public static void main(String[] argv)
   { // Anonymous class
     public void run()
     {
-      Client example = new Client();
+      BankGUI example = new BankGUI();
     }
   });
 }
