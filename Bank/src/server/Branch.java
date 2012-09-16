@@ -14,45 +14,28 @@ public class Branch
 
 	public void deposit(int accountID, float amount, int serialNumber)
 	{
-		BankAccount acnt = getAccount(accountID);
-
-        if (acnt == null) {
-            acnt.deposit(amount, serialNumber);
-        }
+		getAccount(accountID).deposit(amount, serialNumber);
 	}
 
 	public void withdraw(int accountID, float amount, int serialNumber)
 	{
-        BankAccount acnt = getAccount(accountID);
-
-        if (acnt != null) {
-            acnt.withdraw(amount, serialNumber);
-        }
+        getAccount(accountID).withdraw(amount, serialNumber);
 	}
 
 	public void query(int accountID, int serialNumber)
 	{
-        BankAccount acnt = getAccount(accountID);
-
-        if (acnt != null) {
-            acnt.query(serialNumber);
-        }
+        getAccount(accountID).query(serialNumber);
 	}
 
 	public void transfer(int sourceAccount, int destinationAccount, float amount, int serialNumber)
 	{
-        BankAccount source = getAccount(sourceAccount);
-        BankAccount destination = getAccount(destinationAccount);
-
-        if (source != null && destination != null) {
-            source.transfer(destination, amount, serialNumber);
-        }
-
+        getAccount(sourceAccount).transfer(getAccount(destinationAccount), amount, serialNumber);
 	}
 
 	public BankAccount getAccount(int accountID)
 	{
 		AccountNumber accountNumber = new AccountNumber(branchID, accountID);
+
         if (!accounts.containsKey(accountNumber)) {
             BankAccount bankAccount = new BankAccount(accountNumber);
             accounts.put(accountNumber, bankAccount);
