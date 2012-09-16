@@ -16,6 +16,10 @@ public class MessageResponse implements Serializable {
         this.success = success;
         this.balance = balance;
     }
+    
+    public void addFailureReason(String failure_reason) {
+        this.failure_reason = failure_reason;
+    }
 
     public Boolean getSuccess() {
         return this.success;
@@ -25,6 +29,7 @@ public class MessageResponse implements Serializable {
         return this.balance;
     }
 
-    public void addFailureReason(String failure_reason) {
-        this.failure_reason = failure_reason;
+    public String getFailureReason() {
+        return this.failure_reason;
+    }
 }
