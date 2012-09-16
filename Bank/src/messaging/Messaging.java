@@ -69,7 +69,7 @@ public class Messaging {
         }
     }
 
-    public void Messaging(Integer b, Type T) throws MessagingException {
+    public Messaging(Integer b, Type T) throws MessagingException {
         buildTopology();
         if (!topology.containsKey(b)) {
             throw new MessagingException(MessagingException.Type.INVALID_BRANCH_DECLARATION);
