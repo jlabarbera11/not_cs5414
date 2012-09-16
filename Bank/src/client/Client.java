@@ -309,7 +309,7 @@ public static void main(String[] args){
 	int clientNum = -1;
 	try {
 		clientNum = Integer.parseInt(args[0]); 
-	} catch (NumberFormatException e){
+	} catch (Exception e){
 		System.out.println("Please run the program with the client number as the first argument.");
 		System.exit(0);
 	}
