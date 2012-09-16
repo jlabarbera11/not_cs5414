@@ -1,5 +1,11 @@
 package server;
 
+import messaging.Messaging;
+import messaging.DepositResponse;
+import messaging.WithdrawResponse;
+import messaging.QueryResponse;
+import messaging.TransferResponse;
+
 import java.util.Hashset;
 
 public class BankAccount {
@@ -51,6 +57,7 @@ public class BankAccount {
     {
         if serials.contains(serialNumber) {
             serials.add(serialNumber);
+
             switch (t) {
                 case DEPOSIT:
                     balance += amount;
@@ -58,7 +65,7 @@ public class BankAccount {
                 case WITHDRAW:
                     balance -= amount;
                     break;
-                case QUERY
+                case QUERY:
                     break;
                 case TRANSFER:
                     balance -= amount;
@@ -68,11 +75,23 @@ public class BankAccount {
                     balance += amount;
                     break;
             }
-
         }
 
-        if (t != Transcation.RECEIVE) {
-            // send message
+        switch (t) {
+                case DEPOSIT:
+                    Messaging.SendResponse(new DepositResponse(balance));
+                    break;
+                case WITHDRAW:
+                    Messaging.SendResponse(new WithdrawResponse(balance));
+                    break;
+                case QUERY:
+                    Messaging.SendResponse(new QueryResponse(balance));
+                    break;
+                case TRANSFER:
+                    Messaging.SendResponse(new TransferResponse(balance));
+                    break;
+                case RECEIVE:
+                    break;
         }
     }
 }
