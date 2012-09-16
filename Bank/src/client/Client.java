@@ -20,8 +20,9 @@ public class Client extends JFrame implements ActionListener {
     int serialNumber = 0;
     int clientNumber;
     
-  public Client() {
+  public Client(int clientNum) {
     super("Bank GUI");
+    this.clientNumber = clientNum;
     setSize(400, 480);
     this.setResizable(false);
     JPanel mainPanel = new JPanel();
@@ -245,16 +246,21 @@ public void actionPerformed(ActionEvent e) {
     } 
 }
 
-public static void main(String[] argv)
-{
-//For thread safety this should be utilized in the dispatch thread
-  javax.swing.SwingUtilities.invokeLater(new Runnable()
-  { // Anonymous class
-    public void run()
-    {
-      Client example = new Client();
-    }
-  });
+public static void main(String[] args){
+	int clientNum = -1;
+	try {
+		clientNum = Integer.parseInt(args[0]); 
+	} catch (NumberFormatException e){
+		System.out.println("Please run the program with the client number as the first argument.");
+		System.exit(0);
+	}
+	if ((clientNum < 0) || (clientNum > 99)){
+		System.out.println("Please enter a client number between 0 and 99.");
+		System.exit(0);
+	}
+	Client client = new Client(clientNum);
 }
+
+
 
 }
