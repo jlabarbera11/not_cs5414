@@ -111,7 +111,7 @@ public class Messaging {
         }
     }
 
-    public DepositResponse Deposit(Integer acnt, Float amt, Integer ser_number) throws MessagingException {
+    public DepositResponse Deposit(Integer branch, Integer acnt, Float amt, Integer ser_number) throws MessagingException {
         if (branch != this.branch)
             return new DepositResponse(false);
 
