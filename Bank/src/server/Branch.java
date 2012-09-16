@@ -1,5 +1,13 @@
 package server;
 
+import messaging.Messaging;
+import messaging.MessageRequest;
+import messaging.DepositRequest;
+import messaging.WithdrawRequest;
+import messaging.QueryRequest;
+import messaging.TransferRequest;
+import messaging.MessagingException;
+
 import java.util.HashMap;
 
 public class Branch
@@ -44,4 +52,29 @@ public class Branch
 
         return accounts.get(accountNumber);
 	}
+
+    public void run()
+    {
+        while (true) {
+            try {
+                Messaging m = new Messaging(branchID, Messaging.Type.SERVER);
+                MessageRequest mr = m.ReceiveMessage();
+                if (mr instanceof DepositRequest) {
+                    DepositRequest request = (DepositRequest) mr;
+                    deposit(request.getAcnt(), request.getAmt(), request.getSerNumber());
+                } else if (mr instanceof WithdrawRequest) {
+                    WithdrawRequest request = (WithdrawRequest) mr;
+                    withdraw(request.getAcnt(), request.getAmt(), request.getSerNumber());
+                } else if (mr instanceof QueryRequest) {
+                    QueryRequest request = (QueryRequest) mr;
+                    query(request.getAcnt(), request.getSerNumber());
+                } else if (mr instanceof TransferRequest) {
+                    TransferRequest request = (TransferRequest) mr;
+                    transfer(request.getSrcAcnt(), request.getDestAcnt(), request.getAmt(), request.getSerNumber());
+                }
+            } catch (MessagingException e) {
+
+            }        
+        }
+    }
 }
