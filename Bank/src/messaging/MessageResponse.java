@@ -8,19 +8,16 @@ public class MessageResponse implements Serializable {
     protected String failure_reason = null;
     protected Float balance = null;
 
-    public MessageResponse(Boolean success) {
-        this.success = success;
-    }
-
-    public MessageResponse(Boolean success, Float balance) {
-        this.success = success;
-        this.balance = balance;
-    }
-    
-    public void addFailureReason(String failure_reason) {
+    public MessageResponse(String failure_reason) {
+        this.success = false;
         this.failure_reason = failure_reason;
     }
 
+    public MessageResponse(Float balance) {
+        this.success = true;
+        this.balance = balance;
+    }
+    
     public Boolean getSuccess() {
         return this.success;
     }
