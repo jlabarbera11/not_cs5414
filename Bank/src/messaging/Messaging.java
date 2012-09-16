@@ -14,6 +14,7 @@ import java.net.UnknownHostException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.IOException;
+import java.io.File;
 
 public class Messaging {
 
@@ -35,38 +36,43 @@ public class Messaging {
     
     private void buildTopology() {
         this.topology = new HashMap<Integer, Set<Integer>>();
-        Scanner scanner = new Scanner("topology.txt");
-        while (scanner.hasNextLine()) {
-
-            String[] a = scanner.nextLine().split(" ");
-            Integer key = Integer.parseInt(a[0]);
-            Integer val = Integer.parseInt(a[1]);
-
-            if (this.topology.containsKey(key)) {
-                this.topology.get(key).add(val);
-            }
-
-            else {
-                Set<Integer> s = new HashSet<Integer>();
-                s.add(val);
-                this.topology.put(key, s);
-            }
-        }
+        try {
+	        Scanner scanner = new Scanner(new File("topology.txt"));
+	        while (scanner.hasNextLine()) {
+	
+	            String[] a = scanner.nextLine().split(" ");
+	            Integer key = Integer.parseInt(a[0]);
+	            Integer val = Integer.parseInt(a[1]);
+	
+	            if (this.topology.containsKey(key)) {
+	                this.topology.get(key).add(val);
+	            }
+	
+	            else {
+	                Set<Integer> s = new HashSet<Integer>();
+	                s.add(val);
+	                this.topology.put(key, s);
+	            }
+	        }
+        } catch (Exception e) {}
+        
     }
 
     private void resolveBranch() throws MessagingException {
-        Scanner scanner = new Scanner("resolver.txt");
-        while (scanner.hasNextLine()) {
-            String[] branch = scanner.nextLine().split(" ");
-            if (Integer.parseInt(branch[0]) == this.branch) {
-                try {
-                    this.serverHost = InetAddress.getByName(branch[1]);
-                } catch (UnknownHostException e) {
-                    throw new MessagingException(MessagingException.Type.UNKNOWN_HOST);
-                }
-                this.serverPort = Integer.parseInt(branch[2]);
-            }
-        }
+    	try {
+	        Scanner scanner = new Scanner(new File("resolver.txt"));
+	        while (scanner.hasNextLine()) {
+	            String[] branch = scanner.nextLine().split(" ");
+	            if (Integer.parseInt(branch[0]) == this.branch) {
+	                try {
+	                    this.serverHost = InetAddress.getByName(branch[1]);
+	                } catch (UnknownHostException e) {
+	                    throw new MessagingException(MessagingException.Type.UNKNOWN_HOST);
+	                }
+	                this.serverPort = Integer.parseInt(branch[2]);
+	            }
+	        }
+    	} catch (Exception e) {}
     }
 
     public Messaging(Integer b, Type T) throws MessagingException {
@@ -112,7 +118,7 @@ public class Messaging {
     }
 
     public DepositResponse Deposit(Integer branch, Integer acnt, Float amt, Integer ser_number) throws MessagingException {
-        if (branch != this.branch)
+        if (branch.compareTo(this.branch) != 0)
             return new DepositResponse(false);
 
         return (DepositResponse)sendRequest(new DepositRequest(acnt, amt, ser_number));

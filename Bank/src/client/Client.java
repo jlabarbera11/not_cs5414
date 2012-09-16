@@ -4,6 +4,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.*;
+import messaging.*;
 
 public class Client extends JFrame implements ActionListener {
     
@@ -19,6 +20,7 @@ public class Client extends JFrame implements ActionListener {
     JLabel result2 = new JLabel(" ");
     int serialNumber = 0;
     int clientNumber;
+    Messaging messaging;
     
   public Client(int clientNum) {
     super("Bank GUI");
@@ -149,7 +151,7 @@ public class Client extends JFrame implements ActionListener {
   
   private boolean checkAmount(String input){
 	  try {
-		  int amount = Integer.parseInt(input);
+		  Float amount = Float.parseFloat(input);
 		  if (amount > 10000000){
 			  return false;
 		  } else {
@@ -180,8 +182,23 @@ public void actionPerformed(ActionEvent e) {
         	//result1.setText("valid account number and amount");
         	int branchNumber = Integer.parseInt(account.substring(0, 2));
         	int accountNumber = Integer.parseInt(account.substring(3, account.length()));
-        	int amountInt = Integer.parseInt(amount);
-        	//TODO: send message
+        	float amountFloat = Float.parseFloat(amount);
+        	DepositResponse response;
+        	try {
+				response = messaging.Deposit(new Integer(branchNumber), new Integer(accountNumber), new Float(amountFloat), new Integer(serialNumber));
+				serialNumber++;
+				if (response.getSuccess()){
+					result1.setText("Deposit successful");
+					result2.setText("");
+				} else {
+					result1.setText(response.getFailureReason());
+					result2.setText("");
+				}
+			} catch (MessagingException e1) {
+				result1.setText("A network error occurred");
+				result2.setText("");
+			}
+        	
         }
     } else if (action.equals("withdrawal")){
         System.out.println("got withdrawal");
@@ -199,8 +216,22 @@ public void actionPerformed(ActionEvent e) {
         	//result1.setText("valid account number and amount");
         	int branchNumber = Integer.parseInt(account.substring(0, 2));
         	int accountNumber = Integer.parseInt(account.substring(3, account.length()));
-        	int amountInt = Integer.parseInt(amount);
-        	//TODO: send message
+        	float amountFloat = Float.parseFloat(amount);
+        	WithdrawResponse response;
+        	try {
+	        	response = messaging.Withdraw(new Integer(branchNumber), new Integer(accountNumber), new Float(amountFloat), serialNumber);
+	        	serialNumber++;
+	        	if (response.getSuccess()){
+					result1.setText("Withdrawal successful");
+					result2.setText("");
+	        	} else {
+					result1.setText(response.getFailureReason());
+					result2.setText("");
+	        	}
+        	} catch (MessagingException e2){
+				result1.setText("A network error occurred");
+				result2.setText("");
+        	}
         }
     } else if (action.equals("transfer")){
         System.out.println("got transfer");
@@ -225,8 +256,22 @@ public void actionPerformed(ActionEvent e) {
         	int accountNumberTo = Integer.parseInt(accountTo.substring(3, accountTo.length()));
         	int branchNumberFrom = Integer.parseInt(accountFrom.substring(0, 2));
         	int accountNumberFrom = Integer.parseInt(accountFrom.substring(3, accountFrom.length()));
-        	int amountInt = Integer.parseInt(amount);
-        	//TODO: send message
+        	float amountFloat = Float.parseFloat(amount);
+        	TransferResponse response;
+        	try {
+	        	response = messaging.Transfer(new Integer(branchNumberFrom), new Integer(accountNumberFrom), new Integer(branchNumberTo), new Integer(accountNumberTo), new Float(amountFloat), serialNumber);
+	        	serialNumber++;
+	        	if (response.getSuccess()){
+					result1.setText("Transfer successful");
+					result2.setText("");
+	        	} else {
+					result1.setText(response.getFailureReason());
+					result2.setText("");
+	        	}
+        	} catch (MessagingException e2){
+				result1.setText("A network error occurred");
+				result2.setText("");
+        	}
         }
     } else if (action.equals("query")){
         System.out.println("got query");
@@ -239,7 +284,21 @@ public void actionPerformed(ActionEvent e) {
         	//result1.setText("valid account number and amount");
         	int branchNumber = Integer.parseInt(account.substring(0, 2));
         	int accountNumber = Integer.parseInt(account.substring(3, account.length()));
-        	//TODO: send message
+        	QueryResponse response;
+        	try {
+	        	response = messaging.Query(new Integer(branchNumber), new Integer(accountNumber), serialNumber);
+	        	serialNumber++;
+	        	if (response.getSuccess()){
+					result1.setText("Transfer successful");
+					result2.setText("");
+	        	} else {
+					result1.setText(response.getFailureReason());
+					result2.setText("");
+	        	}
+        	} catch (MessagingException e2){
+				result1.setText("A network error occurred");
+				result2.setText("");
+        	}
         }
     } else {
         System.out.println("Invalid action type received from GUI");
@@ -259,6 +318,12 @@ public static void main(String[] args){
 		System.exit(0);
 	}
 	Client client = new Client(clientNum);
+	try {
+		client.messaging = new Messaging(new Integer(clientNum), Messaging.Type.CLIENT);
+	} catch (MessagingException e) {
+		System.out.println("Could not create socket");
+	}
+	//client.messaging.branch = clientNum;
 }
 
 
