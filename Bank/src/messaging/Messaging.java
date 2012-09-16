@@ -119,30 +119,30 @@ public class Messaging {
 
     public DepositResponse Deposit(Integer branch, Integer acnt, Float amt, Integer ser_number) throws MessagingException {
         if (branch.compareTo(this.branch) != 0)
-            return new DepositResponse(false, "Cannot desposit to this branch");
+            return new DepositResponse("Cannot desposit to this branch");
 
         return (DepositResponse)sendRequest(new DepositRequest(acnt, amt, ser_number));
     }
 
     public WithdrawResponse Withdraw(Integer branch, Integer acnt, Float amt, Integer ser_number) throws MessagingException {
         if (branch.compareTo(this.branch) != 0)
-            return new WithdrawResponse(false, "Cannot withdraw from this branch");
+            return new WithdrawResponse("Cannot withdraw from this branch");
 
         return (WithdrawResponse)sendRequest(new WithdrawRequest(acnt, amt, ser_number));
     }
 
     public QueryResponse Query(Integer branch, Integer acnt, Integer ser_number) throws MessagingException {
         if (branch.compareTo(this.branch) != 0)
-            return new QueryResponse(false, "Cannot query account info from this branch");
+            return new QueryResponse("Cannot query account info from this branch");
 
         return (QueryResponse)sendRequest(new QueryRequest(acnt, ser_number));
     }
 
     public TransferResponse Transfer(Integer src_branch, Integer src_acnt, Integer dest_branch, Integer dest_acnt, Float amt, Integer ser_number) throws MessagingException {
         if (this.branch.compareTo(src_branch) != 0)
-            return new TransferResponse(false, "Cannot transfer money from this branch");
+            return new TransferResponse("Cannot transfer money from this branch");
         if (src_branch.compareTo(dest_branch) != 0 && !topology.get(src_branch).contains(dest_branch))
-            return new TransferResponse(false, "Cannot transfer money to this branch");
+            return new TransferResponse("Cannot transfer money to this branch");
 
         return (TransferResponse)sendRequest(new TransferRequest(src_acnt, dest_acnt, amt, ser_number));
     }

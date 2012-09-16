@@ -2,11 +2,11 @@ package messaging;
 
 public class QueryResponse extends MessageResponse {
 
-    public QueryResponse(Boolean success) {
-        super(success);
+    public QueryResponse(String failure_reason) {
+        super(failure_reason);
     }
 
-    public QueryResponse(Boolean success, Float balance) {
-        super(success, balance);
+    public QueryResponse(Float balance) {
+        super(balance);
     }
 }

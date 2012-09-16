@@ -2,11 +2,11 @@ package messaging;
 
 public class TransferResponse extends MessageResponse {
 
-    public TransferResponse(Boolean success) {
-        super(success);
+    public TransferResponse(String failure_reason) {
+        super(failure_reason);
     }
 
-    public TransferResponse(Boolean success, Float balance) {
-        super(success, balance);
+    public TransferResponse(Float balance) {
+        super(balance);
     }
 }

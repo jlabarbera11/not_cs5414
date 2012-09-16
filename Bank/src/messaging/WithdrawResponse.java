@@ -2,11 +2,11 @@ package messaging;
 
 public class WithdrawResponse extends MessageResponse {
 
-    public WithdrawResponse(Boolean success) {
-        super(success);
+    public WithdrawResponse(String failure_reason) {
+        super(failure_reason);
     }
 
-    public WithdrawResponse(Boolean success, Float balance) {
-        super(success, balance);
+    public WithdrawResponse(Float balance) {
+        super(balance);
     }
 }

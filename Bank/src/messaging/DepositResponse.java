@@ -2,11 +2,11 @@ package messaging;
 
 public class DepositResponse extends MessageResponse {
 
-    public DepositResponse(Boolean success) {
-        super(success);
+    public DepositResponse(String failure_reason) {
+        super(failure_reason);
     }
 
-    public DepositResponse(Boolean success, Float balance) {
-        super(success, balance);
+    public DepositResponse(Float balance) {
+        super(balance);
     }
 }
