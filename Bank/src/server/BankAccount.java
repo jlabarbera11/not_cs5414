@@ -1,11 +1,18 @@
 package server;
 
-import java.util.Hashset;
+import messaging.Messaging;
+import messaging.DepositResponse;
+import messaging.WithdrawResponse;
+import messaging.QueryResponse;
+import messaging.TransferResponse;
+import messaging.MessagingException;
+
+import java.util.HashSet;
 
 public class BankAccount {
     private AccountNumber accountNumber;
     private float balance;
-    private Hashset<Integer> serials;
+    private HashSet<Integer> serials;
 
     private enum Transaction
     {
@@ -19,7 +26,7 @@ public class BankAccount {
 	public BankAccount(AccountNumber accountNumber)
     {
         this.accountNumber = accountNumber;
-        balance = 0.0;
+        balance = 0.0f;
     }
 
     public void deposit(float amount, int serialNumber)
@@ -34,7 +41,7 @@ public class BankAccount {
 
     public void query(int serialNumber)
     {
-        transaction(Transaction.QUERY, null, 0.0, serialNumber);
+        transaction(Transaction.QUERY, null, 0.0f, serialNumber);
     }
 
     public void transfer(BankAccount destination, float amount, int serialNumber)
@@ -49,8 +56,9 @@ public class BankAccount {
 
     private void transaction(Transaction t, BankAccount destination, float amount, int serialNumber) 
     {
-        if serials.contains(serialNumber) {
+        if (serials.contains(serialNumber)) {
             serials.add(serialNumber);
+
             switch (t) {
                 case DEPOSIT:
                     balance += amount;
@@ -58,7 +66,7 @@ public class BankAccount {
                 case WITHDRAW:
                     balance -= amount;
                     break;
-                case QUERY
+                case QUERY:
                     break;
                 case TRANSFER:
                     balance -= amount;
@@ -68,11 +76,28 @@ public class BankAccount {
                     balance += amount;
                     break;
             }
-
         }
 
-        if (t != Transcation.RECEIVE) {
-            // send message
+        try {
+            Messaging m = new Messaging(accountNumber.getBranch(), Messaging.Type.SERVER);
+            switch (t) {
+                case DEPOSIT:
+                    m.SendResponse(new DepositResponse(balance));
+                    break;
+                case WITHDRAW:
+                    m.SendResponse(new WithdrawResponse(balance));
+                    break;
+                case QUERY:
+                    m.SendResponse(new QueryResponse(balance));
+                    break;
+                case TRANSFER:
+                    m.SendResponse(new TransferResponse(balance));
+                    break;
+                case RECEIVE:
+                    break;
+            } 
+        } catch (MessagingException e) {
+
         }
     }
 }
