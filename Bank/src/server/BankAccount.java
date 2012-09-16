@@ -17,13 +17,13 @@ public class BankAccount {
     private enum Transaction
     {
         DEPOSIT,
-        WITHDRAW,
-        QUERY,
-        TRANSFER,
-        RECEIVE
+            WITHDRAW,
+            QUERY,
+            TRANSFER,
+            RECEIVE
     }
 
-	public BankAccount(AccountNumber accountNumber)
+    public BankAccount(AccountNumber accountNumber)
     {
         this.accountNumber = accountNumber;
         balance = 0.0f;
