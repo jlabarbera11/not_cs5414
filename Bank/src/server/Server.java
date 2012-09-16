@@ -42,7 +42,7 @@ public class Server
 
     public BankAccount getAccount(int accountID)
     {
-        AccountNumber accountNumber = new AccountNumber(branchID, accountID);
+		AccountNumber accountNumber = new AccountNumber(branchID, accountID);
 
         if (!accounts.containsKey(accountNumber)) {
             BankAccount bankAccount = new BankAccount(accountNumber);
@@ -76,5 +76,10 @@ public class Server
 
             }        
         }
+    }
+
+    public static void main(String args[])
+    {
+        new Server(new Integer(args[0])).run();
     }
 }
