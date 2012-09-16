@@ -185,7 +185,7 @@ public void actionPerformed(ActionEvent e) {
         	float amountFloat = Float.parseFloat(amount);
         	DepositResponse response;
         	try {
-				response = messaging.Deposit(new Integer(branchNumber), new Integer(accountNumber), new Float(amountFloat), new Integer(serialNumber));
+				response = messaging.Deposit(new Integer(branchNumber), new Integer(accountNumber), new Float(amountFloat), new Integer((serialNumber*100) + clientNumber));
 				serialNumber++;
 				if (response.getSuccess()){
 					result1.setText("Deposit successful");
@@ -219,7 +219,7 @@ public void actionPerformed(ActionEvent e) {
         	float amountFloat = Float.parseFloat(amount);
         	WithdrawResponse response;
         	try {
-	        	response = messaging.Withdraw(new Integer(branchNumber), new Integer(accountNumber), new Float(amountFloat), serialNumber);
+	        	response = messaging.Withdraw(new Integer(branchNumber), new Integer(accountNumber), new Float(amountFloat), new Integer((serialNumber*100) + clientNumber));
 	        	serialNumber++;
 	        	if (response.getSuccess()){
 					result1.setText("Withdrawal successful");
@@ -259,7 +259,7 @@ public void actionPerformed(ActionEvent e) {
         	float amountFloat = Float.parseFloat(amount);
         	TransferResponse response;
         	try {
-	        	response = messaging.Transfer(new Integer(branchNumberFrom), new Integer(accountNumberFrom), new Integer(branchNumberTo), new Integer(accountNumberTo), new Float(amountFloat), serialNumber);
+	        	response = messaging.Transfer(new Integer(branchNumberFrom), new Integer(accountNumberFrom), new Integer(branchNumberTo), new Integer(accountNumberTo), new Float(amountFloat), new Integer((serialNumber*100) + clientNumber));
 	        	serialNumber++;
 	        	if (response.getSuccess()){
 					result1.setText("Transfer successful");
@@ -286,7 +286,7 @@ public void actionPerformed(ActionEvent e) {
         	int accountNumber = Integer.parseInt(account.substring(3, account.length()));
         	QueryResponse response;
         	try {
-	        	response = messaging.Query(new Integer(branchNumber), new Integer(accountNumber), serialNumber);
+	        	response = messaging.Query(new Integer(branchNumber), new Integer(accountNumber), (serialNumber*100) + serialNumber);
 	        	serialNumber++;
 	        	if (response.getSuccess()){
 					result1.setText("Transfer successful");
