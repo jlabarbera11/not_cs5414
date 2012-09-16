@@ -1,11 +1,11 @@
 package server;
 
-import java.util.Hashmap;
+import java.util.HashMap;
 
 public class Branch
 {
 	private int branchID;
-	private Hashmap<AccountNumber, BankAccount> accounts;
+	private HashMap<AccountNumber, BankAccount> accounts;
 
 	public Branch(int branchID)
 	{

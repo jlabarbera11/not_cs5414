@@ -14,6 +14,11 @@ public class AccountNumber
 		this.account = account;
 	}
 
+	public int getBranch()
+	{
+		return branch;
+	}
+
 	@Override
 	public String toString()
 	{
