@@ -20,4 +20,4 @@ jar-client: client messaging
 	jar cfe client.jar client.Client -C bin .
 
 clean:
-	rm -rf bin*
+	rm -rf bin/*
