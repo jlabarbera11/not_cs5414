@@ -18,6 +18,7 @@ public class Server
     public Server(int branchID)
     {
         this.branchID = branchID;
+        accounts = new HashMap<AccountNumber, BankAccount>();
     }
 
     public void deposit(int accountID, float amount, int serialNumber)

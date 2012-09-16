@@ -27,6 +27,7 @@ public class BankAccount {
     {
         this.accountNumber = accountNumber;
         balance = 0.0f;
+        serials = new HashSet<Integer>();
     }
 
     public void deposit(float amount, int serialNumber)
