@@ -9,8 +9,11 @@ import java.util.HashSet;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.ServerSocket;
+import java.net.UnknownHostException;
+
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.IOException;
 
 public class Messaging {
 
@@ -51,12 +54,16 @@ public class Messaging {
         }
     }
 
-    private String[] resolveBranch() {
+    private void resolveBranch() throws MessagingException {
         Scanner scanner = new Scanner("resolver.txt");
         while (scanner.hasNextLine()) {
             String[] branch = scanner.nextLine().split(" ");
             if (Integer.parseInt(branch[0]) == this.branch) {
-                this.serverHost = InetAddress.getByName(branch[1]);
+                try {
+                    this.serverHost = InetAddress.getByName(branch[1]);
+                } catch (UnknownHostException e) {
+                    throw new MessagingException(MessagingException.Type.UNKNOWN_HOST);
+                }
                 this.serverPort = Integer.parseInt(branch[2]);
             }
         }
@@ -72,74 +79,94 @@ public class Messaging {
         resolveBranch();
 
         if (T == Type.SERVER) {
-            this.serversocket = new ServerSocket(this.serverPort);
+            try {
+                this.serversocket = new ServerSocket(this.serverPort);
+            } catch (IOException e) {
+                throw new MessagingException(MessagingException.Type.FAILED_SOCKET_CREATION);
+            }
         }
     }
 
-    private Message sendRequest(Message M) {
-        Socket socket = new Socket(this.serverHost, this.serverPort);
-        socket.setSoTimeout(5 * 1000);
+    private MessageResponse sendRequest(MessageRequest M) throws MessagingException {
 
-        ObjectOutputStream o = new ObjectOutputStream(socket.getOutputStream());
-        ObjectInputStream i = new ObjectInputStream(socket.getInputStream());
+        try {
+            Socket socket = new Socket(this.serverHost, this.serverPort);
+            socket.setSoTimeout(5 * 1000);
+            
+            ObjectOutputStream o = new ObjectOutputStream(socket.getOutputStream());
+            ObjectInputStream i = new ObjectInputStream(socket.getInputStream());
 
-        o.writeObject(M);
-        Message resp = (Message)i.readObject();
+            o.writeObject(M);
+            MessageResponse response = (MessageResponse)i.readObject();
 
-        i.close();
-        o.close();
-        socket.close();
+            i.close();
+            o.close();
+            socket.close();
 
-        return resp;
+            return response;
+        } catch (IOException e) {
+            throw new MessagingException(MessagingException.Type.FAILED_REQUEST_SEND);
+        } catch (ClassNotFoundException e) {
+            throw new MessagingException(MessagingException.Type.FAILED_RESPONSE_RECEIVE);
+        }
     }
 
-    public DepositResponse Deposit(Integer acnt, Float amt, Integer ser_number) {
+    public DepositResponse Deposit(Integer acnt, Float amt, Integer ser_number) throws MessagingException {
+        if (branch != this.branch)
+            return new DepositResponse(false);
+
+        return (DepositResponse)sendRequest(new DepositRequest(acnt, amt, ser_number));
+    }
+
+    public WithdrawResponse Withdraw(Integer branch, Integer acnt, Float amt, Integer ser_number) throws MessagingException {
         if (branch != this.branch)
             throw new MessagingException(MessagingException.Type.INVALID_DEST_BRANCH);
 
-        return (DespositResponse)SendRequest(new DespositRequest(acnt, amt, ser_number));
+        return (WithdrawResponse)sendRequest(new WithdrawRequest(acnt, amt, ser_number));
     }
 
-    public WithdrawResponse Withdraw(Integer branch, Integer acnt, float amt, float ser_number) {
+    public QueryResponse Query(Integer branch, Integer acnt, Integer ser_number) throws MessagingException {
         if (branch != this.branch)
-            throw new MessagingException(MessagingException.Type.INVALID_DEST_BRANCH);
+            return new QueryResponse(false);
 
-        Socket socket = new Socket(this.serverHost, this.serverPort);
-        return SendRequest(new WithdrawRequest(acnt, amt, ser_number));
+        return (QueryResponse)sendRequest(new QueryRequest(acnt, ser_number));
     }
 
-    public QueryResponse Query(Integer branch, Integer acnt, Integer ser_number) {
-        if (branch != this.branch)
-            throw new MessagingException(MessagingException.Type.INVALID_DEST_BRANCH);
-
-        return SendRequest(new DespositRequest(acnt, amt, ser_number));
-    }
-
-    public TranseferResponse Transfer(Integer src_branch, Integer src_acnt, Integer dest_branch, Integer dest_act, float amt, float ser_number) {
+    public TransferResponse Transfer(Integer src_branch, Integer src_acnt, Integer dest_branch, Integer dest_acnt, Float amt, Integer ser_number) throws MessagingException {
         if (this.branch != src_branch)
-            throw new MessagingException(MessagingException.Type.INVALID_SRC_BRANCH);
+            return new TransferResponse(false);
         if (src_branch != dest_branch && !topology.get(src_branch).contains(dest_branch))
-            throw new MessagingException(MessagingException.Type.INVALID_DEST_BRANCH);
+            return new TransferResponse(false);
 
-        return SendRequest(new TransferRequest(src_acnt, dest_acnt, amt, ser_number));
+        return (TransferResponse)sendRequest(new TransferRequest(src_acnt, dest_acnt, amt, ser_number));
     }
 
 
     //Server Methods
-    public Message ReceiveMessage(Message M) {
-        this.clientsocket = serversocket.accept();
-        this.oos = new ObjectOutputStream(this.clientsocket.getOutputStream());
-        this.ois = new ObjectInputStream(this.clientsocket.getInputStream());
+    public MessageRequest ReceiveMessage() throws MessagingException {
+        try {
+            this.clientsocket = serversocket.accept();
+            this.oos = new ObjectOutputStream(this.clientsocket.getOutputStream());
+            this.ois = new ObjectInputStream(this.clientsocket.getInputStream());
 
-        return (Message)this.ois.readObject();
+            return (MessageRequest)this.ois.readObject();
+        } catch (IOException e) {
+            throw new MessagingException(MessagingException.Type.FAILED_REQUEST_RECEIVE);
+        } catch (ClassNotFoundException e) {
+            throw new MessagingException(MessagingException.Type.FAILED_REQUEST_RECEIVE);
+        }
     }
 
-    public Message SendResponse(Message M) {
-        this.oos.writeObject(M);
+    public void SendResponse(MessageResponse M) throws MessagingException {
+        try {
+            this.oos.writeObject(M);
 
-        this.ois.close();
-        this.oos.close();
-        this.clientsocket.close();
+            this.ois.close();
+            this.oos.close();
+            this.clientsocket.close();
+        } catch (IOException e) {
+            throw new MessagingException(MessagingException.Type.FAILED_RESPONSE_SEND);
+        }
     }
 
 }

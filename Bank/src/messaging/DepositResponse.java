@@ -1,24 +1,12 @@
 package messaging;
 
-public class DepositResponse {
-
-    private Boolean success = null;
-    private Float balance = null;
+public class DepositResponse extends MessageResponse {
 
     public DepositResponse(Boolean success) {
-        this.success = success;
+        super(success);
     }
 
-    public DepositResponse(Booloean success, Float balance) {
-        this.success = success;
-        this.balance = balance;
-    }
-
-    public Boolean getSuccess() {
-        return this.success;
-    }
-
-    public Float getBalance() {
-        return this.balance;
+    public DepositResponse(Boolean success, Float balance) {
+        super(success, balance);
     }
 }
