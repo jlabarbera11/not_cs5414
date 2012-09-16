@@ -52,10 +52,13 @@ public class Branch
 
 	public BankAccount getAccount(int accountID)
 	{
-		AccountNumber acnt = new AccountNumber(branchID, accountID);
-        if (!accounts.containsKey(acnt))
-            return null;
+		AccountNumber accountNumber = new AccountNumber(branchID, accountID);
+        if (!accounts.containsKey(accountNumber)) {
+            BankAccount bankAccount = new BankAccount(accountNumber);
+            accounts.put(accountNumber, bankAccount);
+            return bankAccount;
+        }
 
-        return accounts.get(acnt);
+        return accounts.get(accountNumber);
 	}
 }
