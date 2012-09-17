@@ -56,15 +56,15 @@ public class Server
 
     public void run()
     {
+        Messaging m = null;
+        try {
+            m = new Messaging(branchID, Messaging.Type.SERVER);
+        } catch (MessagingException e) {
+            System.out.println("Server failed to create Messaging");
+            return;
+        }
+        
         while (true) {
-            Messaging m = null;
-            try {
-                m = new Messaging(branchID, Messaging.Type.SERVER);
-            } catch (MessagingException e) {
-                System.out.println("Server failed to create Messaging");
-                continue;
-            }
-
             MessageRequest mr = null;
             try {
                 mr = m.ReceiveMessage();
@@ -97,8 +97,6 @@ public class Server
                 transfer(request.getSrcAcnt(), request.getDestAcnt(), request.getAmt(), request.getSerNumber());
                 System.out.println("Transfer Request handled");
             }
-
-            
         }
     }
 
