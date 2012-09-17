@@ -4,3 +4,12 @@ bas265
 Ben wrote the graphical user interface for the client. The client accepts input from the user,
 and calls methods from the messaging class to send information to the server. The GUI was created
 using the javax.swing package. Ben spent about 20 hours on the project.
+
+Joe LaBarbera
+jyl76
+
+Joe wrote the networking library for both the client and server. This library
+allows for a client to make connections that a server accepts, as well as a
+server to make requests to other servers (i.e. transferring to different
+branches). He also resolved the topology and hosts of all branches. This took
+about 15 hours.
