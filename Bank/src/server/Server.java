@@ -57,25 +57,36 @@ public class Server
     public void run()
     {
         while (true) {
+            Messaging m = new Messaging(branchID, Messaging.Type.SERVER);
+                
             try {
-                Messaging m = new Messaging(branchID, Messaging.Type.SERVER);
                 MessageRequest mr = m.ReceiveMessage();
-                if (mr instanceof DepositRequest) {
-                    DepositRequest request = (DepositRequest) mr;
-                    deposit(request.getAcnt(), request.getAmt(), request.getSerNumber());
-                } else if (mr instanceof WithdrawRequest) {
-                    WithdrawRequest request = (WithdrawRequest) mr;
-                    withdraw(request.getAcnt(), request.getAmt(), request.getSerNumber());
-                } else if (mr instanceof QueryRequest) {
-                    QueryRequest request = (QueryRequest) mr;
-                    query(request.getAcnt(), request.getSerNumber());
-                } else if (mr instanceof TransferRequest) {
-                    TransferRequest request = (TransferRequest) mr;
-                    transfer(request.getSrcAcnt(), request.getDestAcnt(), request.getAmt(), request.getSerNumber());
-                }
             } catch (MessagingException e) {
+                System.out.println("Server failed to receive message");
+            }  
+            
+            if (mr instanceof DepositRequest) {
+                System.out.println("Deposit Request received");
+                DepositRequest request = (DepositRequest) mr;
+                deposit(request.getAcnt(), request.getAmt(), request.getSerNumber());
 
-            }        
+            } else if (mr instanceof WithdrawRequest) {
+                System.out.println("Withdraw Request received");
+                WithdrawRequest request = (WithdrawRequest) mr;
+                withdraw(request.getAcnt(), request.getAmt(), request.getSerNumber());
+
+            } else if (mr instanceof QueryRequest) {
+                System.out.println("Query Request received");
+                QueryRequest request = (QueryRequest) mr;
+                query(request.getAcnt(), request.getSerNumber());
+
+            } else if (mr instanceof TransferRequest) {
+                System.out.println("Transfer Request received");
+                TransferRequest request = (TransferRequest) mr;
+                transfer(request.getSrcAcnt(), request.getDestAcnt(), request.getAmt(), request.getSerNumber());
+            }
+
+            System.out.println("Request handled");
         }
     }
 

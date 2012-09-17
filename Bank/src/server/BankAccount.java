@@ -17,10 +17,10 @@ public class BankAccount {
     private enum Transaction
     {
         DEPOSIT,
-            WITHDRAW,
-            QUERY,
-            TRANSFER,
-            RECEIVE
+        WITHDRAW,
+        QUERY,
+        TRANSFER,
+        RECEIVE
     }
 
     public BankAccount(AccountNumber accountNumber)
@@ -98,7 +98,7 @@ public class BankAccount {
                     break;
             } 
         } catch (MessagingException e) {
-
+            System.out.println("Failed to send response");
         }
     }
 }
