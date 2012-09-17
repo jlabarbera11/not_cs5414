@@ -1,13 +1,15 @@
---The scheme used for storing serial numbers and the extent to which this scheme involves storing redundant information.
---How, when, and who generates serial numbers. Why this approach could be useful once we admit the possibility of failures.
-
-[Kyle: add "The scheme used for storing serial numbers and the extent to which this scheme involves storing redundant information."]
+Serial numbers are stored in a set, specifically HashSet<Integer>, on each Bank Account.
+If the serial number does not exist in the set, the number is added to the set. No numbers
+are removed from the set so the size of the set is monotonically increasing. Combined with
+a transaction log, this scheme allows the history of every single transaction completed on
+a specific account.
 
 The client generates a new serial number whenever it sends a message to its
 branch. The least significant 2 digits of the serial number is always the
 client number (the branch number of the branch associated with the client).
 To generate a new serial number, the client increments the previous serial
 number by 100. 
+
 This is a good scheme because it ensures that serial numbers are always distinct.
 Thus, even if duplicate messages were circulating in the system, each action 
 submitted by the user will only be executed on the server once. Since the lowest
