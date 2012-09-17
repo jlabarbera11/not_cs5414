@@ -138,7 +138,7 @@ public class Messaging {
         if (!topology.get(this.branch).contains(dest_branch))
             return new DepositFromTransferResponse("Cannot transfer money to this branch");
 
-        return (DepositFromTransferResponse)sendRequestFromServer(new DepositFromTransferRequest(dest_acnt, amt, ser_number), branch);
+        return (DepositFromTransferResponse)sendRequestFromServer(new DepositFromTransferRequest(dest_acnt, amt, ser_number), dest_branch);
     }
 
     public WithdrawResponse Withdraw(Integer branch, Integer acnt, Float amt, Integer ser_number) throws MessagingException {
