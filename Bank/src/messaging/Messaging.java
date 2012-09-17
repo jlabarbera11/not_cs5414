@@ -124,6 +124,13 @@ public class Messaging {
         return (DepositResponse)sendRequest(new DepositRequest(acnt, amt, ser_number));
     }
 
+    public DepositFromTransferResponse DepositFromTransfer(Integer dest_branch, Integer dest_acnt, Float amt, Integer ser_number) throws MessagingException {
+        if (!topology.get(this.branch).contains(dest_branch))
+            return new DepositFromTransferResponse("Cannot transfer money to this branch");
+
+        return (DepositFromTransferResponse)sendRequest(new DepositFromTransferRequest(dest_acnt, amt, ser_number));
+    }
+
     public WithdrawResponse Withdraw(Integer branch, Integer acnt, Float amt, Integer ser_number) throws MessagingException {
         if (branch.compareTo(this.branch) != 0)
             return new WithdrawResponse("Cannot withdraw from this branch");
