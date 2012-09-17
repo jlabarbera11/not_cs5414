@@ -167,9 +167,9 @@ public class Client extends JFrame implements ActionListener {
 public void actionPerformed(ActionEvent e) {
     String action = e.getActionCommand();
     if (action.equals("deposit")){
-        System.out.println("got deposit");
-        System.out.println("account number is: " + depositAccount.getText());
-        System.out.println("deposit amount is: " + depositAmount.getText());
+        //System.out.println("got deposit");
+        //System.out.println("account number is: " + depositAccount.getText());
+        //System.out.println("deposit amount is: " + depositAmount.getText());
         String account = depositAccount.getText();
         String amount = depositAmount.getText();
         if (!checkAccountNumber(account)){
@@ -201,9 +201,9 @@ public void actionPerformed(ActionEvent e) {
         	
         }
     } else if (action.equals("withdrawal")){
-        System.out.println("got withdrawal");
-        System.out.println("account number is: " + withdrawalAccount.getText());
-        System.out.println("amount is: " + withdrawalAmount.getText());
+        //System.out.println("got withdrawal");
+        //System.out.println("account number is: " + withdrawalAccount.getText());
+        //System.out.println("amount is: " + withdrawalAmount.getText());
         String account = withdrawalAccount.getText();
         String amount = withdrawalAmount.getText();
         if (!checkAccountNumber(account)){
@@ -234,10 +234,10 @@ public void actionPerformed(ActionEvent e) {
         	}
         }
     } else if (action.equals("transfer")){
-        System.out.println("got transfer");
-        System.out.println("from account number is: " + transferFromAccount.getText());
-        System.out.println("to account number is: " + transferToAccount.getText());
-        System.out.println("transfer amount is: " + transferAmount.getText());
+        //System.out.println("got transfer");
+        //System.out.println("from account number is: " + transferFromAccount.getText());
+        //System.out.println("to account number is: " + transferToAccount.getText());
+        //System.out.println("transfer amount is: " + transferAmount.getText());
         String accountTo = transferToAccount.getText();
         String accountFrom = transferFromAccount.getText();
         String amount = transferAmount.getText();
@@ -274,8 +274,8 @@ public void actionPerformed(ActionEvent e) {
         	}
         }
     } else if (action.equals("query")){
-        System.out.println("got query");
-        System.out.println("account number is: " + queryAccount.getText());
+        //System.out.println("got query");
+        //System.out.println("account number is: " + queryAccount.getText());
         String account = queryAccount.getText();
         if (!checkAccountNumber(account)){
         	result1.setText("Invalid account number format.");
@@ -301,7 +301,7 @@ public void actionPerformed(ActionEvent e) {
         	}
         }
     } else {
-        System.out.println("Invalid action type received from GUI");
+        //System.out.println("Invalid action type received from GUI");
     } 
 }
 
