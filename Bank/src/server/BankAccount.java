@@ -59,7 +59,7 @@ public class BankAccount {
 
     private void transaction(Transaction t, BankAccount destination, float amount, int serialNumber) 
     {
-        if (serials.contains(serialNumber)) {
+        if (!serials.contains(serialNumber)) {
             serials.add(serialNumber);
 
             switch (t) {
