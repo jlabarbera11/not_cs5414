@@ -87,6 +87,7 @@ public class Messaging {
         if (T == Type.SERVER) {
             try {
                 this.serversocket = new ServerSocket(this.serverPort);
+                serversocket.setReuseAddress(true);
             } catch (IOException e) {
                 throw new MessagingException(MessagingException.Type.FAILED_SOCKET_CREATION);
             }
@@ -151,7 +152,7 @@ public class Messaging {
         if (src_branch.compareTo(dest_branch) != 0 && !topology.get(src_branch).contains(dest_branch))
             return new TransferResponse("Cannot transfer money to this branch");
 
-        return (TransferResponse)sendRequest(new TransferRequest(src_acnt, dest_acnt, amt, ser_number));
+        return (TransferResponse)sendRequest(new TransferRequest(dest_branch, src_acnt, dest_acnt, amt, ser_number));
     }
 
 

@@ -2,7 +2,7 @@ package messaging;
 
 public class TransferRequest extends MessageRequest {
 
-    private Integer dest_branch
+    private Integer dest_branch;
     private Integer dest_acnt;
     private Float amt;
 
