@@ -20,8 +20,8 @@ public class BankAccount {
         DEPOSIT,
         WITHDRAW,
         QUERY,
-        TRANSFER,
-        RECEIVE
+        TRANSFER_WITHDRAW,
+        TRANSFER_DEPOSIT
     }
 
     public BankAccount(AccountNumber accountNumber, Messaging m)
@@ -34,30 +34,30 @@ public class BankAccount {
 
     public void deposit(float amount, int serialNumber)
     {
-        transaction(Transaction.DEPOSIT, null, amount, serialNumber);
+        transaction(Transaction.DEPOSIT, amount, serialNumber);
     }
 
     public void withdraw(float amount, int serialNumber)
     {
-        transaction(Transaction.WITHDRAW, null, amount, serialNumber);
+        transaction(Transaction.WITHDRAW, amount, serialNumber);
     }
 
     public void query(int serialNumber)
     {
-        transaction(Transaction.QUERY, null, 0.0f, serialNumber);
+        transaction(Transaction.QUERY, 0.0f, serialNumber);
     }
 
-    public void transfer(BankAccount destination, float amount, int serialNumber)
+    public void transferWithdraw(float amount, int serialNumber)
     {
-        transaction(Transaction.TRANSFER, destination, amount, serialNumber);
+        transaction(Transaction.TRANSFER_WITHDRAW, amount, serialNumber);
     }
 
-    private void receive(float amount, int serialNumber)
+    public void transferDeposit(float amount, int serialNumber)
     {
-        transaction(Transaction.RECEIVE, null, amount, serialNumber);
+        transaction(Transaction.TRANSFER_DEPOSIT, amount, serialNumber);
     }
 
-    private void transaction(Transaction t, BankAccount destination, float amount, int serialNumber) 
+    private void transaction(Transaction t, float amount, int serialNumber) 
     {
         if (!serials.contains(serialNumber)) {
             serials.add(serialNumber);
@@ -75,13 +75,12 @@ public class BankAccount {
                     break;
                 case QUERY:
                     break;
-                case TRANSFER:
+                case TRANSFER_WITHDRAW:
                     System.out.println("Balance before: " + balance);
                     balance -= amount;
                     System.out.println("Balance after: " + balance);
-                    destination.receive(amount, serialNumber);
                     break;
-                case RECEIVE:
+                case TRANSFER_DEPOSIT:
                     balance += amount;
                     break;
             }
@@ -98,10 +97,10 @@ public class BankAccount {
                 case QUERY:
                     m.SendResponse(new QueryResponse(balance));
                     break;
-                case TRANSFER:
+                case TRANSFER_WITHDRAW:
                     m.SendResponse(new TransferResponse(balance));
                     break;
-                case RECEIVE:
+                case TRANSFER_DEPOSIT:
                     break;
             } 
         } catch (MessagingException e) {

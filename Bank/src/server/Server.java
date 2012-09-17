@@ -5,6 +5,7 @@ import messaging.MessageRequest;
 import messaging.DepositRequest;
 import messaging.WithdrawRequest;
 import messaging.QueryRequest;
+import messaging.DepositFromTransferRequest;
 import messaging.TransferRequest;
 import messaging.MessagingException;
 
@@ -42,9 +43,14 @@ public class Server
         getAccount(accountID).query(serialNumber);
     }
 
-    public void transfer(int sourceAccount, int destinationAccount, float amount, int serialNumber)
+    public void transferWithdraw(int accountID, float amount, int serialNumber)
     {
-        getAccount(sourceAccount).transfer(getAccount(destinationAccount), amount, serialNumber);
+        getAccount(accountID).transferWithdraw(amount, serialNumber);
+    }
+
+    public void transferDeposit(int accountID, float amount, int serialNumber)
+    {
+        getAccount(accountID).transferDeposit(amount, serialNumber);
     }
 
     public BankAccount getAccount(int accountID)
@@ -62,6 +68,7 @@ public class Server
 
     public void run()
     {
+        System.out.println("Server starting up!");
         while (true) {
             MessageRequest mr = null;
             try {
@@ -92,8 +99,19 @@ public class Server
             } else if (mr instanceof TransferRequest) {
                 System.out.println("Transfer Request received");
                 TransferRequest request = (TransferRequest) mr;
-                transfer(request.getSrcAcnt(), request.getDestAcnt(), request.getAmt(), request.getSerNumber());
+                transferWithdraw(request.getSrcAcnt(), request.getAmt(), request.getSerNumber());
+                try {
+                    m.DepositFromTransfer(request.getDestBranch(), request.getDestAcnt(), request.getAmt(), request.getSerNumber());
+                } catch (MessagingException e) {
+                    System.out.println("Source branch could not send Destination branch deposit");
+                }
                 System.out.println("Transfer Request handled");
+
+            } else if (mr instanceof DepositFromTransferRequest) {
+                System.out.println("DepositFromTransfer Request received");
+                DepositFromTransferRequest request = (DepositFromTransferRequest) mr;
+                transferDeposit(request.getAcnt(), request.getAmt(), request.getSerNumber());
+                System.out.println("DepsitFromTransfer Request handled");
             }
         }
     }
