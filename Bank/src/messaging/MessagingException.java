@@ -5,6 +5,8 @@ import java.lang.Exception;
 public class MessagingException extends Exception {
 
     public enum Type {
+        FILE_NOT_FOUND,
+        UNRECOGNIZED_BRANCH,
         FAILED_SOCKET_CREATION,
         FAILED_REQUEST_SEND,
         FAILED_REQUEST_RECEIVE,
