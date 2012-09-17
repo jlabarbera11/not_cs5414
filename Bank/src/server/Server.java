@@ -57,36 +57,48 @@ public class Server
     public void run()
     {
         while (true) {
-            Messaging m = new Messaging(branchID, Messaging.Type.SERVER);
-                
+            Messaging m = null;
             try {
-                MessageRequest mr = m.ReceiveMessage();
+                m = new Messaging(branchID, Messaging.Type.SERVER);
+            } catch (MessagingException e) {
+                System.out.println("Server failed to create Messaging");
+                continue;
+            }
+
+            MessageRequest mr = null;
+            try {
+                mr = m.ReceiveMessage();
             } catch (MessagingException e) {
                 System.out.println("Server failed to receive message");
+                continue;
             }  
             
             if (mr instanceof DepositRequest) {
                 System.out.println("Deposit Request received");
                 DepositRequest request = (DepositRequest) mr;
                 deposit(request.getAcnt(), request.getAmt(), request.getSerNumber());
+                System.out.println("Deposit Request handled");
 
             } else if (mr instanceof WithdrawRequest) {
                 System.out.println("Withdraw Request received");
                 WithdrawRequest request = (WithdrawRequest) mr;
                 withdraw(request.getAcnt(), request.getAmt(), request.getSerNumber());
+                System.out.println("Withdraw Request handled");
 
             } else if (mr instanceof QueryRequest) {
                 System.out.println("Query Request received");
                 QueryRequest request = (QueryRequest) mr;
                 query(request.getAcnt(), request.getSerNumber());
+                System.out.println("Query Request handled");
 
             } else if (mr instanceof TransferRequest) {
                 System.out.println("Transfer Request received");
                 TransferRequest request = (TransferRequest) mr;
                 transfer(request.getSrcAcnt(), request.getDestAcnt(), request.getAmt(), request.getSerNumber());
+                System.out.println("Transfer Request handled");
             }
 
-            System.out.println("Request handled");
+            
         }
     }
 
