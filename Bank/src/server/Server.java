@@ -99,9 +99,11 @@ public class Server
             } else if (mr instanceof TransferRequest) {
                 System.out.println("Transfer Request received");
                 TransferRequest request = (TransferRequest) mr;
-                if (request.getDestBranch().equals(branchID)) {
+                if (request.getDestBranch().equals(branchID) && request.getSrcAcnt().equals(request.getDestAcnt())) {
+                    System.out.println("Transfering to itself");
                     transferWithdraw(request.getSrcAcnt(), 0.0f, request.getSerNumber());
                 } else {
+                    
                     transferWithdraw(request.getSrcAcnt(), request.getAmt(), request.getSerNumber());
                     try {
                         m.DepositFromTransfer(request.getDestBranch(), request.getDestAcnt(), request.getAmt(), request.getSerNumber());
