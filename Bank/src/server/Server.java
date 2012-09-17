@@ -28,9 +28,9 @@ public class Server
         }
     }
 
-    public void deposit(int accountID, float amount, int serialNumber)
+    public void deposit(int accountID, float amount, int serialNumber, boolean resp)
     {
-        getAccount(accountID).deposit(amount, serialNumber);
+        getAccount(accountID).deposit(amount, serialNumber, resp);
     }
 
     public void withdraw(int accountID, float amount, int serialNumber)
@@ -81,7 +81,7 @@ public class Server
             if (mr instanceof DepositRequest) {
                 System.out.println("Deposit Request received");
                 DepositRequest request = (DepositRequest) mr;
-                deposit(request.getAcnt(), request.getAmt(), request.getSerNumber());
+                deposit(request.getAcnt(), request.getAmt(), request.getSerNumber(), true);
                 System.out.println("Deposit Request handled");
 
             } else if (mr instanceof WithdrawRequest) {
@@ -102,6 +102,9 @@ public class Server
                 if (request.getDestBranch().equals(branchID) && request.getSrcAcnt().equals(request.getDestAcnt())) {
                     System.out.println("Transfering to itself");
                     transferWithdraw(request.getSrcAcnt(), 0.0f, request.getSerNumber());
+                } else if (request.getDestBranch().equals(branchID)) {
+                    transferWithdraw(request.getSrcAcnt(), request.getAmt(), request.getSerNumber());
+                    deposit(request.getDestAcnt(), request.getAmt(), request.getSerNumber(), false);
                 } else {
                     transferWithdraw(request.getSrcAcnt(), request.getAmt(), request.getSerNumber());
                     System.out.println("Sending request to second account");
