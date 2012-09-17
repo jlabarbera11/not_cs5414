@@ -26,3 +26,10 @@ Generic Installation Instructions:
 4. Enter the following command:
         > java -jar client.jar <BRANCH_NUM>
    This will start the client GUI.
+
+Names and Descriptions of Files:
+
+The client directory contains files to create and run the GUI. The messaging directory
+contains files for sending and receiving messages. The server directory contains files
+for running the server.
+
