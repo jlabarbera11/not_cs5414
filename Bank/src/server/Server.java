@@ -20,6 +20,11 @@ public class Server
     {
         this.branchID = branchID;
         accounts = new HashMap<AccountNumber, BankAccount>();
+        try {
+            m = new Messaging(branchID, Messaging.Type.SERVER);
+        } catch (MessagingException e) {
+            System.out.println("Server failed to create Messaging");
+        }
     }
 
     public void deposit(int accountID, float amount, int serialNumber)
@@ -57,13 +62,6 @@ public class Server
 
     public void run()
     {
-        try {
-            m = new Messaging(branchID, Messaging.Type.SERVER);
-        } catch (MessagingException e) {
-            System.out.println("Server failed to create Messaging");
-            return;
-        }
-        
         while (true) {
             MessageRequest mr = null;
             try {
