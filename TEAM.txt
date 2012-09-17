@@ -3,4 +3,4 @@ bas265
 
 Ben wrote the graphical user interface for the client. The client accepts input from the user,
 and calls methods from the messaging class to send information to the server. The GUI was created
-using the javax.swing package.
+using the javax.swing package. Ben spent about 20 hours on the project.
