@@ -289,8 +289,8 @@ public void actionPerformed(ActionEvent e) {
 	        	response = messaging.Query(new Integer(branchNumber), new Integer(accountNumber), (serialNumber*100) + serialNumber);
 	        	serialNumber++;
 	        	if (response.getSuccess()){
-					result1.setText("Transfer successful");
-					result2.setText("");
+					result1.setText("Transfer successful.");
+					result2.setText("Balance: " + response.getBalance());
 	        	} else {
 					result1.setText(response.getFailureReason());
 					result2.setText("");
