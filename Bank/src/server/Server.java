@@ -103,8 +103,8 @@ public class Server
                     System.out.println("Transfering to itself");
                     transferWithdraw(request.getSrcAcnt(), 0.0f, request.getSerNumber());
                 } else {
-                    
                     transferWithdraw(request.getSrcAcnt(), request.getAmt(), request.getSerNumber());
+                    System.out.println("Sending request to second account");
                     try {
                         m.DepositFromTransfer(request.getDestBranch(), request.getDestAcnt(), request.getAmt(), request.getSerNumber());
                     } catch (MessagingException e) {
