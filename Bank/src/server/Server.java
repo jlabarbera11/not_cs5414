@@ -100,8 +100,10 @@ public class Server
                 System.out.println("Transfer Request received");
                 TransferRequest request = (TransferRequest) mr;
                 if (request.getDestBranch().equals(branchID)) {
+                    System.out.println("Transfering to itself");
                     transferWithdraw(request.getSrcAcnt(), 0.0f, request.getSerNumber());
                 } else {
+                    
                     transferWithdraw(request.getSrcAcnt(), request.getAmt(), request.getSerNumber());
                     try {
                         m.DepositFromTransfer(request.getDestBranch(), request.getDestAcnt(), request.getAmt(), request.getSerNumber());
