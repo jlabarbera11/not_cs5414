@@ -23,7 +23,7 @@ public class Client extends JFrame implements ActionListener {
     Messaging messaging;
     
   public Client(int clientNum) {
-    super("Bank GUI");
+    super("Bank GUI for Branch " + clientNum);
     this.clientNumber = clientNum;
     setSize(400, 480);
     this.setResizable(false);
