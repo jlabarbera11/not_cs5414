@@ -64,15 +64,21 @@ public class BankAccount {
 
             switch (t) {
                 case DEPOSIT:
+                    System.out.println("Balance before: " + balance);
                     balance += amount;
+                    System.out.println("Balance after: " + balance);
                     break;
                 case WITHDRAW:
+                    System.out.println("Balance before: " + balance);
                     balance -= amount;
+                    System.out.println("Balance after: " + balance);
                     break;
                 case QUERY:
                     break;
                 case TRANSFER:
+                    System.out.println("Balance before: " + balance);
                     balance -= amount;
+                    System.out.println("Balance after: " + balance);
                     destination.receive(amount, serialNumber);
                     break;
                 case RECEIVE:
