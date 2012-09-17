@@ -80,15 +80,14 @@ public class Messaging {
 
     public Messaging(Integer b, Type T) throws MessagingException {
         buildTopology();
-        if (!topology.containsKey(b)) {
-            throw new MessagingException(MessagingException.Type.INVALID_BRANCH_DECLARATION);
-        }
         
         this.branch = b;
-        String[] res = resolveBranch(this.branch);
         try {
+            String[] res = resolveBranch(this.branch);
             this.serverHost = InetAddress.getByName(res[1]);
             this.serverPort = Integer.parseInt(res[2]);
+        } catch (MessagingException e) {
+            throw e;
         } catch (UnknownHostException e) {
             throw new MessagingException(MessagingException.Type.UNKNOWN_HOST);
         }
