@@ -1,4 +1,4 @@
-package massaging;
+package messaging;
 
 public class DepositFromTransferRequest extends MessageRequest {
     
