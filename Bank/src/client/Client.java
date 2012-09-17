@@ -189,7 +189,7 @@ public void actionPerformed(ActionEvent e) {
 				serialNumber++;
 				if (response.getSuccess()){
 					result1.setText("Deposit successful");
-					result2.setText("");
+					result2.setText("Balance: " + response.getBalance());
 				} else {
 					result1.setText(response.getFailureReason());
 					result2.setText("");
@@ -223,7 +223,7 @@ public void actionPerformed(ActionEvent e) {
 	        	serialNumber++;
 	        	if (response.getSuccess()){
 					result1.setText("Withdrawal successful");
-					result2.setText("");
+					result2.setText("Balance: " + response.getBalance());
 	        	} else {
 					result1.setText(response.getFailureReason());
 					result2.setText("");
@@ -263,7 +263,7 @@ public void actionPerformed(ActionEvent e) {
 	        	serialNumber++;
 	        	if (response.getSuccess()){
 					result1.setText("Transfer successful");
-					result2.setText("");
+					result2.setText("Balance in source account: " + response.getBalance());
 	        	} else {
 					result1.setText(response.getFailureReason());
 					result2.setText("");
