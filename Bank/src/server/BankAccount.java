@@ -13,6 +13,7 @@ public class BankAccount {
     private AccountNumber accountNumber;
     private float balance;
     private HashSet<Integer> serials;
+    private Messaging m;
 
     private enum Transaction
     {
@@ -23,11 +24,12 @@ public class BankAccount {
         RECEIVE
     }
 
-    public BankAccount(AccountNumber accountNumber)
+    public BankAccount(AccountNumber accountNumber, Messaging m)
     {
         this.accountNumber = accountNumber;
         balance = 0.0f;
         serials = new HashSet<Integer>();
+        this.m = m;
     }
 
     public void deposit(float amount, int serialNumber)
@@ -80,7 +82,6 @@ public class BankAccount {
         }
 
         try {
-            Messaging m = new Messaging(accountNumber.getBranch(), Messaging.Type.SERVER);
             switch (t) {
                 case DEPOSIT:
                     m.SendResponse(new DepositResponse(balance));

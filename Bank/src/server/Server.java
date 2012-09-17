@@ -14,6 +14,7 @@ public class Server
 {
     private int branchID;
     private HashMap<AccountNumber, BankAccount> accounts;
+    private Messaging m;
 
     public Server(int branchID)
     {
@@ -46,7 +47,7 @@ public class Server
 		AccountNumber accountNumber = new AccountNumber(branchID, accountID);
 
         if (!accounts.containsKey(accountNumber)) {
-            BankAccount bankAccount = new BankAccount(accountNumber);
+            BankAccount bankAccount = new BankAccount(accountNumber, m);
             accounts.put(accountNumber, bankAccount);
             return bankAccount;
         }
@@ -56,7 +57,6 @@ public class Server
 
     public void run()
     {
-        Messaging m = null;
         try {
             m = new Messaging(branchID, Messaging.Type.SERVER);
         } catch (MessagingException e) {
