@@ -65,6 +65,10 @@ public class Messaging {
         }
     }
 
+    public Set<Integer> whoNeighbors() {
+        return this.topology.get(this.branch);
+    }
+
     private void _checkTopopolgy(Set<Integer> checked, Integer current) {
         checked.add(current);
         for(Integer val : this.topology.get(current)) {
