@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Iterator;
 
 import java.net.InetAddress;
 import java.net.Socket;
@@ -21,6 +22,7 @@ public class Messaging {
 
     private Integer branch = null;
     private Map<Integer, Set<Integer>> topology = null;
+    private Map<Integer, String[]> resolver = null;
 
     private ServerSocket serversocket = null;
     private Socket clientsocket = null;
@@ -34,11 +36,66 @@ public class Messaging {
         CLIENT,
         SERVER
     }
+
+    public Messaging(Integer b, Type T) throws MessagingException {
+        this(b, T, "topology.txt", "resolver.txt");
+    }
+
+    public Messaging(Integer b, Type T, String topologyfile, String resolverfile) throws MessagingException {
+        if(!buildTopology(topologyfile))
+            throw new MessagingException(MessagingException.Type.INVALID_TOPOLOGY);
+        buildResolver(resolverfile);
+
+        this.branch = b;
+        try {
+            String[] res = this.resolver.get(this.branch);
+            this.serverHost = InetAddress.getByName(res[1]);
+            this.serverPort = Integer.parseInt(res[2]);
+        } catch (UnknownHostException e) {
+            throw new MessagingException(MessagingException.Type.UNKNOWN_HOST);
+        }
+
+        if (T == Type.SERVER) {
+            try {
+                this.serversocket = new ServerSocket(this.serverPort);
+                serversocket.setReuseAddress(true);
+            } catch (IOException e) {
+                throw new MessagingException(MessagingException.Type.FAILED_SOCKET_CREATION);
+            }
+        }
+    }
+
+    private void _checkTopopolgy(Set<Integer> checked, Integer current) {
+        checked.add(current);
+        for(Integer val : this.topology.get(current)) {
+            if(checked.contains(val))
+                continue;
+            else
+                _checkTopopolgy(checked, val);
+        }
+    }
+
+    public boolean checkTopology() throws MessagingException {
+        for(Integer key : this.topology.keySet()) {
+            Set<Integer> checked = new HashSet<Integer>();
+            checked.add(key);
+            for(Integer val : this.topology.get(key)) {
+                if(checked.contains(val))
+                    continue;
+                else
+                    _checkTopopolgy(checked, val);
+            }
+            if(checked.size() != this.topology.keySet().size())
+                return false;
+        }
+
+        return true;
+    }
     
-    private void buildTopology() throws MessagingException {
+    private boolean buildTopology(String topologyfile) throws MessagingException {
         this.topology = new HashMap<Integer, Set<Integer>>();
         try {
-	        Scanner scanner = new Scanner(new File("topology.txt"));
+	        Scanner scanner = new Scanner(new File(topologyfile));
 	        while (scanner.hasNextLine()) {
 	
 	            String[] a = scanner.nextLine().split(" ");
@@ -58,48 +115,21 @@ public class Messaging {
         } catch (FileNotFoundException e) {
             throw new MessagingException(MessagingException.Type.FILE_NOT_FOUND);
         }
-        
+
+        return checkTopology();
     }
     
-    private String[] resolveBranch(Integer b) throws MessagingException {
+    private void buildResolver(String resolverfile) throws MessagingException {
+        this.resolver = new HashMap<Integer, String[]>();
         try {
-
-            Scanner scanner = new Scanner(new File("resolver.txt"));
+            Scanner scanner = new Scanner(new File(resolverfile));
             while (scanner.hasNextLine()) {
                 String[] branch = scanner.nextLine().split(" ");
-                if (Integer.parseInt(branch[0]) == b)
-                    return branch;
+                this.resolver.put(Integer.parseInt(branch[0]), new String[]{branch[1], branch[2]});
             }
-            throw new MessagingException(MessagingException.Type.UNRECOGNIZED_BRANCH);
-        } catch (MessagingException e) {
-            throw e;
         } catch (FileNotFoundException e) {
             throw new MessagingException(MessagingException.Type.FILE_NOT_FOUND);
         } 
-    }
-
-    public Messaging(Integer b, Type T) throws MessagingException {
-        buildTopology();
-        
-        this.branch = b;
-        try {
-            String[] res = resolveBranch(this.branch);
-            this.serverHost = InetAddress.getByName(res[1]);
-            this.serverPort = Integer.parseInt(res[2]);
-        } catch (MessagingException e) {
-            throw e;
-        } catch (UnknownHostException e) {
-            throw new MessagingException(MessagingException.Type.UNKNOWN_HOST);
-        }
-
-        if (T == Type.SERVER) {
-            try {
-                this.serversocket = new ServerSocket(this.serverPort);
-                serversocket.setReuseAddress(true);
-            } catch (IOException e) {
-                throw new MessagingException(MessagingException.Type.FAILED_SOCKET_CREATION);
-            }
-        }
     }
 
     private MessageResponse sendRequest(MessageRequest M) throws MessagingException {
@@ -168,7 +198,7 @@ public class Messaging {
     private MessageResponse sendRequestFromServer(MessageRequest M, Integer branch) throws MessagingException {
 
         try {
-            String[] res = resolveBranch(branch);
+            String[] res = this.resolver.get(branch);
             Socket socket = new Socket(InetAddress.getByName(res[1]), Integer.parseInt(res[2]));
             socket.setSoTimeout(5 * 1000);
             

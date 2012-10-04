@@ -13,6 +13,7 @@ public class MessagingException extends Exception {
         FAILED_RESPONSE_SEND,
         FAILED_RESPONSE_RECEIVE,
         UNKNOWN_HOST,
+        INVALID_TOPOLOGY,
         INVALID_BRANCH_DECLARATION,
         INVALID_SRC_BRANCH,
         INVALID_DEST_BRANCH,
