@@ -233,6 +233,14 @@ public class Messaging {
     }
 
     public void FinishTransfer(Integer branch, Integer acnt, Float amt, Integer ser_number) throws MessagingException {
+        try {
+            ObjectOutputStream o = new ObjectOutputStream(this.sockets.get(branch).getOutputStream());
+            o.writeObject(new DepositRequest(acnt, amt, ser_number));
+            o.close();
+
+        } catch (IOException e) {
+            throw new MessagingException(MessagingException.Type.FAILED_REQUEST_SEND);
+        }
     }
     //End Server Methods
 
