@@ -78,6 +78,7 @@ public class Server
                 continue;
             }  
             
+            // TODO (KKH48): Reimplement using Visitor pattern
             if (mr instanceof DepositRequest) {
                 System.out.println("Deposit Request received");
                 DepositRequest request = (DepositRequest) mr;
