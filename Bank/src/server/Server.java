@@ -69,6 +69,10 @@ public class Server
     public void run()
     {
         System.out.println("Server starting up!");
+        try {
+            m.makeConnections();
+        } catch(MessagingException e) {}
+
         while (true) {
             MessageRequest mr = null;
             try {
@@ -110,7 +114,7 @@ public class Server
                     transferWithdraw(request.getSrcAcnt(), request.getAmt(), request.getSerNumber());
                     System.out.println("Sending request to second account");
                     try {
-                        m.DepositFromTransfer(request.getDestBranch(), request.getDestAcnt(), request.getAmt(), request.getSerNumber());
+                        m.FinishTransfer(request.getDestBranch(), request.getDestAcnt(), request.getAmt(), request.getSerNumber());
                     } catch (MessagingException e) {
                         System.out.println("Source branch could not send Destination branch deposit");
                     }

@@ -320,6 +320,7 @@ public static void main(String[] args){
 	Client client = new Client(clientNum);
 	try {
 		client.messaging = new Messaging(new Integer(clientNum), Messaging.Type.CLIENT);
+                client.messaging.connectToServer();
 	} catch (MessagingException e) {
 		System.out.println("Could not create socket");
 	}
