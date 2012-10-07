@@ -29,6 +29,9 @@ public class Messaging {
     private Map<Integer, String[]> resolver = null;
 
     private Socket clientsocket = null;
+    private ObjectOutputStream oos = null;
+    private ObjectInputStream ois = null;
+
     private ServerSocket serversocket = null;
     private Map<Integer, Socket> sockets = null;
 
@@ -36,7 +39,7 @@ public class Messaging {
 
     public enum Type {
         CLIENT,
-            SERVER
+        SERVER
     }
 
     public Messaging(Integer b, Type T) throws MessagingException {
@@ -53,6 +56,8 @@ public class Messaging {
             try {
                 this.serversocket = new ServerSocket(Integer.parseInt(this.resolver.get(this.branch)[1]));
                 serversocket.setReuseAddress(true);
+                this.sockets = new HashMap<Integer, Socket>();
+                this.messageBuffer = new LinkedBlockingQueue<MessageRequest>();
             } catch (IOException e) {
                 throw new MessagingException(MessagingException.Type.FAILED_SOCKET_CREATION);
             }
@@ -65,6 +70,9 @@ public class Messaging {
 
     private void _checkTopopolgy(Set<Integer> checked, Integer current) {
         checked.add(current);
+        if(!this.topology.containsKey(current))
+            return;
+
         for(Integer val : this.topology.get(current)) {
             if(checked.contains(val))
                 continue;
@@ -131,11 +139,15 @@ public class Messaging {
         } 
     }
 
+    //Client Methods
     public void connectToServer() throws MessagingException {
         try {
             String[] res = this.resolver.get(this.branch);
             this.clientsocket = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
             this.clientsocket.setSoTimeout(5 * 1000);
+            this.oos = new ObjectOutputStream(this.clientsocket.getOutputStream());
+            this.ois = new ObjectInputStream(this.clientsocket.getInputStream());
+            System.out.println("Connected to server!");
         } catch (UnknownHostException e) {
             throw new MessagingException(MessagingException.Type.UNKNOWN_HOST);
         } catch(IOException e) {
@@ -144,17 +156,12 @@ public class Messaging {
     }
 
     private MessageResponse sendRequest(MessageRequest M) throws MessagingException {
+        System.out.println("Sending message!");
         try {
-            ObjectOutputStream o = new ObjectOutputStream(this.clientsocket.getOutputStream());
-            ObjectInputStream i = new ObjectInputStream(this.clientsocket.getInputStream());
-
-            o.writeObject(M);
-            MessageResponse response = (MessageResponse)i.readObject();
-
-            i.close();
-            o.close();
-
-            return response; 
+            this.oos.writeObject(M);
+            System.out.println("Sent message!");
+            
+            return (MessageResponse)this.ois.readObject();
         } catch (IOException e) {
             throw new MessagingException(MessagingException.Type.FAILED_REQUEST_SEND);
         } catch (ClassNotFoundException e) {
@@ -196,16 +203,25 @@ public class Messaging {
 
     //Server Methods
     public void makeConnections() throws MessagingException {
-        //TODO:start_thread(listen_for_connections_and_spawn_threads);
-        for(Integer branch : this.topology.get(this.branch)) {
-            try {
+        try {
+            this.clientsocket = this.serversocket.accept();
+            this.oos = new ObjectOutputStream(this.clientsocket.getOutputStream()); 
+            new Thread(new ConnectionHandler(this.clientsocket, this.messageBuffer, -1)).start();
+            System.out.println("Connected to client!");
+            
+            for(Integer i : this.topology.keySet())
+                for(Integer j : this.topology.get(i))
+                    if(j == this.branch)
+                        new Thread(new ConnectionHandler(this.messageBuffer, i)).start();
+
+            for(Integer branch : this.topology.get(this.branch)) {
                 String[] res = this.resolver.get(this.branch);
-                Socket socket = new Socket(InetAddress.getByName(res[1]), Integer.parseInt(res[2]));
+                Socket socket = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
                 socket.setSoTimeout(5 * 1000);
                 this.sockets.put(branch, socket);
-            } catch(IOException e) {
-                throw new MessagingException(MessagingException.Type.FAILED_SOCKET_CREATION);
             }
+        } catch(IOException e) {
+            throw new MessagingException(MessagingException.Type.FAILED_SOCKET_CREATION);
         }
     }
 
@@ -220,13 +236,8 @@ public class Messaging {
     //For responding to client
     public void SendResponse(MessageResponse M) throws MessagingException {
         try {
-            ObjectOutputStream o = new ObjectOutputStream(this.clientsocket.getOutputStream());
-            ObjectInputStream i = new ObjectInputStream(this.clientsocket.getInputStream());
-
-            o.writeObject(M);
-
-            i.close();
-            o.close();
+            System.out.println("Sending response!");
+            this.oos.writeObject(M);
         } catch (IOException e) {
             throw new MessagingException(MessagingException.Type.FAILED_RESPONSE_SEND);
         }
