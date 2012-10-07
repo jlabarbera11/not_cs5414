@@ -242,6 +242,19 @@ public class Messaging {
             throw new MessagingException(MessagingException.Type.FAILED_REQUEST_SEND);
         }
     }
+
+    public void sendSnapshotRequest(Integer id) throws MessagingException {
+        try {
+            for(Socket s : this.sockets.values()) {
+                ObjectOutputStream o = new ObjectOutputStream(s.getOutputStream());
+                o.writeObject(new Snapshot(this.branch, id));
+                o.close();
+            }
+
+        } catch (IOException e) {
+            throw new MessagingException(MessagingException.Type.FAILED_REQUEST_SEND);
+        }
+    }
     //End Server Methods
 
 }
