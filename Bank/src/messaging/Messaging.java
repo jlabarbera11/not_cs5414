@@ -142,6 +142,7 @@ public class Messaging {
     //Client Methods
     public void connectToServer() throws MessagingException {
         try {
+            System.out.println("Connecting to server");
             String[] res = this.resolver.get(this.branch);
             this.clientsocket = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
             this.clientsocket.setSoTimeout(5 * 1000);
@@ -208,17 +209,20 @@ public class Messaging {
             this.clientoos = new ObjectOutputStream(this.clientsocket.getOutputStream()); 
             new Thread(new ConnectionHandler(this.clientsocket, this.messageBuffer, -1)).start();
             System.out.println("Connected to client!");
-            
+           
+            //start listening for incoming connections from other servers
             for(Integer i : this.topology.keySet())
                 for(Integer j : this.topology.get(i))
                     if(j == this.branch)
-                        new Thread(new ConnectionHandler(this.messageBuffer, i)).start();
+                        new Thread(new ConnectionHandler(this.serversocket, this.messageBuffer, i)).start();
 
+            //make connections to other servers
             for(Integer branch : this.topology.get(this.branch)) {
-                String[] res = this.resolver.get(this.branch);
+                String[] res = this.resolver.get(branch);
                 Socket socket = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
                 socket.setSoTimeout(5 * 1000);
                 this.outputstreams.put(branch, new ObjectOutputStream(socket.getOutputStream()));
+                System.out.println("Established outgoing connection to " + branch);
             }
         } catch(IOException e) {
             throw new MessagingException(MessagingException.Type.FAILED_SOCKET_CREATION);
