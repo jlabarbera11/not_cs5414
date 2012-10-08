@@ -23,6 +23,7 @@ public class Server
         accounts = new HashMap<AccountNumber, BankAccount>();
         try {
             m = new Messaging(branchID, Messaging.Type.SERVER);
+            m.makeConnections();
         } catch (MessagingException e) {
             System.out.println("Server failed to create Messaging");
         }
@@ -55,7 +56,7 @@ public class Server
 
     public BankAccount getAccount(int accountID)
     {
-		AccountNumber accountNumber = new AccountNumber(branchID, accountID);
+        AccountNumber accountNumber = new AccountNumber(branchID, accountID);
 
         if (!accounts.containsKey(accountNumber)) {
             BankAccount bankAccount = new BankAccount(accountNumber, m);
@@ -69,10 +70,6 @@ public class Server
     public void run()
     {
         System.out.println("Server starting up!");
-        try {
-            m.makeConnections();
-        } catch(MessagingException e) {}
-
         while (true) {
             MessageRequest mr = null;
             try {
@@ -81,7 +78,7 @@ public class Server
                 System.out.println("Server failed to receive message");
                 continue;
             }  
-            
+
             // TODO (KKH48): Reimplement using Visitor pattern
             if (mr instanceof DepositRequest) {
                 System.out.println("Deposit Request received");

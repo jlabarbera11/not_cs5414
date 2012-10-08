@@ -46,25 +46,24 @@ public class Messaging {
     //This class listens for new connections, distributing ones that are made
     //to a connection handler
     private class Acceptor implements Runnable {
-        private Integer count;
-
-        public Acceptor(Integer count) {
-            this.count = count;
-        }
-
+        
+        public Acceptor() {}
+        
         public void run() {
-            for(Integer i=0; i<count; i++) {
+            while(true) {
                 try {
-                    System.out.println("Attempting to accept connection from " + i);
+                    System.out.println("Attempting to accept connection");
                     Socket newsocket = serversocket.accept();
-                    System.out.println("Established incoming connection from " + i);
 
                     ObjectInputStream ois = new ObjectInputStream(newsocket.getInputStream());
-                    System.out.println("At least we're here");
-                    if(((InitializeRequest)ois.readObject()).getType() == Type.CLIENT)
+                    InitializeRequest ir = (InitializeRequest)ois.readObject();
+                    if(ir.getType() == Type.CLIENT) {
                         outputstreams.put(-1, new ObjectOutputStream(newsocket.getOutputStream()));
-
-                    new Thread(new ConnectionHandler(ois, messageBuffer, i)).start();
+                        System.out.println("Added client to output streams");
+                    }
+                    System.out.println("Established incoming connection from " + ir.getBranch());
+                    
+                    new Thread(new ConnectionHandler(ois, messageBuffer, ir.getBranch())).start();
                 } catch(IOException e) {
                     System.out.println("Error establishing connection due to IO Exception");
                 } catch(ClassNotFoundException e) {
@@ -73,7 +72,6 @@ public class Messaging {
             }
         }
     }
-
 
     public Messaging(Integer b, Type T) throws MessagingException {
         this(b, T, "topology.txt", "resolver.txt");
@@ -182,7 +180,7 @@ public class Messaging {
             this.clientsocket.setSoTimeout(5 * 1000);
             this.clientoos = new ObjectOutputStream(this.clientsocket.getOutputStream());
             System.out.println("Sending initialize request");
-            this.clientoos.writeObject(new InitializeRequest(Type.CLIENT));
+            this.clientoos.writeObject(new InitializeRequest(Type.CLIENT, -1));
             System.out.println("Sent initialize request");
             this.clientois = new ObjectInputStream(this.clientsocket.getInputStream());
         } catch (UnknownHostException e) {
@@ -197,7 +195,7 @@ public class Messaging {
         try {
             this.clientoos.writeObject(M);
             System.out.println("Sent message!");
-            
+
             return (MessageResponse)this.clientois.readObject();
         } catch (IOException e) {
             throw new MessagingException(MessagingException.Type.FAILED_REQUEST_SEND);
@@ -239,40 +237,52 @@ public class Messaging {
 
 
     //Server Methods
-    public void makeConnections() throws MessagingException {
-        try {
-            //start listening for incoming connections from client and other servers in a new Acceptor thread
-            Integer count = 1;
-            for(Integer i : this.topology.keySet())
-                for(Integer j : this.topology.get(i))
-                    if(j == this.branch)
-                        count += 1;
-            System.out.println("Count is " + count);
-            new Thread(this.new Acceptor(count)).start();
-
-            //make connections to other servers
-            for(Integer branch : this.topology.get(this.branch)) {
-                String[] res = this.resolver.get(branch);
-                System.out.println("Tyring to establish connection to branch " + branch + " at " + res[0] + ":" + res[1]);
-                Socket socket = null;
-                while(socket == null) {
-                    try {
-                    socket = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
-                    socket.setSoTimeout(5 * 1000);
-                    } catch(IOException e){Thread.sleep(5);}
+    public void makeConnections() {
+        new Thread(this.new Acceptor()).start();
+    }
+    public void sendToBranch(Integer branch, Object o) throws MessagingException {
+        for(int i=0; i<5; i++) {
+            try {
+                try {
+                    if(this.outputstreams.get(branch) == null)
+                        throw new IOException();
+                    this.outputstreams.get(branch).writeObject(o);
+                    return;
+                } catch (IOException e) {
+                    System.out.println("Caught something");
+                    Thread.sleep(1000);
+                    String[] res = this.resolver.get(branch);
+                    Socket s = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
+                    ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
+                    oos.writeObject(new InitializeRequest(Type.SERVER, this.branch));
+                    this.outputstreams.put(branch, oos);
                 }
-                ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-                oos.writeObject(new InitializeRequest(Type.SERVER));
-                this.outputstreams.put(branch, oos);
-                System.out.println("Established outgoing connection to " + branch);
+            } catch (IOException e) {
+                continue;
+            } catch (InterruptedException e) {
+                throw new MessagingException(MessagingException.Type.UNKNOWN_ERROR);
             }
-        } catch(IOException e) {
-            System.out.println("Establishing outgoing connection failed");
-            e.printStackTrace(System.out);
-            throw new MessagingException(MessagingException.Type.FAILED_SOCKET_CREATION);
-        } catch(InterruptedException e) {
-            throw new MessagingException(MessagingException.Type.UNKNOWN_ERROR);
         }
+        throw new MessagingException(MessagingException.Type.FAILED_REQUEST_SEND);
+    }
+
+    //For responding to client
+    public void SendResponse(MessageResponse M) throws MessagingException {
+        System.out.println("Sending response!");
+        sendToBranch(-1, M);
+        System.out.println("Sent response!");
+    }
+
+    public void FinishTransfer(Integer branch, Integer acnt, Float amt, Integer ser_number) throws MessagingException {
+        if(this.branch.compareTo(branch) == 0)
+            return;
+
+        sendToBranch(branch, new DepositFromTransferRequest(acnt, amt, ser_number));
+    }
+
+    public void sendSnapshotRequest(Integer id, Snapshot snapshot) throws MessagingException {
+        for(Integer i : this.topology.get(this.branch))
+            sendToBranch(i, snapshot);
     }
 
     public MessageRequest ReceiveMessage() throws MessagingException {
@@ -280,38 +290,6 @@ public class Messaging {
             return this.messageBuffer.take();
         } catch(java.lang.InterruptedException e) {
             throw new MessagingException(MessagingException.Type.FAILED_SYNC_BUFFER);
-        }
-    }
-
-    //For responding to client
-    public void SendResponse(MessageResponse M) throws MessagingException {
-        try {
-            System.out.println("Sending response!");
-            this.outputstreams.get(-1).writeObject(M);
-        } catch (IOException e) {
-            throw new MessagingException(MessagingException.Type.FAILED_RESPONSE_SEND);
-        }
-    }
-
-    public void FinishTransfer(Integer branch, Integer acnt, Float amt, Integer ser_number) throws MessagingException {
-        if(this.branch.compareTo(branch) == 0)
-            return;
-        
-        try {
-            this.outputstreams.get(branch).writeObject(new DepositFromTransferRequest(acnt, amt, ser_number));
-        } catch (IOException e) {
-            throw new MessagingException(MessagingException.Type.FAILED_REQUEST_SEND);
-        }
-    }
-
-    public void sendSnapshotRequest(Integer id) throws MessagingException {
-        try {
-            for(ObjectOutputStream o : this.outputstreams.values()) {
-                o.writeObject(new Snapshot(this.branch, id));
-            }
-
-        } catch (IOException e) {
-            throw new MessagingException(MessagingException.Type.FAILED_REQUEST_SEND);
         }
     }
     //End Server Methods
