@@ -1,6 +1,7 @@
 package messaging;
 
 import java.util.Scanner;
+
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
@@ -113,6 +114,21 @@ public class Messaging {
         }
     }
 
+    //We've extended whoNeighbors to return an array:
+    //The first element contains all neighbors we can reach in one hop
+    //The second element contains all neighbors that can reach us in one hop
+    //TODO: Figure out how to put shit in the array
+    //public Set<Integer>[] whoNeighbors() {
+    //    Set<Integer> first = this.topology.get(this.branch);
+
+    //    Set<Integer> second = new HashSet<Integer>();
+    //    for(Integer i : this.topology.keySet()) {
+    //        if(this.topology.get(i).contains(this.branch))
+    //            second.add(i);
+    //    }
+
+    //    return new Set<Integer>[]{first, second};
+    //}
     public Set<Integer> whoNeighbors() {
         return this.topology.get(this.branch);
     }
@@ -256,7 +272,7 @@ public class Messaging {
         new Thread(this.new Acceptor()).start();
     }
 
-    public void sendMessage(Integer branch, Object o) throws MessagingException {
+    private void sendMessage(Integer branch, Object o) throws MessagingException {
         for(int i=0; i<5; i++) {
             try {
                 try {
@@ -295,7 +311,7 @@ public class Messaging {
         sendMessage(branch, new DepositFromTransferMessage(acnt, amt, ser_number));
     }
 
-    public void sendSnapshot(Integer id, Snapshot snapshot) throws MessagingException {
+    public void propogateSnapshot(Integer id, Snapshot snapshot) throws MessagingException {
         for(Integer i : this.topology.get(this.branch))
             sendMessage(i, snapshot);
     }

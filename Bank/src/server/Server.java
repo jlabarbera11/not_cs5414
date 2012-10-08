@@ -1,13 +1,16 @@
 package server;
 
+import messaging.Snapshot;
 import messaging.Messaging;
 import messaging.Message;
 import messaging.Request;
 import messaging.DepositRequest;
 import messaging.WithdrawRequest;
 import messaging.QueryRequest;
-import messaging.DepositFromTransferMessage;
 import messaging.TransferRequest;
+import messaging.SnapshotRequest;
+import messaging.DepositFromTransferMessage;
+import messaging.SnapshotMessage;
 import messaging.MessagingException;
 
 import java.util.HashMap;
@@ -124,6 +127,11 @@ public class Server
                 DepositFromTransferMessage request = (DepositFromTransferMessage) mr;
                 transferDeposit(request.getAcnt(), request.getAmt(), request.getSerNumber());
                 System.out.println("DepsitFromTransfer Request handled");
+            
+            } else if (mr instanceof SnapshotRequest) {
+
+            } else if (mr instanceof SnapshotMessage) {
+
             }
         }
     }
