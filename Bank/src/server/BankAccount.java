@@ -5,7 +5,6 @@ import messaging.DepositResponse;
 import messaging.WithdrawResponse;
 import messaging.QueryResponse;
 import messaging.TransferResponse;
-import messaging.DepositFromTransferResponse;
 import messaging.MessagingException;
 
 import java.util.HashSet;

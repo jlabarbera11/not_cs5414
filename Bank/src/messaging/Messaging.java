@@ -36,19 +36,39 @@ public class Messaging {
     private ServerSocket serversocket = null;
     private Map<Integer, ObjectOutputStream> outputstreams = null;
 
-    private BlockingQueue<MessageRequest> messageBuffer; 
+    private BlockingQueue<Message> messageBuffer; 
 
     public enum Type {
         CLIENT,
         SERVER
     }
 
+    //This class receives messages and puts them into a synchronized buffer
+    private class ConnectionHandler implements Runnable {
+        private Integer branch;
+        private ObjectInputStream ois = null;
+
+        public ConnectionHandler(ObjectInputStream ois, Integer branch) {
+            this.branch = branch;
+            this.ois = ois;
+        }
+        public void run() {
+            System.out.println("Running connection handler for " + this.branch + "!");
+            try {
+                while(true) {
+                    Message r = (Message)this.ois.readObject();
+                    System.out.println("Got message!");
+                    messageBuffer.put(r);
+                }
+            } catch(Exception e) {
+                System.out.println(e.toString() + " thrown from ConnectionHandler " + this.branch);
+            }
+        }
+    }
+
     //This class listens for new connections, distributing ones that are made
     //to a connection handler
     private class Acceptor implements Runnable {
-        
-        public Acceptor() {}
-        
         public void run() {
             while(true) {
                 try {
@@ -62,12 +82,10 @@ public class Messaging {
                         System.out.println("Added client to output streams");
                     }
                     System.out.println("Established incoming connection from " + ir.getBranch());
-                    
-                    new Thread(new ConnectionHandler(ois, messageBuffer, ir.getBranch())).start();
-                } catch(IOException e) {
-                    System.out.println("Error establishing connection due to IO Exception");
-                } catch(ClassNotFoundException e) {
-                    System.out.println("Error establishing connection due to ClassNotFoundException");
+
+                    new Thread(new ConnectionHandler(ois, ir.getBranch())).start();
+                } catch(Exception e) {
+                    System.out.println(e.toString() + " thrown from Acceptor Thread");
                 }
             }
         }
@@ -88,7 +106,7 @@ public class Messaging {
                 this.serversocket = new ServerSocket(Integer.parseInt(this.resolver.get(this.branch)[1]));
                 serversocket.setReuseAddress(true);
                 this.outputstreams= new HashMap<Integer, ObjectOutputStream>();
-                this.messageBuffer = new LinkedBlockingQueue<MessageRequest>();
+                this.messageBuffer = new LinkedBlockingQueue<Message>();
             } catch (IOException e) {
                 throw new MessagingException(MessagingException.Type.FAILED_SOCKET_CREATION);
             }
@@ -125,7 +143,6 @@ public class Messaging {
             if(checked.size() != this.topology.keySet().size())
                 return false;
         }
-
         return true;
     }
 
@@ -153,7 +170,6 @@ public class Messaging {
         } catch (FileNotFoundException e) {
             throw new MessagingException(MessagingException.Type.FILE_NOT_FOUND);
         }
-
         return checkTopology();
     }
 
@@ -190,13 +206,12 @@ public class Messaging {
         }
     }
 
-    private MessageResponse sendRequest(MessageRequest M) throws MessagingException {
+    private Response sendRequest(Request M) throws MessagingException {
         System.out.println("Sending message!");
         try {
             this.clientoos.writeObject(M);
             System.out.println("Sent message!");
-
-            return (MessageResponse)this.clientois.readObject();
+            return (Response)this.clientois.readObject();
         } catch (IOException e) {
             throw new MessagingException(MessagingException.Type.FAILED_REQUEST_SEND);
         } catch (ClassNotFoundException e) {
@@ -207,21 +222,18 @@ public class Messaging {
     public DepositResponse Deposit(Integer branch, Integer acnt, Float amt, Integer ser_number) throws MessagingException {
         if (branch.compareTo(this.branch) != 0)
             return new DepositResponse("Cannot desposit to this branch");
-
         return (DepositResponse)sendRequest(new DepositRequest(acnt, amt, ser_number));
     }
 
     public WithdrawResponse Withdraw(Integer branch, Integer acnt, Float amt, Integer ser_number) throws MessagingException {
         if (branch.compareTo(this.branch) != 0)
             return new WithdrawResponse("Cannot withdraw from this branch");
-
         return (WithdrawResponse)sendRequest(new WithdrawRequest(acnt, amt, ser_number));
     }
 
     public QueryResponse Query(Integer branch, Integer acnt, Integer ser_number) throws MessagingException {
         if (branch.compareTo(this.branch) != 0)
             return new QueryResponse("Cannot query account info from this branch");
-
         return (QueryResponse)sendRequest(new QueryRequest(acnt, ser_number));
     }
 
@@ -230,8 +242,11 @@ public class Messaging {
             return new TransferResponse("Cannot transfer money from this branch");
         if (src_branch.compareTo(dest_branch) != 0 && !topology.get(src_branch).contains(dest_branch))
             return new TransferResponse("Cannot transfer money to this branch");
-
         return (TransferResponse)sendRequest(new TransferRequest(dest_branch, src_acnt, dest_acnt, amt, ser_number));
+    }
+
+    public SnapshotResponse TakeSnapshot() throws MessagingException {
+        return (SnapshotResponse)sendRequest(new SnapshotRequest(-1, 1));
     }
     //End Client Methods
 
@@ -240,7 +255,8 @@ public class Messaging {
     public void makeConnections() {
         new Thread(this.new Acceptor()).start();
     }
-    public void sendToBranch(Integer branch, Object o) throws MessagingException {
+
+    public void sendMessage(Integer branch, Object o) throws MessagingException {
         for(int i=0; i<5; i++) {
             try {
                 try {
@@ -249,7 +265,7 @@ public class Messaging {
                     this.outputstreams.get(branch).writeObject(o);
                     return;
                 } catch (IOException e) {
-                    System.out.println("Caught something");
+                    System.out.println("Could not connect to branch " + branch + ", trying again");
                     Thread.sleep(1000);
                     String[] res = this.resolver.get(branch);
                     Socket s = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
@@ -267,25 +283,24 @@ public class Messaging {
     }
 
     //For responding to client
-    public void SendResponse(MessageResponse M) throws MessagingException {
+    public void SendResponse(Response M) throws MessagingException {
         System.out.println("Sending response!");
-        sendToBranch(-1, M);
+        sendMessage(-1, M);
         System.out.println("Sent response!");
     }
 
     public void FinishTransfer(Integer branch, Integer acnt, Float amt, Integer ser_number) throws MessagingException {
         if(this.branch.compareTo(branch) == 0)
             return;
-
-        sendToBranch(branch, new DepositFromTransferRequest(acnt, amt, ser_number));
+        sendMessage(branch, new DepositFromTransferMessage(acnt, amt, ser_number));
     }
 
-    public void sendSnapshotRequest(Integer id, Snapshot snapshot) throws MessagingException {
+    public void sendSnapshot(Integer id, Snapshot snapshot) throws MessagingException {
         for(Integer i : this.topology.get(this.branch))
-            sendToBranch(i, snapshot);
+            sendMessage(i, snapshot);
     }
 
-    public MessageRequest ReceiveMessage() throws MessagingException {
+    public Message ReceiveMessage() throws MessagingException {
         try {
             return this.messageBuffer.take();
         } catch(java.lang.InterruptedException e) {
@@ -293,5 +308,6 @@ public class Messaging {
         }
     }
     //End Server Methods
-
+   
 }
+

@@ -1,12 +1,20 @@
 package messaging;
 
-public class TransferResponse extends MessageResponse {
+public class TransferResponse extends Response {
+
+    private Float balance;
 
     public TransferResponse(String failure_reason) {
-        super(failure_reason);
+        this.success = false;
+        this.failure_reason = failure_reason;
     }
 
     public TransferResponse(Float balance) {
-        super(balance);
+        this.success = true;
+        this.balance = balance;
+    }
+    
+    public Float getBalance() {
+        return this.balance;
     }
 }

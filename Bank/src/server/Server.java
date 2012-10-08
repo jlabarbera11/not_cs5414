@@ -1,11 +1,12 @@
 package server;
 
 import messaging.Messaging;
-import messaging.MessageRequest;
+import messaging.Message;
+import messaging.Request;
 import messaging.DepositRequest;
 import messaging.WithdrawRequest;
 import messaging.QueryRequest;
-import messaging.DepositFromTransferRequest;
+import messaging.DepositFromTransferMessage;
 import messaging.TransferRequest;
 import messaging.MessagingException;
 
@@ -71,7 +72,7 @@ public class Server
     {
         System.out.println("Server starting up!");
         while (true) {
-            MessageRequest mr = null;
+            Message mr = null;
             try {
                 mr = m.ReceiveMessage();
             } catch (MessagingException e) {
@@ -118,9 +119,9 @@ public class Server
                 }
                 System.out.println("Transfer Request handled");
 
-            } else if (mr instanceof DepositFromTransferRequest) {
+            } else if (mr instanceof DepositFromTransferMessage) {
                 System.out.println("DepositFromTransfer Request received");
-                DepositFromTransferRequest request = (DepositFromTransferRequest) mr;
+                DepositFromTransferMessage request = (DepositFromTransferMessage) mr;
                 transferDeposit(request.getAcnt(), request.getAmt(), request.getSerNumber());
                 System.out.println("DepsitFromTransfer Request handled");
             }

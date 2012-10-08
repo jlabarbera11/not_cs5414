@@ -2,7 +2,7 @@ package messaging;
 
 import java.io.Serializable;
 
-public class InitializeRequest implements Serializable {
+public class InitializeRequest extends Request {
 
     private Messaging.Type type;
     private Integer branch;
