@@ -1,0 +1,11 @@
+Messaging:
+    Required to start everything before a transaction can go through
+        This is because the server waits to make all connections before
+        listening to connections.
+    
+    Only responsd to messages from the client, not from other servers
+        This was to stay as close to the unidirectional link as possible.
+        It's a little weird, we should ask if it's ok.
+
+    A server should now be able to send a transfer to itself. We can remove the
+    check on the server level.

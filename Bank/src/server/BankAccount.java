@@ -93,7 +93,6 @@ public class BankAccount {
                         m.SendResponse(new TransferResponse(balance));
                         break;
                     case TRANSFER_DEPOSIT:
-                        m.SendResponse(new DepositFromTransferResponse(balance));
                         break;
                 }
             } 
