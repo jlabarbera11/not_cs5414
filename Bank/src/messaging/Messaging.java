@@ -51,18 +51,20 @@ public class Messaging {
     //Otherwise we add it to the messagebuffer for receive to handle.
     private class SnapshotListener implements Runnable {
 
-        //private callback;
 
-        //public SnapshotListener(Function callback) {
-        //    this.callback = callback;
-        //}
+        Callback callback;
+
+        public SnapshotListener(Callback callback) {
+            this.callback = callback;
+        }
 
         public void run() {
             while(true) {
                 try {
                     Response m = (Response)clientois.readObject();
+                    callback.callback();
                     if(m instanceof SnapshotResponse)
-                        continue;
+                        callback.callback();
                     else
                         messageBuffer.add(m);
                 } catch(Exception e) {
@@ -231,7 +233,7 @@ public class Messaging {
     }
 
     //Client Methods
-    public void connectToServer() throws MessagingException {
+    public void connectToServer(Callback c) throws MessagingException {
         try {
             String[] res = this.resolver.get(this.branch);
             System.out.println("Connecting to server");
@@ -242,7 +244,7 @@ public class Messaging {
             this.clientoos.writeObject(new InitializeRequest(Type.CLIENT, -1));
             System.out.println("Sent initialize request");
             this.clientois = new ObjectInputStream(this.clientsocket.getInputStream());
-            new Thread(this.new SnapshotListener()).start();
+            new Thread(this.new SnapshotListener(c)).start();
         } catch (UnknownHostException e) {
             throw new MessagingException(MessagingException.Type.UNKNOWN_HOST);
         } catch(IOException e) {

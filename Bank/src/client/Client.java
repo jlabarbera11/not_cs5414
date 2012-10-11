@@ -326,7 +326,7 @@ public class Client extends JFrame implements ActionListener {
         Client client = new Client(clientNum);
         try {
             client.messaging = new Messaging(new Integer(clientNum), Messaging.Type.CLIENT);
-            client.messaging.connectToServer();
+            client.messaging.connectToServer(new ClientSnapshot());
         } catch (MessagingException e) {
             System.out.println("Could not create socket");
         }
