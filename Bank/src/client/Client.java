@@ -67,7 +67,7 @@ public class Client extends JFrame implements ActionListener {
       leftAlign(panel, title);
       panel.add(createRow(" Account number:             ", depositAccount));
       panel.add(createRow(" Deposit amount:               ", depositAmount));
-      panel.add(createRow(" Deposit serial number:     ", depositSerial));
+      panel.add(createRow(" Deposit serial number:   ", depositSerial));
       JButton button = new JButton("Deposit");
       button.addActionListener(this);
       button.setActionCommand("deposit");
@@ -79,9 +79,9 @@ public class Client extends JFrame implements ActionListener {
       //JPanel panel = new JPanel();
      // panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
       leftAlign(panel, new JLabel("Make a withdrawal:"));
-      panel.add(createRow(" Account number:             ", withdrawalAccount));
-      panel.add(createRow(" Withdrawal amount:       ", withdrawalAmount));
-      panel.add(createRow(" Withdrawal serial number:     ", withdrawalSerial));
+      panel.add(createRow(" Account number:                    ", withdrawalAccount));
+      panel.add(createRow(" Withdrawal amount:              ", withdrawalAmount));
+      panel.add(createRow(" Withdrawal serial number:  ", withdrawalSerial));
       JButton button = new JButton("Withdraw");
       button.addActionListener(this);
       button.setActionCommand("withdrawal");
@@ -379,10 +379,14 @@ private void handleQuery(){
 
 private void handleSnapshot(){
 	System.out.println("taking snapshot");
-	//send message
-	
-	//get response
-	display_snapshot_response();
+    try {
+        messaging.TakeSnapshot();
+        result1.setText("Taking a snapshot...");
+        result2.setText("");
+    } catch (MessagingException e2){
+        result1.setText("A network error occurred");
+        result2.setText("");
+    }
 }
 
 private void lockGUI(){
@@ -416,5 +420,26 @@ public void actionPerformed(ActionEvent e) {
     waitingForResponse=false;
 }
 
+
+public static void main(String[] args){
+	int clientNum = -1;
+	try {
+		clientNum = Integer.parseInt(args[0]); 
+	} catch (Exception e){
+		System.out.println("Please run the program with the client number as the first argument.");
+		System.exit(0);
+	}
+	if ((clientNum < 0) || (clientNum > 99)){
+		System.out.println("Please enter a client number between 0 and 99.");
+		System.exit(0);
+	}
+	Client client = new Client(clientNum);
+	try {
+		client.messaging = new Messaging(new Integer(clientNum), Messaging.Type.CLIENT);
+	} catch (MessagingException e) {
+		System.out.println("Could not create socket");
+	}
+	//client.messaging.branch = clientNum;
+}
 
 }
