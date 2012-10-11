@@ -291,8 +291,8 @@ public class Messaging {
         return (TransferResponse)sendRequest(new TransferRequest(dest_branch, src_acnt, dest_acnt, amt, ser_number));
     }
 
-    public SnapshotResponse TakeSnapshot() throws MessagingException {
-        return (SnapshotResponse)sendRequest(new SnapshotRequest(-1, 1));
+    public void TakeSnapshot() throws MessagingException {
+        sendRequest(new SnapshotRequest(-1, 1));
     }
     //End Client Methods
 
