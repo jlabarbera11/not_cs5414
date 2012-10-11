@@ -2,6 +2,10 @@ all: client server messaging
 
 client:
 	javac -Xlint:unchecked -sourcepath src/ -d bin/ src/client/*.java
+	
+client-test:
+	javac -Xlint:unchecked -sourcepath src/ -cp lib/junit-4.10.jar -d bin src/client/test/ClientTest.java
+	java -cp lib/junit-4.10.jar:bin/ org.junit.runner.JUnitCore client.test.ClientTest
 
 server:
 	javac -Xlint:unchecked -sourcepath src/ -d bin/ src/server/*.java

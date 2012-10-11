@@ -1,4 +1,4 @@
-package client;
+package client.test;
 
 import static org.junit.Assert.*;
 import client.*;
