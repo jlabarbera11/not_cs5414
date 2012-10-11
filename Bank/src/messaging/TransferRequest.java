@@ -1,10 +1,24 @@
 package messaging;
 
-public class TransferRequest extends MessageRequest {
-
+public class TransferRequest extends Request {
+    
+    private Integer acnt;
+    private Integer ser_number;
+    private Float amt;
     private Integer dest_branch;
     private Integer dest_acnt;
-    private Float amt;
+
+    public Integer getAcnt() {
+        return this.acnt;
+    }
+
+    public Integer getSerNumber() {
+        return this.ser_number;
+    }
+
+    public Float getAmt() {
+        return this.amt;
+    }
 
     public TransferRequest(Integer dest_branch, Integer src_acnt, Integer dest_acnt, Float amt, Integer ser_number) {
         this.dest_branch = dest_branch;
@@ -26,8 +40,5 @@ public class TransferRequest extends MessageRequest {
         return this.dest_acnt;
     }
 
-    public Float getAmt() {
-        return this.amt;
-    }
 }
 

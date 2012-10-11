@@ -12,7 +12,7 @@ import messaging.*;
 //TODO: enter a serial for snapshot?
 
 public class Client extends JFrame implements ActionListener {
-    
+
     JTextField depositAccount = new JTextField(16);
     JTextField depositAmount = new JTextField(16);
     JTextField depositSerial = new JTextField(16);
@@ -414,27 +414,6 @@ public void actionPerformed(ActionEvent e) {
     	System.out.println("Request ignored because another request is pending");
     }
     waitingForResponse=false;
-}
-
-public static void main(String[] args){
-	int clientNum = -1;
-	try {
-		clientNum = Integer.parseInt(args[0]); 
-	} catch (Exception e){
-		System.out.println("Please run the program with the client number as the first argument.");
-		System.exit(0);
-	}
-	if ((clientNum < 0) || (clientNum > 99)){
-		System.out.println("Please enter a client number between 0 and 99.");
-		System.exit(0);
-	}
-	Client client = new Client(clientNum);
-	try {
-		client.messaging = new Messaging(new Integer(clientNum), Messaging.Type.CLIENT);
-	} catch (MessagingException e) {
-		System.out.println("Could not create socket");
-	}
-	//client.messaging.branch = clientNum;
 }
 
 

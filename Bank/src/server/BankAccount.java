@@ -5,7 +5,6 @@ import messaging.DepositResponse;
 import messaging.WithdrawResponse;
 import messaging.QueryResponse;
 import messaging.TransferResponse;
-import messaging.DepositFromTransferResponse;
 import messaging.MessagingException;
 
 import java.util.HashSet;
@@ -93,7 +92,6 @@ public class BankAccount {
                         m.SendResponse(new TransferResponse(balance));
                         break;
                     case TRANSFER_DEPOSIT:
-                        m.SendResponse(new DepositFromTransferResponse(balance));
                         break;
                 }
             } 

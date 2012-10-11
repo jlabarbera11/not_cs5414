@@ -1,12 +1,16 @@
 package server;
 
+import messaging.Snapshot;
 import messaging.Messaging;
-import messaging.MessageRequest;
+import messaging.Message;
+import messaging.Request;
 import messaging.DepositRequest;
 import messaging.WithdrawRequest;
 import messaging.QueryRequest;
-import messaging.DepositFromTransferRequest;
 import messaging.TransferRequest;
+import messaging.SnapshotRequest;
+import messaging.DepositFromTransferMessage;
+import messaging.SnapshotMessage;
 import messaging.MessagingException;
 
 import java.util.HashMap;
@@ -23,6 +27,7 @@ public class Server
         accounts = new HashMap<AccountNumber, BankAccount>();
         try {
             m = new Messaging(branchID, Messaging.Type.SERVER);
+            m.makeConnections();
         } catch (MessagingException e) {
             System.out.println("Server failed to create Messaging");
         }
@@ -55,7 +60,7 @@ public class Server
 
     public BankAccount getAccount(int accountID)
     {
-		AccountNumber accountNumber = new AccountNumber(branchID, accountID);
+        AccountNumber accountNumber = new AccountNumber(branchID, accountID);
 
         if (!accounts.containsKey(accountNumber)) {
             BankAccount bankAccount = new BankAccount(accountNumber, m);
@@ -70,14 +75,14 @@ public class Server
     {
         System.out.println("Server starting up!");
         while (true) {
-            MessageRequest mr = null;
+            Message mr = null;
             try {
                 mr = m.ReceiveMessage();
             } catch (MessagingException e) {
                 System.out.println("Server failed to receive message");
                 continue;
             }  
-            
+
             // TODO (KKH48): Reimplement using Visitor pattern
             if (mr instanceof DepositRequest) {
                 System.out.println("Deposit Request received");
@@ -110,18 +115,23 @@ public class Server
                     transferWithdraw(request.getSrcAcnt(), request.getAmt(), request.getSerNumber());
                     System.out.println("Sending request to second account");
                     try {
-                        m.DepositFromTransfer(request.getDestBranch(), request.getDestAcnt(), request.getAmt(), request.getSerNumber());
+                        m.FinishTransfer(request.getDestBranch(), request.getDestAcnt(), request.getAmt(), request.getSerNumber());
                     } catch (MessagingException e) {
                         System.out.println("Source branch could not send Destination branch deposit");
                     }
                 }
                 System.out.println("Transfer Request handled");
 
-            } else if (mr instanceof DepositFromTransferRequest) {
+            } else if (mr instanceof DepositFromTransferMessage) {
                 System.out.println("DepositFromTransfer Request received");
-                DepositFromTransferRequest request = (DepositFromTransferRequest) mr;
+                DepositFromTransferMessage request = (DepositFromTransferMessage) mr;
                 transferDeposit(request.getAcnt(), request.getAmt(), request.getSerNumber());
                 System.out.println("DepsitFromTransfer Request handled");
+            
+            } else if (mr instanceof SnapshotRequest) {
+
+            } else if (mr instanceof SnapshotMessage) {
+
             }
         }
     }

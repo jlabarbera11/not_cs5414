@@ -13,10 +13,10 @@ messaging-test:
 	javac -Xlint:unchecked -sourcepath src/ -cp lib/junit-4.10.jar -d bin src/messaging/test/MessagingTest.java
 	java -cp lib/junit-4.10.jar:bin/ org.junit.runner.JUnitCore messaging.test.MessagingTest
 
-jar-server: server messaging
+server-jar: server messaging
 	jar cfe server.jar server.Server -C bin .
 
-jar-client: client messaging
+client-jar: client messaging
 	jar cfe client.jar client.Client -C bin .
 
 clean:

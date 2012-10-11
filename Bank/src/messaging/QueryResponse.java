@@ -1,12 +1,20 @@
 package messaging;
 
-public class QueryResponse extends MessageResponse {
+public class QueryResponse extends Response {
+
+    private Float balance;
 
     public QueryResponse(String failure_reason) {
-        super(failure_reason);
+        this.success = false;
+        this.failure_reason = failure_reason;
     }
 
     public QueryResponse(Float balance) {
-        super(balance);
+        this.success = true;
+        this.balance = balance;
+    }
+
+    public Float getBalance() {
+        return this.balance;
     }
 }

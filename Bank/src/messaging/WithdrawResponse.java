@@ -1,12 +1,20 @@
 package messaging;
 
-public class WithdrawResponse extends MessageResponse {
+public class WithdrawResponse extends Response {
+
+    private Float balance;
 
     public WithdrawResponse(String failure_reason) {
-        super(failure_reason);
+        this.success = false;
+        this.failure_reason = failure_reason;
     }
 
     public WithdrawResponse(Float balance) {
-        super(balance);
+        this.success = true;
+        this.balance = balance;
+    }
+    
+    public Float getBalance() {
+        return this.balance;
     }
 }
