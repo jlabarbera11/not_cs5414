@@ -13,20 +13,20 @@ import messaging.*;
 
 public class Client extends JFrame implements ActionListener {
 
-    JTextField depositAccount = new JTextField(16);
-    JTextField depositAmount = new JTextField(16);
-    JTextField depositSerial = new JTextField(16);
-    JTextField withdrawalAccount = new JTextField(16);
-    JTextField withdrawalAmount = new JTextField(16);
-    JTextField withdrawalSerial = new JTextField(16);
-    JTextField transferFromAccount = new JTextField(16);
-    JTextField transferToAccount = new JTextField(16);
-    JTextField transferAmount = new JTextField(16);
-    JTextField transferSerial = new JTextField(16);
-    JTextField queryAccount = new JTextField(16);
-    JTextField querySerial = new JTextField(16);
-    JLabel result1 = new JLabel(" ");
-    JLabel result2 = new JLabel(" ");
+    public JTextField depositAccount = new JTextField(16);
+    public JTextField depositAmount = new JTextField(16);
+    public JTextField depositSerial = new JTextField(16);
+    public JTextField withdrawalAccount = new JTextField(16);
+    public JTextField withdrawalAmount = new JTextField(16);
+    public JTextField withdrawalSerial = new JTextField(16);
+    public JTextField transferFromAccount = new JTextField(16);
+    public JTextField transferToAccount = new JTextField(16);
+    public JTextField transferAmount = new JTextField(16);
+    public JTextField transferSerial = new JTextField(16);
+    public JTextField queryAccount = new JTextField(16);
+    public JTextField querySerial = new JTextField(16);
+    public JLabel result1 = new JLabel(" ");
+    public JLabel result2 = new JLabel(" ");
     //int serialNumber = 0;
     int clientNumber;
     Messaging messaging;
