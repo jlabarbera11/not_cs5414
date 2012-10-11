@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
+import java.util.ArrayList;
 
 import java.net.InetAddress;
 import java.net.Socket;
@@ -42,6 +44,33 @@ public class Messaging {
     public enum Type {
         CLIENT,
         SERVER
+    }
+
+    //This class listens for messages sent to the client.
+    //If the message is a snapshot, we call the callback.
+    //Otherwise we add it to the messagebuffer for receive to handle.
+    private class SnapshotListener implements Runnable {
+
+        //private callback;
+
+        //public SnapshotListener(Function callback) {
+        //    this.callback = callback;
+        //}
+
+        public void run() {
+            while(true) {
+                try {
+                    Response m = (Response)clientois.readObject();
+                    if(m instanceof SnapshotResponse)
+                        continue;
+                    else
+                        messageBuffer.add(m);
+                } catch(Exception e) {
+                    System.out.println(e.toString() + "thrown from SnapshotListener");
+                }
+            }
+        }
+
     }
 
     //This class receives messages and puts them into a synchronized buffer
@@ -100,14 +129,14 @@ public class Messaging {
         if(!buildTopology(topologyfile))
             throw new MessagingException(MessagingException.Type.INVALID_TOPOLOGY);
         buildResolver(resolverfile);
-        this.branch = b;
-
+        
+        this.branch = b;        
+        this.messageBuffer = new LinkedBlockingQueue<Message>();
         if (T == Type.SERVER) {
             try {
                 this.serversocket = new ServerSocket(Integer.parseInt(this.resolver.get(this.branch)[1]));
                 serversocket.setReuseAddress(true);
                 this.outputstreams= new HashMap<Integer, ObjectOutputStream>();
-                this.messageBuffer = new LinkedBlockingQueue<Message>();
             } catch (IOException e) {
                 throw new MessagingException(MessagingException.Type.FAILED_SOCKET_CREATION);
             }
@@ -117,22 +146,21 @@ public class Messaging {
     //We've extended whoNeighbors to return an array:
     //The first element contains all neighbors we can reach in one hop
     //The second element contains all neighbors that can reach us in one hop
-    //TODO: Figure out how to put shit in the array
-    //public Set<Integer>[] whoNeighbors() {
-    //    Set<Integer> first = this.topology.get(this.branch);
+    public List<Set<Integer>> whoNeighbors() {
+        Set<Integer> first = this.topology.get(this.branch);
 
-    //    Set<Integer> second = new HashSet<Integer>();
-    //    for(Integer i : this.topology.keySet()) {
-    //        if(this.topology.get(i).contains(this.branch))
-    //            second.add(i);
-    //    }
+        Set<Integer> second = new HashSet<Integer>();
+        for(Integer i : this.topology.keySet()) {
+            if(this.topology.get(i).contains(this.branch))
+                second.add(i);
+        }
 
-    //    return new Set<Integer>[]{first, second};
-    //}
-    public Set<Integer> whoNeighbors() {
-        return this.topology.get(this.branch);
+        List<Set<Integer>> r = new ArrayList<Set<Integer>>();
+        r.add(first);
+        r.add(second);
+        return r;
     }
-
+    
     private void _checkTopopolgy(Set<Integer> checked, Integer current) {
         checked.add(current);
         if(!this.topology.containsKey(current))
@@ -209,12 +237,12 @@ public class Messaging {
             System.out.println("Connecting to server");
             this.clientsocket = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
             System.out.println("Connected to server!");
-            this.clientsocket.setSoTimeout(5 * 1000);
             this.clientoos = new ObjectOutputStream(this.clientsocket.getOutputStream());
             System.out.println("Sending initialize request");
             this.clientoos.writeObject(new InitializeRequest(Type.CLIENT, -1));
             System.out.println("Sent initialize request");
             this.clientois = new ObjectInputStream(this.clientsocket.getInputStream());
+            new Thread(this.new SnapshotListener()).start();
         } catch (UnknownHostException e) {
             throw new MessagingException(MessagingException.Type.UNKNOWN_HOST);
         } catch(IOException e) {
@@ -227,10 +255,10 @@ public class Messaging {
         try {
             this.clientoos.writeObject(M);
             System.out.println("Sent message!");
-            return (Response)this.clientois.readObject();
+            return (Response)this.messageBuffer.take();
         } catch (IOException e) {
             throw new MessagingException(MessagingException.Type.FAILED_REQUEST_SEND);
-        } catch (ClassNotFoundException e) {
+        } catch(InterruptedException e) {
             throw new MessagingException(MessagingException.Type.FAILED_RESPONSE_RECEIVE);
         }
     }
