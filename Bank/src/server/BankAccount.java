@@ -65,24 +65,14 @@ public class BankAccount {
 
             switch (t) {
                 case DEPOSIT:
-                    System.out.println("Balance before: " + balance);
-                    balance += amount;
-                    System.out.println("Balance after: " + balance);
-                    break;
-                case WITHDRAW:
-                    System.out.println("Balance before: " + balance);
-                    balance -= amount;
-                    System.out.println("Balance after: " + balance);
-                    break;
-                case QUERY:
-                    break;
-                case TRANSFER_WITHDRAW:
-                    System.out.println("Balance before: " + balance);
-                    balance -= amount;
-                    System.out.println("Balance after: " + balance);
-                    break;
                 case TRANSFER_DEPOSIT:
                     balance += amount;
+                    break;
+                case WITHDRAW:
+                case TRANSFER_WITHDRAW:
+                    balance -= amount;
+                    break;
+                case QUERY:
                     break;
             }
         }
