@@ -11,7 +11,7 @@ import java.util.HashSet;
 
 public class BankAccount {
     private AccountNumber accountNumber;
-    private float balance;
+    private Float balance;
     private HashSet<Integer> serials;
     private Messaging m;
 
@@ -32,12 +32,17 @@ public class BankAccount {
         this.m = m;
     }
 
-    public void deposit(float amount, int serialNumber, boolean resp)
+    public Float getBalance()
+    {
+        return balance;
+    }
+
+    public void deposit(Float amount, int serialNumber, boolean resp)
     {
         transaction(Transaction.DEPOSIT, amount, serialNumber, resp);
     }
 
-    public void withdraw(float amount, int serialNumber)
+    public void withdraw(Float amount, int serialNumber)
     {
         transaction(Transaction.WITHDRAW, amount, serialNumber, true);
     }
@@ -47,21 +52,22 @@ public class BankAccount {
         transaction(Transaction.QUERY, 0.0f, serialNumber, true);
     }
 
-    public void transferWithdraw(float amount, int serialNumber)
+    public void transferWithdraw(Float amount, int serialNumber)
     {
         transaction(Transaction.TRANSFER_WITHDRAW, amount, serialNumber, true);
     }
 
-    public void transferDeposit(float amount, int serialNumber)
+    public void transferDeposit(Float amount, int serialNumber)
     {
         transaction(Transaction.TRANSFER_DEPOSIT, amount, serialNumber, true);
     }
 
-    private void transaction(Transaction t, float amount, int serialNumber, boolean resp) 
+    private void transaction(Transaction t, Float amount, int serialNumber, boolean resp) 
     {
-        boolean valid = !serials.contains(serialNumber);
+        boolean valid = !(serials.contains(serialNumber));
         
-        if (!serials.contains(serialNumber)) {
+        if (valid == true) {
+            System.out.println("new transaction number " + serialNumber);
             serials.add(serialNumber);
 
             switch (t) {
