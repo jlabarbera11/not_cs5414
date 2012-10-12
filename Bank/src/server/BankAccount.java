@@ -10,7 +10,7 @@ import messaging.MessagingException;
 import java.util.HashSet;
 
 public class BankAccount {
-    private AccountNumber accountNumber;
+    public AccountNumber accountNumber;
     private Float balance;
     private HashSet<Integer> serials;
     private Messaging m;

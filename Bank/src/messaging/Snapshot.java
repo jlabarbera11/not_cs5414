@@ -9,8 +9,8 @@ import server.BankAccount;
 
 public class Snapshot extends Message {
 
-    private Map<Integer, Channel> channels;
-    private Set<BankAccount> branchState;
+    public Map<Integer, Channel> channels;
+    public Set<BankAccount> branchState;
 
     public Snapshot(SSInfo ss) 
     {
