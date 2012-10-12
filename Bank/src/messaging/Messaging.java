@@ -50,8 +50,6 @@ public class Messaging {
     //If the message is a snapshot, we call the callback.
     //Otherwise we add it to the messagebuffer for receive to handle.
     private class SnapshotListener implements Runnable {
-
-
         Callback callback;
 
         public SnapshotListener(Callback callback) {
@@ -68,7 +66,6 @@ public class Messaging {
                     else
                         messageBuffer.add(m);
                 } catch(Exception e) {
-                    System.out.println(e.toString() + "thrown from SnapshotListener");
                 }
             }
         }
