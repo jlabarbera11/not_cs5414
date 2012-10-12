@@ -311,8 +311,10 @@ public class Messaging {
                     if(this.outputstreams.get(branch) == null)
                         throw new IOException();
                     this.outputstreams.get(branch).writeObject(o);
+                    System.out.println("message sent");
                     return;
                 } catch (IOException e) {
+                    e.printStackTrace();
                     System.out.println("Could not connect to branch " + branch + ", trying again");
                     Thread.sleep(1000);
                     String[] res = this.resolver.get(branch);
@@ -322,11 +324,14 @@ public class Messaging {
                     this.outputstreams.put(branch, oos);
                 }
             } catch (IOException e) {
+                System.out.println("in io exception");
                 continue;
             } catch (InterruptedException e) {
+                System.out.println("how did i end up here?");
                 throw new MessagingException(MessagingException.Type.UNKNOWN_ERROR);
             }
         }
+        System.out.println("dead");
         throw new MessagingException(MessagingException.Type.FAILED_REQUEST_SEND);
     }
 
