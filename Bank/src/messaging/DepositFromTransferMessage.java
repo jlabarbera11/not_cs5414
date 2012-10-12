@@ -24,4 +24,10 @@ public class DepositFromTransferMessage extends Message {
     public Integer getSerNumber() {
         return this.ser_number;
     }
+
+    @Override
+    public String toString()
+    {
+        return String.format("DepositFromTransfer = Sender: %d, Account: %d, Amount: %.2f, Serial: %d", sender, acnt, amt, ser_number);
+    }
 }
