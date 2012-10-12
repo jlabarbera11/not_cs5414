@@ -42,7 +42,7 @@ public class ClientSnapshot implements Callback {
 	    int i=0;
 	    while(iterator.hasNext()){
 	    	BankAccount account = iterator.next();
-	    	rows[i][0]=""+account.accountNumber;
+	    	rows[i][0]=""+account.getAccountNumber();
 	    	rows[i][1]=""+account.getBalance();
 	    	i++;
 	    }
