@@ -159,7 +159,9 @@ public class Server
                 ss.startSnapshot(request.getID(), getBranchState());
                 try {
                     m.PropogateSnapshot(new SnapshotMessage(this.branchID, request.getID()));
-                } catch (Exception e) {}
+                } catch (Exception e) {
+
+                }
 
             } else if (mr instanceof SnapshotMessage) {
                 SnapshotMessage message = (SnapshotMessage) mr;
@@ -169,8 +171,10 @@ public class Server
                     if (ss.closeChannel(ssID, message.getSender())) {
                         // All channels are closed; send snapshot response
                         try {
-                        m.SendResponse(new SnapshotResponse(new Snapshot(ss.getSSInfo(ssID))));
-                        } catch (Exception e) {}
+                            m.SendResponse(new SnapshotResponse(new Snapshot(ss.getSSInfo(ssID))));
+                        } catch (Exception e) {
+
+                        }
                     }
                 } else {
                     ss.startSnapshot(ssID, getBranchState());
