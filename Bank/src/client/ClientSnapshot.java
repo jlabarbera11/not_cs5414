@@ -48,7 +48,7 @@ public class ClientSnapshot extends JFrame implements Callback {
 	    while(iterator.hasNext()){
 	    	List<Object> account = iterator.next();
 	    	rows[i][0]=System.out.printf("%02d%n", account.get(0))+"."+account.get(1);
-	    	rows[i][1]=account.get(2);
+	    	rows[i][1]=account.get(2).toString();
 	    	i++;
 	    }
 	    JTable table = new JTable(rows, column_names);
