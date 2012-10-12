@@ -6,12 +6,15 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 
 import server.BankAccount;
 import server.Channel;
 import server.SSInfo;
+import server.Server;
 import messaging.*;
 
 /**
@@ -46,6 +49,17 @@ public class ClientSnapshot implements Callback {
 	    JTable table = new JTable(rows, column_names);
 	    JScrollPane scrollPane = new JScrollPane(table);
 	    newFrame.getContentPane().add(scrollPane, BorderLayout.CENTER);
+	    
+	    
+	    //private Map<Integer, Channel> channels;
+	    JPanel panel = new JPanel();
+	    for (Map.Entry<Integer, Channel> entry : snapshot.channels.entrySet()) {
+	    	panel.add(new JLabel("Messages in channel from branch " + entry.getKey()));
+	    	panel.add(new JLabel(entry.getValue().toString()));
+	    }
+	    newFrame.getContentPane().add(scrollPane, panel);
+	    
+	    
 	  
 	    newFrame.pack();
 	    newFrame.setVisible(true);
