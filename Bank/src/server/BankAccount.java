@@ -59,6 +59,8 @@ public class BankAccount {
 
     private void transaction(Transaction t, float amount, int serialNumber, boolean resp) 
     {
+        boolean valid = !serials.contains(serialNumber);
+        
         if (!serials.contains(serialNumber)) {
             serials.add(serialNumber);
 
@@ -80,16 +82,16 @@ public class BankAccount {
             if (resp) {
                 switch (t) {
                     case DEPOSIT:
-                        m.SendResponse(new DepositResponse(balance));
+                        m.SendResponse(valid ? new DepositResponse(balance) : new DepositResponse("Invalid Serial Number"));
                         break;
                     case WITHDRAW:
-                        m.SendResponse(new WithdrawResponse(balance));
+                        m.SendResponse(valid ? new WithdrawResponse(balance) : new WithdrawResponse("Invalid Serial Number"));
                         break;
                     case QUERY:
-                        m.SendResponse(new QueryResponse(balance));
+                        m.SendResponse(valid ? new QueryResponse(balance) : new QueryResponse("Invalid Serial Number"));
                         break;
                     case TRANSFER_WITHDRAW:
-                        m.SendResponse(new TransferResponse(balance));
+                        m.SendResponse(valid ? new TransferResponse(balance) : new TransferResponse("Invalid Serial Number"));
                         break;
                     case TRANSFER_DEPOSIT:
                         break;
