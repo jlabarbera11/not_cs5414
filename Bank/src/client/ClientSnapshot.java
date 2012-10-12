@@ -43,12 +43,12 @@ public class ClientSnapshot extends JFrame implements Callback {
 	    String[][] rows = new String[snapshot.branchState.size()][2];
 	    System.out.println("branch state size is: " + snapshot.branchState.size());
 	    String[] column_names = {"Account Number", "Balance:"};
-	    Iterator<BankAccount> iterator = snapshot.branchState.iterator();
+	    Iterator<List<Object>> iterator = snapshot.branchState.iterator();
 	    int i=0;
 	    while(iterator.hasNext()){
-	    	BankAccount account = iterator.next();
-	    	rows[i][0]="asdf"+account.getAccountNumber();
-	    	rows[i][1]="asdf"+account.getBalance();
+	    	List<Object> account = iterator.next();
+	    	rows[i][0]="asdf"+account.get(0);
+	    	rows[i][1]="asdf"+account.get(2);
 	    	i++;
 	    }
 	    JTable table = new JTable(rows, column_names);
@@ -96,13 +96,13 @@ public class ClientSnapshot extends JFrame implements Callback {
 	    
 	    panel.add(new JLabel("Messages in channel"));
 	    
-	    for (Map.Entry<Integer, Channel> entry : snapshot.channels.entrySet()) {
+	    for (Map.Entry<Integer, List<Message>> entry : snapshot.channels.entrySet()) {
 	    	panel.add(new JLabel("Messages in channel from branch " + entry.getKey()));
 	    	panel.add(new JLabel(entry.getValue().toString()));
 	    	
 	    	//newFrame.getContentPane().add(new JLabel("Messages in channel from branch " + entry.getKey()), BorderLayout.CENTER);
-	    	Channel channel = entry.getValue();
-	    	List<Message> messages = channel.getMessages();
+	    	//Channel channel = entry.getValue();
+	    	List<Message> messages = entry.getValue(); //channel.getMessages();
 	    	for (Message m: messages){
 	    		panel.add(new JLabel(m.toString()), BorderLayout.CENTER);
 	    	}

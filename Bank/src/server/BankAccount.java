@@ -9,6 +9,8 @@ import messaging.MessagingException;
 
 import java.io.Serializable;
 import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class BankAccount implements Comparable<BankAccount>, Serializable {
@@ -32,6 +34,16 @@ public class BankAccount implements Comparable<BankAccount>, Serializable {
         balance = 0.0f;
         serials = new HashSet<Integer>();
         this.m = m;
+    }
+
+    public List<Object> getObjects()
+    {
+        List<Object> list = new ArrayList<Object>();
+        list.add(accountNumber.getBranch());
+        list.add(accountNumber.getAccount());
+        list.add(balance);
+
+        return list;
     }
 
     public Float getBalance()

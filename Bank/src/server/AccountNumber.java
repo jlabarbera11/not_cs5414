@@ -21,6 +21,11 @@ public class AccountNumber implements Serializable
         return branch;
     }
 
+    public int getAccount()
+    {
+        return account;
+    }
+
     @Override
     public String toString()
     {
