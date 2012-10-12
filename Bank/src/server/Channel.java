@@ -38,4 +38,9 @@ public class Channel
 
         return !isOpen;
     }
+
+    List<Message> getMessages()
+    {
+        return messages;
+    }
 }
