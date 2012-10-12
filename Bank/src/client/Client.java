@@ -29,7 +29,7 @@ public class Client extends JFrame implements ActionListener {
     public JLabel result2 = new JLabel(" ");
     //int serialNumber = 0;
     int clientNumber;
-    Messaging messaging;
+    public Messaging messaging;
     boolean waitingForResponse;
     
     public String GetResult(){
