@@ -341,7 +341,7 @@ public class Messaging {
     public void FinishTransfer(Integer branch, Integer acnt, Float amt, Integer ser_number) throws MessagingException {
         if(this.branch.compareTo(branch) == 0)
             return;
-        sendMessage(branch, new DepositFromTransferMessage(acnt, amt, ser_number));
+        sendMessage(branch, new DepositFromTransferMessage(this.branch, acnt, amt, ser_number));
     }
 
     public void PropogateSnapshot(SnapshotMessage sm) throws MessagingException {

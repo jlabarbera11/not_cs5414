@@ -64,8 +64,10 @@ public class BankAccount {
 
     private void transaction(Transaction t, Float amount, int serialNumber, boolean resp) 
     {
-        boolean valid = !serials.contains(serialNumber);
+        boolean valid = !(serials.contains(serialNumber));
+        
         if (valid == true) {
+            System.out.println("new transaction number " + serialNumber);
             serials.add(serialNumber);
 
             switch (t) {
