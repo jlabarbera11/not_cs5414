@@ -16,9 +16,14 @@ public class Channel
         messages = new LinkedList<Message>();
     }
 
-    public void closeChannel()
+    public boolean closeChannel()
     {
-        isOpen = false;
+        if (isOpen) {
+            isOpen = false;
+            return true;
+        }
+
+        return false;
     }
 
     public boolean isOpen()
