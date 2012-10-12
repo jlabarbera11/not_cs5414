@@ -60,7 +60,6 @@ public class Messaging {
             while(true) {
                 try {
                     Response m = (Response)clientois.readObject();
-                    callback.callback();
                     if(m instanceof SnapshotResponse)
                         callback.callback(m);
                     else
