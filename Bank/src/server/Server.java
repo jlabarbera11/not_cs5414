@@ -164,7 +164,10 @@ public class Server
                 // should only be received from client
                 SnapshotRequest request = (SnapshotRequest) mr;
                 // all branchIDs are positive
-                ss.startSnapshot(request.getID(), getBranchState(), new Integer(-1));
+                ss.startSnapshot(request.getID(), getBranchState(), new Integer(-1000));
+                for (BankAccount ba : getBranchState()) {
+                        System.out.println("bankaccount with: " + ba.getBalance());
+                }
                 try {
                     m.PropogateSnapshot(new SnapshotMessage(this.branchID, request.getID()));
                 } catch (Exception e) {
