@@ -199,6 +199,7 @@ public class Client extends JFrame implements ActionListener {
 			  int serial = Integer.parseInt(input);
 			  return (serial > 0);
 		  } catch (NumberFormatException e) {
+			  System.out.println("checkSerial is returning false on input " + input);
 			  return false;
 		  }
 	  }
@@ -269,7 +270,7 @@ public class Client extends JFrame implements ActionListener {
 		System.out.println("withdrawal serial is: " + withdrawalSerial.getText());
 	    String account = withdrawalAccount.getText();
 	    String amount = withdrawalAmount.getText();
-	    String serial = querySerial.getText();
+	    String serial = withdrawalSerial.getText();
 	    if (!checkAccountNumber(account)){
 	    	result1.setText("Invalid account number format.");
 	    	result2.setText("Example account number: 12.34567.");
@@ -311,7 +312,7 @@ public class Client extends JFrame implements ActionListener {
 	    String accountTo = transferToAccount.getText();
 	    String accountFrom = transferFromAccount.getText();
 	    String amount = transferAmount.getText();
-	    String serial = querySerial.getText();
+	    String serial = transferSerial.getText();
 	    if (!checkAccountNumber(accountTo)){
 	    	result1.setText("Invalid account number format.");
 	    	result2.setText("Example account number: 12.34567.");

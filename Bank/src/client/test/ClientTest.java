@@ -3,7 +3,6 @@ package client.test;
 import static org.junit.Assert.*;
 import client.*;
 import server.*;
-
 import org.junit.Test;
 
 public class ClientTest {
