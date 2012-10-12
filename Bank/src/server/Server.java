@@ -113,23 +113,27 @@ public class Server
                 System.out.println("Deposit Request received");
                 DepositRequest request = (DepositRequest) mr;
                 deposit(request.getAcnt(), request.getAmt(), request.getSerNumber(), true);
+                ss.recordMessage(request.getSender(), request);
                 System.out.println("Deposit Request handled");
 
             } else if (mr instanceof WithdrawRequest) {
                 System.out.println("Withdraw Request received");
                 WithdrawRequest request = (WithdrawRequest) mr;
                 withdraw(request.getAcnt(), request.getAmt(), request.getSerNumber());
+                ss.recordMessage(request.getSender(), request);
                 System.out.println("Withdraw Request handled");
 
             } else if (mr instanceof QueryRequest) {
                 System.out.println("Query Request received");
                 QueryRequest request = (QueryRequest) mr;
                 query(request.getAcnt(), request.getSerNumber());
+                ss.recordMessage(request.getSender(), request);
                 System.out.println("Query Request handled");
 
             } else if (mr instanceof TransferRequest) {
                 System.out.println("Transfer Request received");
                 TransferRequest request = (TransferRequest) mr;
+                ss.recordMessage(request.getSender(), request);
                 if (request.getDestBranch().equals(branchID) && request.getSrcAcnt().equals(request.getDestAcnt())) {
                     System.out.println("Transfering to itself");
                     transferWithdraw(request.getSrcAcnt(), 0.0f, request.getSerNumber());
@@ -150,6 +154,7 @@ public class Server
             } else if (mr instanceof DepositFromTransferMessage) {
                 System.out.println("DepositFromTransfer Request received");
                 DepositFromTransferMessage request = (DepositFromTransferMessage) mr;
+                ss.recordMessage(request.getSender(), request);
                 transferDeposit(request.getAcnt(), request.getAmt(), request.getSerNumber());
                 System.out.println("DepsitFromTransfer Request handled");
             
