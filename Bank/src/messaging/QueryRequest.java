@@ -18,4 +18,10 @@ public class QueryRequest extends Request {
         return this.ser_number;
     }
 
+    @Override
+    public String toString()
+    {
+        return String.format("Query = Account: %d, Serial: %d", acnt, ser_number);
+    }
+
 }
