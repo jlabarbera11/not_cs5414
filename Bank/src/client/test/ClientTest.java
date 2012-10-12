@@ -4,6 +4,10 @@ import static org.junit.Assert.*;
 import client.*;
 import server.*;
 
+
+import messaging.Messaging;
+import messaging.MessagingException;
+
 import org.junit.Test;
 
 public class ClientTest {
@@ -14,13 +18,28 @@ public class ClientTest {
 		serial++;
 		return "" + serial;
 	}
+	
+	public static void wait (int n){
+        long t0,t1;
+        t0=System.currentTimeMillis();
+        do{
+            t1=System.currentTimeMillis();
+        }
+        while (t1-t0<1000);
+	}
 
 	@Test
-	public void test() {
-		Server server = new Server(1);
-		server.run();
+	public void test() throws InterruptedException, MessagingException {
+		
+		ServerTestThread thread = new ServerTestThread();
+		thread.start();
+		
+		//int i=0;
+		//while (i<1000000000){i++;}
 		
 		Client client = new Client(1);
+		client.messaging = new Messaging(new Integer(1), Messaging.Type.CLIENT);
+		client.messaging.connectToServer(new ClientSnapshot());
 		
 		//------------------ Test Deposit ---------------------------
 		
@@ -29,6 +48,7 @@ public class ClientTest {
 		client.depositAmount.setText("100");
 		client.depositSerial.setText(newSerial());
 		client.handleDeposit();
+		wait(1);
 		assertEquals(client.result1.getText(), "Invalid account number format.");
 		assertEquals(client.result2.getText(), "Example account number: 12.34567");
 		
@@ -37,6 +57,7 @@ public class ClientTest {
 		client.depositAmount.setText("abc");
 		client.depositSerial.setText(newSerial());
 		client.handleDeposit();
+		wait(1);
 		assertEquals(client.result1.getText(), "Invalid deposit amount. Make sure you have entered a number");
 		assertEquals(client.result2.getText(), "greater than 0 but less than 10,000,000.");
 		
@@ -45,14 +66,16 @@ public class ClientTest {
 		client.depositAmount.setText("100");
 		client.depositSerial.setText("99999");
 		client.handleDeposit();
+		wait(1);
 		assertEquals(client.result1.getText(), "Deposit successful");
-		assertEquals(client.result2.getText(), "Balance: 100");
+		assertEquals(client.result2.getText(), "Balance: 100.0");
 		
 		//invalid serial
 		client.depositAccount.setText("01.11111");
 		client.depositAmount.setText("100");
 		client.depositSerial.setText("99999");
 		client.handleDeposit();
+		wait(1);
 		assertEquals(client.result1.getText(), "Invalid serial number");
 		assertEquals(client.result2.getText(), "");
 		
@@ -61,6 +84,7 @@ public class ClientTest {
 		client.depositAmount.setText("100");
 		client.depositSerial.setText(newSerial());
 		client.handleDeposit();
+		wait(1);
 		assertEquals(client.result1.getText(), "A network error occurred");
 		assertEquals(client.result2.getText(), "");
 		
@@ -72,6 +96,7 @@ public class ClientTest {
 		client.withdrawalAmount.setText("100");
 		client.withdrawalSerial.setText(newSerial());
 		client.handleWithdrawal();
+		wait(1);
 		assertEquals(client.result1.getText(), "Invalid account number format.");
 		assertEquals(client.result2.getText(), "Example account number: 12.34567");
 		
@@ -80,6 +105,7 @@ public class ClientTest {
 		client.withdrawalAmount.setText("abc");
 		client.withdrawalSerial.setText(newSerial());
 		client.handleWithdrawal();
+		wait(1);
 		assertEquals(client.result1.getText(), "Invalid withdrawal amount. Make sure you have entered a number");
 		assertEquals(client.result2.getText(), "greater than 0 but less than 10,000,000.");
 		
@@ -88,6 +114,7 @@ public class ClientTest {
 		client.withdrawalAmount.setText("100");
 		client.withdrawalSerial.setText("99999");
 		client.handleWithdrawal();
+		wait(1);
 		assertEquals(client.result1.getText(), "Invalid serial number");
 		assertEquals(client.result2.getText(), "");
 		
@@ -96,6 +123,7 @@ public class ClientTest {
 		client.withdrawalAmount.setText("100");
 		client.withdrawalSerial.setText(newSerial());
 		client.handleWithdrawal();
+		wait(1);
 		assertEquals(client.result1.getText(), "A network error occurred");
 		assertEquals(client.result2.getText(), "");
 		
@@ -104,6 +132,7 @@ public class ClientTest {
 		client.withdrawalAmount.setText("50");
 		client.withdrawalSerial.setText(newSerial());
 		client.handleWithdrawal();
+		wait(1);
 		assertEquals(client.result1.getText(), "Withdrawal successful");
 		assertEquals(client.result2.getText(), "Balance: 50");
 		
@@ -114,6 +143,7 @@ public class ClientTest {
 		client.queryAccount.setText("abc");
 		client.querySerial.setText(newSerial());
 		client.handleWithdrawal();
+		wait(1);
 		assertEquals(client.result1.getText(), "Invalid account number format.");
 		assertEquals(client.result2.getText(), "Example account number: 12.34567");
 		
@@ -121,6 +151,7 @@ public class ClientTest {
 		client.queryAccount.setText("01.11111");
 		client.querySerial.setText("99999");
 		client.handleQuery();
+		wait(1);
 		assertEquals(client.result1.getText(), "Invalid serial number");
 		assertEquals(client.result2.getText(), "");
 		
@@ -128,6 +159,7 @@ public class ClientTest {
 		client.queryAccount.setText("05.55555");
 		client.querySerial.setText(newSerial());
 		client.handleQuery();
+		wait(1);
 		assertEquals(client.result1.getText(), "A network error occurred");
 		assertEquals(client.result2.getText(), "");
 		
@@ -135,14 +167,12 @@ public class ClientTest {
 		client.queryAccount.setText("01.11111");
 		client.querySerial.setText(newSerial());
 		client.handleQuery();
+		wait(1);
 		assertEquals(client.result1.getText(), "Query successful");
 		assertEquals(client.result2.getText(), "Balance: 50");
 		
 		
 		//------------------ Test Transfer ---------------------------
-		
-		Server server2 = new Server(2);
-		server2.run();
 		
 		//invalid source account
 		client.transferFromAccount.setText("abc");
@@ -150,6 +180,7 @@ public class ClientTest {
 		client.transferAmount.setText("25");
 		client.transferSerial.setText(newSerial());
 		client.handleTransfer();
+		wait(1);
 		assertEquals(client.result1.getText(), "Invalid account number format.");
 		assertEquals(client.result2.getText(), "Example account number: 12.34567");
 		
@@ -159,6 +190,7 @@ public class ClientTest {
 		client.transferAmount.setText("25");
 		client.transferSerial.setText(newSerial());
 		client.handleTransfer();
+		wait(1);
 		assertEquals(client.result1.getText(), "Invalid account number format.");
 		assertEquals(client.result2.getText(), "Example account number: 12.34567");
 		
@@ -168,6 +200,7 @@ public class ClientTest {
 		client.transferAmount.setText("abc");
 		client.transferSerial.setText(newSerial());
 		client.handleTransfer();
+		wait(1);
 		assertEquals(client.result1.getText(), "Invalid transfer amount. Make sure you have entered a number");
 		assertEquals(client.result2.getText(), "greater than 0 but less than 10,000,000.");
 		
@@ -177,6 +210,7 @@ public class ClientTest {
 		client.transferAmount.setText("100");
 		client.transferSerial.setText("99999");
 		client.handleTransfer();
+		wait(1);
 		assertEquals(client.result1.getText(), "Invalid serial number");
 		assertEquals(client.result2.getText(), "");
 		
@@ -186,6 +220,7 @@ public class ClientTest {
 		client.transferAmount.setText("100");
 		client.transferSerial.setText(newSerial());
 		client.handleTransfer();
+		wait(1);
 		assertEquals(client.result1.getText(), "A network error occurred");
 		assertEquals(client.result2.getText(), "");
 		
@@ -195,6 +230,7 @@ public class ClientTest {
 		client.transferAmount.setText("25");
 		client.transferSerial.setText(newSerial());
 		client.handleTransfer();
+		wait(1);
 		assertEquals(client.result1.getText(), "Transfer successful");
 		assertEquals(client.result2.getText(), "Balance in source account: 25");
 		
@@ -203,6 +239,7 @@ public class ClientTest {
 		
 		//valid withdrawal
 		client.handleSnapshot();
+		wait(1);
 		assertEquals(client.result1.getText(), "Taking snapshot...");
 		assertEquals(client.result2.getText(), "");
 		
