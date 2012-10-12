@@ -1,7 +1,9 @@
 package client;
 
 import java.awt.BorderLayout;
+import java.awt.event.ActionListener;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -11,6 +13,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextField;
 
 import server.BankAccount;
 import server.Channel;
@@ -31,7 +34,7 @@ import messaging.*;
  *
  */
 
-public class ClientSnapshot implements Callback {
+public class ClientSnapshot extends JFrame implements Callback {
     public void callback(Message message) {
 	    System.out.println("displaying callback");
 	    SnapshotResponse response = (SnapshotResponse)message;
@@ -55,32 +58,65 @@ public class ClientSnapshot implements Callback {
 	    newFrame.pack();
 	    newFrame.setVisible(true);
 	    
-	    makeAnotherWindow(snapshot);
+	    ClientSnapshot object = new ClientSnapshot(snapshot);
     }
 
-	private static void makeAnotherWindow() {
+        
+  public ClientSnapshot(Snapshot snapshot) {
+    super("Displaying snapshot information");
+    setSize(400, 700);
+    //this.setResizable(false);
+    JPanel mainPanel = new JPanel();
+    BoxLayout layout = new BoxLayout(mainPanel, BoxLayout.Y_AXIS);
+    mainPanel.setLayout(layout);
+    mainPanel.add(makeAnotherWindow(snapshot));
+    //mainPanel.add(withdrawalBox);
+    //mainPanel.add(transferBox);
+    //mainPanel.add(queryBox);
+    getContentPane().add(mainPanel);
+    setDefaultCloseOperation(EXIT_ON_CLOSE);
+    setVisible(true);
+  }
+
+	public ClientSnapshot() {
+	// TODO Auto-generated constructor stub
+}
+
+
+	private static JPanel makeAnotherWindow(Snapshot snapshot) {
 		
-		JFrame newFrame = new JFrame();
+		//JFrame newFrame = new JFrame();
+		//newFrame.getContentPane().add(new JLabel("Showing messages in the channel"), BorderLayout.CENTER);
+		//newFrame.getContentPane().add(new JLabel("text"), BorderLayout.CENTER);
+		
+		
 		
 	    //private Map<Integer, Channel> channels;
 	    JPanel panel = new JPanel();
+	    
+	    panel.add(new JLabel("Messages in channel"));
+	    
 	    for (Map.Entry<Integer, Channel> entry : snapshot.channels.entrySet()) {
-	    	//panel.add(new JLabel("Messages in channel from branch " + entry.getKey()));
+	    	panel.add(new JLabel("Messages in channel from branch " + entry.getKey()));
 	    	panel.add(new JLabel(entry.getValue().toString()));
 	    	
-	    	newFrame.getContentPane().add(new JLabel("Messages in channel from branch " + entry.getKey()), BorderLayout.CENTER);
+	    	//newFrame.getContentPane().add(new JLabel("Messages in channel from branch " + entry.getKey()), BorderLayout.CENTER);
 	    	Channel channel = entry.getValue();
+	    	List<Message> messages = channel.getMessages();
+	    	for (Message m: messages){
+	    		panel.add(new JLabel(m.toString()), BorderLayout.CENTER);
+	    	}
 	    }
 		
 	    
 		  
-	    newFrame.pack();
-	    newFrame.setVisible(true);
-		
+	    //newFrame.pack();
+	    //newFrame.setVisible(true);
+		return panel;
 	}
     
 	public static void main(String[] args){
-		makeAnotherWindow();
+		//makeAnotherWindow();
 		
 	}
     

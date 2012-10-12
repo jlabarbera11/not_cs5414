@@ -39,7 +39,7 @@ public class Channel
         return !isOpen;
     }
 
-    List<Message> getMessages()
+    public List<Message> getMessages()
     {
         return messages;
     }
