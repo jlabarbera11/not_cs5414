@@ -64,7 +64,6 @@ public class Snapshots
     public SSInfo getSSInfo(Integer ssID)
     {
         SSInfo info = ssInfoMap.get(ssID);
-        assert info != null;
 
         return info;
     }

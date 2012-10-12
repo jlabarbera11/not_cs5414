@@ -177,9 +177,23 @@ public class Server
                 SnapshotMessage message = (SnapshotMessage) mr;
                 Integer ssID = message.getID();
 
-                if (ss.getSSInfo(ssID).getNumChannels() > 0) {
-                    System.out.println("more than 1 neighbor");
-                    if (ss.snapshotExists(ssID)) {
+                SSInfo ssinfo = ss.getSSInfo(ssID);
+
+                if (!ss.snapshotExists(ssID)) {
+                    ss.startSnapshot(false, ssID, getBranchState(), message.getSender());
+
+                    if (ss.getSSInfo(ssID).getNumChannels() == 0) {
+                        System.out.println("Only one neighbor");
+                        ss.removeOngoingSnapshot(ssID);
+                        try {
+                            m.SendResponse(new SnapshotResponse(new Snapshot(ss.getSSInfo(ssID))));
+                        } catch (Exception e) {
+
+                        }
+                    }
+                } else {
+                    if (ss.getSSInfo(ssID).getNumChannels() > 0) {
+                        System.out.println("more than 1 neighbor");
                         if (ss.closeChannel(ssID, message.getSender())) {
                             // All channels are closed; send snapshot response
                             try {
@@ -188,21 +202,6 @@ public class Server
 
                             }
                         }
-                    } else {
-                        ss.startSnapshot(false, ssID, getBranchState(), message.getSender());
-                    }
-                } else {
-                    System.out.println("Only one neighbor");
-                    for (BankAccount ba : getBranchState()) {
-                        System.out.println("One bankaccount with: " + ba.getBalance());
-                    }
-
-                    ss.startSnapshot(false, ssID, getBranchState(), message.getSender());
-                    ss.removeOngoingSnapshot(ssID);
-                    try {
-                        m.SendResponse(new SnapshotResponse(new Snapshot(ss.getSSInfo(ssID))));
-                    } catch (Exception e) {
-
                     }
                 }
             }
