@@ -206,7 +206,7 @@ public class Server
                         try {
                             m.SendResponse(new SnapshotResponse(new Snapshot(ss.getSSInfo(ssID))));
                         } catch (Exception e) {
-
+                            System.out.println("failed to send response with no incoming neighbors");
                         }
                     }
                 } else {
@@ -219,7 +219,7 @@ public class Server
                                 //System.out.println("snapshot response branchstate size: " + snapshot.getNumNonZeroAccounts());
                                 m.SendResponse(new SnapshotResponse(snapshot));
                             } catch (Exception e) {
-
+                                System.out.println("failed to send response at channels closed");
                             }
                         }
 
