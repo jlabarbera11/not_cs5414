@@ -320,7 +320,7 @@ public class Client extends JFrame implements ActionListener {
 	    	result1.setText("Invalid account number format.");
 	    	result2.setText("Example account number: 12.34567.");
 	    } else if (!checkAmount(amount)) {
-	    	result1.setText("Invalid withdrawal amount. Make sure you have entered a number");
+	    	result1.setText("Invalid transfer amount. Make sure you have entered a number");
 	    	result2.setText("greater than 0 but less than 10,000,000.");
 	    } else if (!checkSerial(serial)){
 	    	result1.setText("Invalid serial number.");

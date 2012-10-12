@@ -57,7 +57,7 @@ public class ClientSnapshot implements Callback {
 	    	panel.add(new JLabel("Messages in channel from branch " + entry.getKey()));
 	    	panel.add(new JLabel(entry.getValue().toString()));
 	    }
-	    newFrame.getContentPane().add(scrollPane, panel);
+	    newFrame.getContentPane().add(panel, BorderLayout.CENTER);
 	    
 	    
 	  

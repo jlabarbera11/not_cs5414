@@ -34,9 +34,6 @@ public class ClientTest {
 		ServerTestThread thread = new ServerTestThread();
 		thread.start();
 		
-		//int i=0;
-		//while (i<1000000000){i++;}
-		
 		Client client = new Client(1);
 		client.messaging = new Messaging(new Integer(1), Messaging.Type.CLIENT);
 		client.messaging.connectToServer(new ClientSnapshot());
@@ -149,7 +146,7 @@ public class ClientTest {
 		
 		//invalid serial
 		client.queryAccount.setText("01.11111");
-		client.querySerial.setText("1");
+		client.querySerial.setText("99999");
 		client.handleQuery();
 		wait(1);
 		assertEquals(client.result1.getText(), "Invalid Serial Number");
@@ -160,7 +157,7 @@ public class ClientTest {
 		client.querySerial.setText(newSerial());
 		client.handleQuery();
 		wait(1);
-		assertEquals(client.result1.getText(), "A network error occurred");
+		assertEquals(client.result1.getText(), "Cannot query account info from this branch");
 		assertEquals(client.result2.getText(), "");
 		
 		//valid query
@@ -168,8 +165,8 @@ public class ClientTest {
 		client.querySerial.setText(newSerial());
 		client.handleQuery();
 		wait(1);
-		assertEquals(client.result1.getText(), "Query successful");
-		assertEquals(client.result2.getText(), "Balance: 50");
+		assertEquals(client.result1.getText(), "Query successful.");
+		assertEquals(client.result2.getText(), "Balance: 50.0");
 		
 		
 		//------------------ Test Transfer ---------------------------
