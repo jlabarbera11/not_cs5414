@@ -8,8 +8,7 @@ using the javax.swing package. Ben spent about 20 hours on the project.
 Joe LaBarbera
 jyl76
 
-Joe wrote the networking library for both the client and server. This library
-allows for a client to make connections that a server accepts, as well as a
-server to make requests to other servers (i.e. transferring to different
-branches). He also resolved the topology and hosts of all branches. This took
-about 15 hours.
+Joe worked on the networking class for this assignment. This class abstracts
+all threading necessities for the client and server, as well as provides
+containers for the objects that are passed around on the network. This took
+about 20 hours.
