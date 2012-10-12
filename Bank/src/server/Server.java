@@ -206,6 +206,8 @@ public class Server
                         try {
                             m.SendResponse(new SnapshotResponse(new Snapshot(ss.getSSInfo(ssID))));
                         } catch (Exception e) {
+                            System.out.println(e.toString());
+                            e.printStackTrace();
                             System.out.println("failed to send response with no incoming neighbors");
                         }
                     }

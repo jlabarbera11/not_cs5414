@@ -1,11 +1,12 @@
 package server;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.LinkedList;
 
 import messaging.Message;
 
-public class Channel
+public class Channel implements Serializable
 {
     private boolean isOpen;
     private List<Message> messages;

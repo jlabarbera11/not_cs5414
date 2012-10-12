@@ -7,10 +7,11 @@ import messaging.QueryResponse;
 import messaging.TransferResponse;
 import messaging.MessagingException;
 
+import java.io.Serializable;
 import java.util.HashSet;
 
 
-public class BankAccount implements Comparable<BankAccount> {
+public class BankAccount implements Comparable<BankAccount>, Serializable {
     private AccountNumber accountNumber;
     private Float balance;
     private HashSet<Integer> serials;

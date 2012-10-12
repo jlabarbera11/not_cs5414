@@ -1,5 +1,6 @@
 package messaging;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
 
@@ -7,7 +8,7 @@ import server.SSInfo;
 import server.Channel;
 import server.BankAccount;
 
-public class Snapshot extends Message {
+public class Snapshot extends Message implements Serializable {
 
     public Map<Integer, Channel> channels;
     public Set<BankAccount> branchState;
