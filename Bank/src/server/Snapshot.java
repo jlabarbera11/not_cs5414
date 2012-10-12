@@ -17,4 +17,9 @@ public class Snapshot extends Message {
         channels = ss.getChannels();
         branchState = ss.getBranchState();
     }
+
+    public int getNumNonZeroAccounts()
+    {
+        return branchState.size();
+    }
 }
