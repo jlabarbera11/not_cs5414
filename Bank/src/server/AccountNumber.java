@@ -1,6 +1,8 @@
 package server;
 
-public class AccountNumber
+import java.io.Serializable;
+
+public class AccountNumber implements Serializable
 {
     private int branch;
     private int account;
