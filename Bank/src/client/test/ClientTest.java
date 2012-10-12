@@ -31,8 +31,11 @@ public class ClientTest {
 	@Test
 	public void test() throws InterruptedException, MessagingException {
 		
-		ServerTestThread thread = new ServerTestThread();
+		ServerTestThread thread = new ServerTestThread(1);
 		thread.start();
+		
+		ServerTestThread thread2 = new ServerTestThread(2);
+		thread2.start();
 		
 		Client client = new Client(1);
 		client.messaging = new Messaging(new Integer(1), Messaging.Type.CLIENT);
@@ -229,7 +232,7 @@ public class ClientTest {
 		client.handleTransfer();
 		wait(1);
 		assertEquals(client.result1.getText(), "Transfer successful");
-		assertEquals(client.result2.getText(), "Balance in source account: 25");
+		assertEquals(client.result2.getText(), "Balance in source account: 25.0");
 		
 		
 		//------------------ Test Snapshot ---------------------------
@@ -237,7 +240,7 @@ public class ClientTest {
 		//valid withdrawal
 		client.handleSnapshot();
 		wait(1);
-		assertEquals(client.result1.getText(), "Taking snapshot...");
+		assertEquals(client.result1.getText(), "Taking a snapshot...");
 		assertEquals(client.result2.getText(), "");
 		
 	}
