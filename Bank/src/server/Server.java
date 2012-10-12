@@ -185,8 +185,10 @@ public class Server
                 if (!ss.snapshotExists(ssID)) {
                     ss.startSnapshot(false, ssID, getBranchState(), message.getSender());
 
+
+
                     if (ss.getSSInfo(ssID).getNumChannels() == 0) {
-                        System.out.println("Only one neighbor");
+                        System.out.println("Only one neighbor so sending response");
                         ss.removeOngoingSnapshot(ssID);
                         try {
                             m.SendResponse(new SnapshotResponse(new Snapshot(ss.getSSInfo(ssID))));
@@ -198,9 +200,12 @@ public class Server
                     if (ss.getSSInfo(ssID).getNumChannels() > 0) {
                         System.out.println("more than 1 neighbor");
                         if (ss.closeChannel(ssID, message.getSender())) {
+                            System.out.println("All channels are closed");
                             // All channels are closed; send snapshot response
                             try {
-                                m.SendResponse(new SnapshotResponse(new Snapshot(ss.getSSInfo(ssID))));
+                                Snapshot snapshot = new Snapshot(ss.getSSInfo(ssID));
+                                //System.out.println("snapshot response branchstate size: " + snapshot.getNumNonZeroAccounts());
+                                m.SendResponse(new SnapshotResponse(snapshot));
                             } catch (Exception e) {
 
                             }
