@@ -30,5 +30,4 @@ test directory to test some of the checks performed at the Messaging level.
 
 The server directory contains files for running the server.
 
-
 Phase II was based on our own Phase I solution.

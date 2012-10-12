@@ -15,13 +15,16 @@ public class SSInfo
     private int numChannels;
     private Integer ignore;
 
-    public SSInfo(int numChannels, Set<BankAccount> branchState, Integer ignore)
+    public SSInfo(boolean isRequest, int numChannels, Set<BankAccount> branchState, Integer ignore)
     {
         channels = new HashMap<Integer, Channel>();
         this.branchState = branchState;
         closedChannels = 0;
         this.numChannels = numChannels;
         this.ignore = ignore;
+
+        if (!isRequest)
+            this.numChannels = numChannels - 1;
     }
 
     public boolean areAllChannelsClosed()
@@ -60,5 +63,10 @@ public class SSInfo
     public Set<BankAccount> getBranchState()
     {
         return branchState;
+    }
+
+    public Integer getNumChannels()
+    {
+        return numChannels;
     }
 }
