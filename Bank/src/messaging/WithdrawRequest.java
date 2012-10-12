@@ -23,4 +23,10 @@ public class WithdrawRequest extends Request {
     public Float getAmt() {
         return this.amt;
     }
+
+    @Override
+    public String toString()
+    {
+        return String.format("Withdraw = Account: %d, Amount: %.2f, Serial: %d", acnt, amt, ser_number);
+    }
 }

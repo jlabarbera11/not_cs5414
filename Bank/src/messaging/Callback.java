@@ -1,5 +1,5 @@
 package messaging;
 
 public interface Callback {
-    void callback();
+    void callback(Message m);
 }
