@@ -40,5 +40,12 @@ public class TransferRequest extends Request {
         return this.dest_acnt;
     }
 
+    @Override
+    public String toString()
+    {
+        return String.format("Transfer = From: %d, ToBranch: %d, ToAccount: %d, Amount: %.2f, Serial: %d", 
+            acnt, dest_branch, dest_acnt, amt, ser_number);
+    }
+
 }
 

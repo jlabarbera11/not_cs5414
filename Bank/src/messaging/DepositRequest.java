@@ -24,4 +24,10 @@ public class DepositRequest extends Request {
         return this.ser_number;
     }
 
+    @Override
+    public String toString()
+    {
+        return String.format("Deposit = Account: %d, Amount: %.2f, Serial: %d", acnt, amt,ser_number);
+    }
+
 }
