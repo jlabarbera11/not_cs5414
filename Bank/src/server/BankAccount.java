@@ -9,8 +9,9 @@ import messaging.MessagingException;
 
 import java.util.HashSet;
 
-public class BankAccount {
-    public AccountNumber accountNumber;
+
+public class BankAccount implements Comparable<BankAccount> {
+    private AccountNumber accountNumber;
     private Float balance;
     private HashSet<Integer> serials;
     private Messaging m;
@@ -106,5 +107,16 @@ public class BankAccount {
         } catch (MessagingException e) {
             System.out.println("Failed to send response");
         }
+    }
+
+    public AccountNumber getAccountNumber()
+    {
+        return accountNumber;
+    }
+
+    @Override
+    public int compareTo(BankAccount ba)
+    {
+        return accountNumber.hashCode() - ba.getAccountNumber().hashCode();
     }
 }

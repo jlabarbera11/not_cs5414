@@ -41,7 +41,8 @@ public class Server
             System.out.println("Server failed to create Messaging");
         }
 
-        ss = new Snapshots(((ArrayList<Set<Integer>>) m.whoNeighbors()).get(1).size());
+        // -1 because we don't listen to the neighbor we got the snapshot message from
+        ss = new Snapshots(((ArrayList<Set<Integer>>) m.whoNeighbors()).get(1).size() - 1);
     }
 
     /**
@@ -161,7 +162,8 @@ public class Server
             } else if (mr instanceof SnapshotRequest) {
                 // should only be received from client
                 SnapshotRequest request = (SnapshotRequest) mr;
-                ss.startSnapshot(request.getID(), getBranchState());
+                // all branchIDs are positive
+                ss.startSnapshot(request.getID(), getBranchState(), new Integer(-1));
                 try {
                     m.PropogateSnapshot(new SnapshotMessage(this.branchID, request.getID()));
                 } catch (Exception e) {
@@ -171,18 +173,28 @@ public class Server
             } else if (mr instanceof SnapshotMessage) {
                 SnapshotMessage message = (SnapshotMessage) mr;
                 Integer ssID = message.getID();
-                
-                if (ss.snapshotExists(ssID)) {
-                    if (ss.closeChannel(ssID, message.getSender())) {
-                        // All channels are closed; send snapshot response
-                        try {
-                            m.SendResponse(new SnapshotResponse(new Snapshot(ss.getSSInfo(ssID))));
-                        } catch (Exception e) {
 
+                if (ss.getNumNeighbors() != 0) {
+                    if (ss.snapshotExists(ssID)) {
+                        if (ss.closeChannel(ssID, message.getSender())) {
+                            // All channels are closed; send snapshot response
+                            try {
+                                m.SendResponse(new SnapshotResponse(new Snapshot(ss.getSSInfo(ssID))));
+                            } catch (Exception e) {
+
+                            }
                         }
+                    } else {
+                        ss.startSnapshot(ssID, getBranchState(), message.getSender());
                     }
                 } else {
-                    ss.startSnapshot(ssID, getBranchState());
+                    ss.startSnapshot(ssID, getBranchState(), message.getSender());
+                    ss.removeOngoingSnapshot(ssID);
+                    try {
+                        m.SendResponse(new SnapshotResponse(new Snapshot(ss.getSSInfo(ssID))));
+                    } catch (Exception e) {
+
+                    }
                 }
             }
         }

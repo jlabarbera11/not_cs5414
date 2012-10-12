@@ -24,12 +24,12 @@ public class Snapshots
         return ongoingSnapshots;
     }
 
-    public boolean startSnapshot(Integer ssID, Set<BankAccount> branchState)
+    public boolean startSnapshot(Integer ssID, Set<BankAccount> branchState, Integer ignore)
     {
         if (ssInfoMap.get(ssID) != null)
             return false;
 
-        SSInfo info = new SSInfo(numNeighbors, branchState);
+        SSInfo info = new SSInfo(numNeighbors, branchState, ignore);
         ssInfoMap.put(ssID, info);
         return true;
     }
@@ -44,6 +44,11 @@ public class Snapshots
         for (Integer ssID : ongoingSnapshots) {
             ssInfoMap.get(ssID).recordMessage(branchID, m);
         }
+    }
+
+    public void removeOngoingSnapshot(Integer ssID)
+    {
+        ongoingSnapshots.remove(ssID);
     }
 
     public boolean closeChannel(Integer ssID, Integer branchID)
@@ -62,5 +67,10 @@ public class Snapshots
         assert info != null;
 
         return info;
+    }
+
+    public int getNumNeighbors()
+    {
+        return numNeighbors;
     }
 }
