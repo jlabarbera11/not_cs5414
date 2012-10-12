@@ -91,8 +91,10 @@ public class Server
     {
         Set<BankAccount> branchState = new TreeSet<BankAccount>();
         for (BankAccount ba : accounts.values()) {
-            if (ba.getBalance() > 0.0f)
+            if (ba.getBalance() > 0.0f) {
                 branchState.add(ba);
+                System.out.println("adding bankacocunt with " + ba.getBalance() + " balance for getBranchState");
+            }
         }
 
         return branchState;
