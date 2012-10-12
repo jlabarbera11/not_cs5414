@@ -369,7 +369,7 @@ public class Client extends JFrame implements ActionListener {
 	    	int serialNumber = Integer.parseInt(serial);
 	    	QueryResponse response;
 	    	try {
-	        	response = messaging.Query(new Integer(branchNumber), new Integer(accountNumber), (serialNumber*100) + serialNumber);
+	        	response = messaging.Query(new Integer(branchNumber), new Integer(accountNumber), (serialNumber*100) + clientNumber);
 	        	if (response.getSuccess()){
 					result1.setText("Query successful.");
 					result2.setText("Balance: " + response.getBalance());
