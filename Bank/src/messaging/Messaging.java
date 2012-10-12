@@ -252,14 +252,20 @@ public class Messaging {
         }
     }
 
-    private Response sendRequest(Request M) throws MessagingException {
+    private void sendMessage(Request M) throws MessagingException {
         System.out.println("Sending message!");
         try {
             this.clientoos.writeObject(M);
             System.out.println("Sent message!");
-            return (Response)this.messageBuffer.take();
         } catch (IOException e) {
             throw new MessagingException(MessagingException.Type.FAILED_REQUEST_SEND);
+        }
+    }
+
+    private Response sendRequest(Request M) throws MessagingException {
+        try {
+            sendMessage(M);
+            return (Response)this.messageBuffer.take();
         } catch(InterruptedException e) {
             throw new MessagingException(MessagingException.Type.FAILED_RESPONSE_RECEIVE);
         }
@@ -292,7 +298,7 @@ public class Messaging {
     }
 
     public void TakeSnapshot() throws MessagingException {
-        sendRequest(new SnapshotRequest(-1, 1));
+        sendMessage(new SnapshotRequest(-1, 1));
     }
     //End Client Methods
 
