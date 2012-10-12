@@ -188,6 +188,11 @@ public class Server
                         ss.startSnapshot(ssID, getBranchState(), message.getSender());
                     }
                 } else {
+                    System.out.println("Only one neighbor");
+                    for (BankAccount ba : getBranchState()) {
+                        System.out.println("One bankaccount with: " + ba.getBalance());
+                    }
+
                     ss.startSnapshot(ssID, getBranchState(), message.getSender());
                     ss.removeOngoingSnapshot(ssID);
                     try {
