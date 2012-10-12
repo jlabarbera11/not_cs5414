@@ -66,7 +66,7 @@ public class BankAccount {
     {
         boolean valid = !(serials.contains(serialNumber));
         
-        if (valid == true) {
+        if (valid) {
             System.out.println("new transaction number " + serialNumber);
             serials.add(serialNumber);
 

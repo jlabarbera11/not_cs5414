@@ -62,7 +62,7 @@ public class Messaging {
                     Response m = (Response)clientois.readObject();
                     callback.callback();
                     if(m instanceof SnapshotResponse)
-                        callback.callback();
+                        callback.callback(m);
                     else
                         messageBuffer.add(m);
                 } catch(Exception e) {
