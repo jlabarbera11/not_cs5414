@@ -187,17 +187,17 @@ public class Server
                 System.out.println("Received snapshot message ID: " + ssinfo);
 
 
-                try {
-                    if (ss.getOngoingSnapshots().contains(ssID))
-                        m.PropogateSnapshot(new SnapshotMessage(this.branchID, message.getID()));
-                } catch (Exception e) {
-                    System.out.println("propogate failed");
-
-                }
-
                 if (!ss.snapshotExists(ssID)) {
                     System.out.println("creating new snapshot");
                     ss.startSnapshot(false, ssID, getBranchState(), message.getSender());
+
+                    try {
+                        if (ss.getOngoingSnapshots().contains(ssID))
+                            m.PropogateSnapshot(new SnapshotMessage(this.branchID, message.getID()));
+                    } catch (Exception e) {
+                        System.out.println("propogate failed");
+
+                    }
 
                     if (ss.getSSInfo(ssID).getNumChannels() == 0) {
                         System.out.println("Only one neighbor so sending response");
@@ -212,6 +212,14 @@ public class Server
                     }
                 } else {
                         System.out.println("more than 1 neighbor");
+
+                        try {
+                            if (ss.getOngoingSnapshots().contains(ssID))
+                                m.PropogateSnapshot(new SnapshotMessage(this.branchID, message.getID()));
+                        } catch (Exception e) {
+                            System.out.println("propogate failed");
+                        }
+
                         if (ss.closeChannel(ssID, message.getSender())) {
                             System.out.println("All channels are closed");
                             // All channels are closed; send snapshot response
