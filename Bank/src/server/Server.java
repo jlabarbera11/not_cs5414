@@ -11,28 +11,42 @@ import messaging.TransferRequest;
 import messaging.SnapshotRequest;
 import messaging.DepositFromTransferMessage;
 import messaging.SnapshotMessage;
+import messaging.SnapshotResponse;
 import messaging.MessagingException;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.TreeSet;
+import java.util.LinkedList;
+import java.util.Set;
+import java.util.Map;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Server
 {
     private int branchID;
-    private HashMap<AccountNumber, BankAccount> accounts;
+    private ConcurrentHashMap<AccountNumber, BankAccount> accounts;
     private Messaging m;
+    private Snapshots ss;
 
     public Server(int branchID)
     {
         this.branchID = branchID;
-        accounts = new HashMap<AccountNumber, BankAccount>();
+        accounts = new ConcurrentHashMap<AccountNumber, BankAccount>();
+
         try {
             m = new Messaging(branchID, Messaging.Type.SERVER);
             m.makeConnections();
         } catch (MessagingException e) {
             System.out.println("Server failed to create Messaging");
         }
+
+        ss = new Snapshots(((ArrayList<Set<Integer>>) m.whoNeighbors()).get(1).size());
     }
 
+    /**
+     * @param resp whether to send response
+     */
     public void deposit(int accountID, float amount, int serialNumber, boolean resp)
     {
         getAccount(accountID).deposit(amount, serialNumber, resp);
@@ -69,6 +83,17 @@ public class Server
         }
 
         return accounts.get(accountNumber);
+    }
+
+    public Set<BankAccount> getBranchState()
+    {
+        Set<BankAccount> branchState = new TreeSet<BankAccount>();
+        for (BankAccount ba : accounts.values()) {
+            if (ba.getBalance() > 0.0f)
+                branchState.add(ba);
+        }
+
+        return branchState;
     }
 
     public void run()
@@ -129,9 +154,27 @@ public class Server
                 System.out.println("DepsitFromTransfer Request handled");
             
             } else if (mr instanceof SnapshotRequest) {
+                // should only be received from client
+                SnapshotRequest request = (SnapshotRequest) mr;
+                ss.startSnapshot(request.getID(), getBranchState());
+                try {
+                    m.PropogateSnapshot(new SnapshotMessage(this.branchID, request.getID()));
+                } catch (Exception e) {}
 
             } else if (mr instanceof SnapshotMessage) {
-
+                SnapshotMessage message = (SnapshotMessage) mr;
+                Integer ssID = message.getID();
+                
+                if (ss.snapshotExists(ssID)) {
+                    if (ss.closeChannel(ssID, message.getSender())) {
+                        // All channels are closed; send snapshot response
+                        try {
+                        m.SendResponse(new SnapshotResponse(new Snapshot(ss.getSSInfo(ssID))));
+                        } catch (Exception e) {}
+                    }
+                } else {
+                    ss.startSnapshot(ssID, getBranchState());
+                }
             }
         }
     }

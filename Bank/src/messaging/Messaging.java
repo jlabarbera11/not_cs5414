@@ -344,7 +344,7 @@ public class Messaging {
         sendMessage(branch, new DepositFromTransferMessage(acnt, amt, ser_number));
     }
 
-    public void propogateSnapshot(SnapshotMessage sm) throws MessagingException {
+    public void PropogateSnapshot(SnapshotMessage sm) throws MessagingException {
         for(Integer i : this.topology.get(this.branch))
             sendMessage(i, sm);
     }
