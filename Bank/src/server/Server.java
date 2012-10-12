@@ -43,7 +43,6 @@ public class Server
         }
 
         // -1 because we don't listen to the neighbor we got the snapshot message from
-        System.out.println("# of Channels that this server listens to: " + ((((ArrayList<Set<Integer>>) m.whoNeighbors()).get(1).size() - 1)));
         ss = new Snapshots(((ArrayList<Set<Integer>>) m.whoNeighbors()).get(1).size());
     }
 
