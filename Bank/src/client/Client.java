@@ -31,6 +31,7 @@ public class Client extends JFrame implements ActionListener {
     int clientNumber;
     public Messaging messaging;
     boolean waitingForResponse;
+    int number=0;
     
     public String GetResult(){
     	return result1.getText();
@@ -387,7 +388,8 @@ public class Client extends JFrame implements ActionListener {
 	public void handleSnapshot(){
 		System.out.println("taking snapshot");
 	    try {
-	        messaging.TakeSnapshot();
+	        messaging.TakeSnapshot(number);
+	        number++;
 	        result1.setText("Taking a snapshot...");
 	        result2.setText("");
 	    } catch (MessagingException e2){
