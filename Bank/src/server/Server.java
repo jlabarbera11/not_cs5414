@@ -89,13 +89,15 @@ public class Server
 
     public Set<BankAccount> getBranchState()
     {
-        Set<BankAccount> branchState = new TreeSet<BankAccount>();
+        Set<BankAccount> branchState = new HashSet<BankAccount>();
         for (BankAccount ba : accounts.values()) {
             if (ba.getBalance() > 0.0f) {
                 branchState.add(ba);
                 System.out.println("adding bankacocunt with " + ba.getBalance() + " balance for getBranchState");
             }
         }
+
+        System.out.println("Size of set " + branchState.size());
 
         return branchState;
     }
