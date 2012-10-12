@@ -218,7 +218,7 @@ public class ClientTest {
 		client.transferSerial.setText(newSerial());
 		client.handleTransfer();
 		wait(1);
-		assertEquals(client.result1.getText(), "A network error occurred");
+		assertEquals(client.result1.getText(), "Cannot transfer money from this branch");
 		assertEquals(client.result2.getText(), "");
 		
 		//valid transfer
