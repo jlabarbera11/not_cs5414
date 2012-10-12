@@ -34,6 +34,13 @@ public class SSInfo
 
     public boolean closeChannel(Integer branchID)
     {
+        if (branchID.equals(ignore))
+            return false;
+
+        if (channels.get(branchID) == null) {
+            channels.put(branchID, new Channel());
+        }
+
         if (channels.get(branchID).closeChannel()) {
             System.out.println("closed channel");
             closedChannels++;

@@ -166,13 +166,17 @@ public class Server
                 System.out.println("DepsitFromTransfer Request handled");
             
             } else if (mr instanceof SnapshotRequest) {
+
+                System.out.println("Received snapshot request");
                 // should only be received from client
                 SnapshotRequest request = (SnapshotRequest) mr;
                 // all branchIDs are positive
                 ss.startSnapshot(true, request.getID(), getBranchState(), new Integer(-1000));
                 try {
+                    System.out.println("trying to propogate request");
                     m.PropogateSnapshot(new SnapshotMessage(this.branchID, request.getID()));
                 } catch (Exception e) {
+                    System.out.println("propogate failed");
 
                 }
 
@@ -181,11 +185,20 @@ public class Server
                 Integer ssID = message.getID();
 
                 SSInfo ssinfo = ss.getSSInfo(ssID);
+                System.out.println("Received snapshot message ID: " + ssinfo);
+
+
+                try {
+                    if (ss.getOngoingSnapshots().contains(ssID))
+                        m.PropogateSnapshot(new SnapshotMessage(this.branchID, message.getID()));
+                } catch (Exception e) {
+                    System.out.println("propogate failed");
+
+                }
 
                 if (!ss.snapshotExists(ssID)) {
+                    System.out.println("creating new snapshot");
                     ss.startSnapshot(false, ssID, getBranchState(), message.getSender());
-
-
 
                     if (ss.getSSInfo(ssID).getNumChannels() == 0) {
                         System.out.println("Only one neighbor so sending response");
@@ -197,7 +210,6 @@ public class Server
                         }
                     }
                 } else {
-                    if (ss.getSSInfo(ssID).getNumChannels() > 0) {
                         System.out.println("more than 1 neighbor");
                         if (ss.closeChannel(ssID, message.getSender())) {
                             System.out.println("All channels are closed");
@@ -210,7 +222,7 @@ public class Server
 
                             }
                         }
-                    }
+
                 }
             }
         }
