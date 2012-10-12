@@ -24,12 +24,12 @@ public class Snapshots
         return ongoingSnapshots;
     }
 
-    public boolean startSnapshot(Integer ssID, Set<BankAccount> branchState, Integer ignore)
+    public boolean startSnapshot(boolean isRequest, Integer ssID, Set<BankAccount> branchState, Integer ignore)
     {
         if (ssInfoMap.get(ssID) != null)
             return false;
 
-        SSInfo info = new SSInfo(numNeighbors, branchState, ignore);
+        SSInfo info = new SSInfo(isRequest, numNeighbors, branchState, ignore);
         ssInfoMap.put(ssID, info);
         return true;
     }

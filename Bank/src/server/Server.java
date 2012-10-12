@@ -43,7 +43,7 @@ public class Server
 
         // -1 because we don't listen to the neighbor we got the snapshot message from
         System.out.println("# of Channels that this server listens to: " + ((((ArrayList<Set<Integer>>) m.whoNeighbors()).get(1).size() - 1)));
-        ss = new Snapshots(((ArrayList<Set<Integer>>) m.whoNeighbors()).get(1).size() - 1);
+        ss = new Snapshots(((ArrayList<Set<Integer>>) m.whoNeighbors()).get(1).size());
     }
 
     /**
@@ -166,10 +166,7 @@ public class Server
                 // should only be received from client
                 SnapshotRequest request = (SnapshotRequest) mr;
                 // all branchIDs are positive
-                ss.startSnapshot(request.getID(), getBranchState(), new Integer(-1000));
-                for (BankAccount ba : getBranchState()) {
-                        System.out.println("bankaccount with: " + ba.getBalance());
-                }
+                ss.startSnapshot(true, request.getID(), getBranchState(), new Integer(-1000));
                 try {
                     m.PropogateSnapshot(new SnapshotMessage(this.branchID, request.getID()));
                 } catch (Exception e) {
@@ -180,7 +177,7 @@ public class Server
                 SnapshotMessage message = (SnapshotMessage) mr;
                 Integer ssID = message.getID();
 
-                if (ss.getNumNeighbors() != 0) {
+                if (ss.getSSInfo(ssID).getNumChannels() > 0) {
                     System.out.println("more than 1 neighbor");
                     if (ss.snapshotExists(ssID)) {
                         if (ss.closeChannel(ssID, message.getSender())) {
@@ -192,7 +189,7 @@ public class Server
                             }
                         }
                     } else {
-                        ss.startSnapshot(ssID, getBranchState(), message.getSender());
+                        ss.startSnapshot(false, ssID, getBranchState(), message.getSender());
                     }
                 } else {
                     System.out.println("Only one neighbor");
@@ -200,7 +197,7 @@ public class Server
                         System.out.println("One bankaccount with: " + ba.getBalance());
                     }
 
-                    ss.startSnapshot(ssID, getBranchState(), message.getSender());
+                    ss.startSnapshot(false, ssID, getBranchState(), message.getSender());
                     ss.removeOngoingSnapshot(ssID);
                     try {
                         m.SendResponse(new SnapshotResponse(new Snapshot(ss.getSSInfo(ssID))));

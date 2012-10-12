@@ -2,10 +2,14 @@ Tutorial:
 
 1. Unzip out submission to a directory named BigRedBank.
 2. Open a command prompt. Change to the BigRedBank directory you just created.
-3. Enter the following command:
-        > make jar-server
-4. Enter the following command:
-        > make jar-client
+3. To make the server, enter the following commands:
+        > javac -Xlint:unchecked -sourcepath src/ -d bin/ src/server/*.java
+        > javac -Xlint:unchecked -sourcepath src/ -d bin/ src/messaging/*.java
+        > jar cfe server.jar server.Server -C bin .
+4. To make the client, enter the following commands:
+        > javac -Xlint:unchecked -sourcepath src/ -d bin/ src/client/*.java
+        > javac -Xlint:unchecked -sourcepath src/ -d bin/ src/messaging/*.java
+        > jar cfe client.jar client.Client -C bin .
 3. Enter the following command:
         > LAUNCH.cmd
 4. Using the 4 GUIs, try some test deposits, withdrawals, transfers, and queries.
@@ -16,20 +20,14 @@ Tutorial:
    50 and click "Transfer". Click on the second GUI generated. Enter query account 02.11111
    and click query.
 
-Generic Installation Instructions:
-
-1. Unzip out submission to a directory named BigRedBank.
-2. Open a command prompt. Change to the BigRedBank directory you just created.
-3. Enter the following command:
-        > java -jar server.jar <BRANCH_NUM>
-   This will start the branch server.
-4. Enter the following command:
-        > java -jar client.jar <BRANCH_NUM>
-   This will start the client GUI.
-
 Names and Descriptions of Files:
 
-The client directory contains files to create and run the GUI. The messaging directory
-contains files for sending and receiving messages. The server directory contains files
-for running the server.
+The client directory contains files to create and run the GUI. 
 
+The messaging directory contains the messaging class, several helper classes,
+such as a callback, and wrappers for Message objects. Additionally, there is a
+test directory to test some of the checks performed at the Messaging level.
+
+The server directory contains files for running the server.
+
+Phase II was based on our own Phase I solution.
