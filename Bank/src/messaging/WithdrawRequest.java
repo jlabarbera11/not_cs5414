@@ -1,6 +1,6 @@
 package messaging;
 
-public class WithdrawRequest extends Request {
+public class WithdrawRequest extends RequestClient {
 
     private Integer acnt;
     private Integer ser_number;

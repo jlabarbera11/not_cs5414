@@ -1,6 +1,6 @@
 package messaging;
 
-public class SnapshotRequest extends Request {
+public class SnapshotRequest extends RequestClient {
 
     private Integer ID;
 

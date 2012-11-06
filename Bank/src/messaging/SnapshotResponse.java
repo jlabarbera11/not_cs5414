@@ -1,6 +1,6 @@
 package messaging;
 
-public class SnapshotResponse extends Response {
+public class SnapshotResponse extends ResponseClient {
 
     private Snapshot snapshot;
 

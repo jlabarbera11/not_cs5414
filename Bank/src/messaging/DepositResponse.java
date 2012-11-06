@@ -1,6 +1,6 @@
 package messaging;
 
-public class DepositResponse extends Response {
+public class DepositResponse extends ResponseClient {
 
     private Float balance;
 

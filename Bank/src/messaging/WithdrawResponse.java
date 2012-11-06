@@ -1,6 +1,6 @@
 package messaging;
 
-public class WithdrawResponse extends Response {
+public class WithdrawResponse extends ResponseClient {
 
     private Float balance;
 

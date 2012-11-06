@@ -1,6 +1,6 @@
 package messaging;
 
-public class QueryResponse extends Response {
+public class QueryResponse extends ResponseClient {
 
     private Float balance;
 
