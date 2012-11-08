@@ -1,2 +1,4 @@
-public FailureOracle extends OracleMessage {
+package messaging;
+
+public class FailureOracle extends OracleMessage {
 }

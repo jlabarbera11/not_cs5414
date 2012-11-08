@@ -6,7 +6,7 @@ public class QueryRequest extends RequestClient {
     
     public QueryRequest(Integer acnt, Integer ser_number) {
         this.acnt = acnt;
-        this.ser_number = ser_number;
+        this.serial_number = serial_number;
     }
 
     public Integer getAcnt() {
@@ -16,7 +16,7 @@ public class QueryRequest extends RequestClient {
     @Override
     public String toString()
     {
-        return String.format("Query = Account: %d, Serial: %d", acnt, ser_number);
+        return String.format("Query = Account: %d, Serial: %d", acnt, serial_number);
     }
 
 }

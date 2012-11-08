@@ -1,5 +1,7 @@
 package messaging;
 
+import java.util.Map;
+
 public class ResponseBackup extends BackupMessage {
     private Map bank_accounts;
     private Map transactions;
