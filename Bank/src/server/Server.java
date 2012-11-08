@@ -2,6 +2,10 @@ package server;
 
 import messaging.*;
 
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.InetAddress;
+import java.net.Socket;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.TreeSet;
 import java.util.LinkedList;
@@ -26,52 +30,71 @@ public class Server
     private ConcurrentHashMap<Integer, Set<Integer>> topology;
     private ConcurrentHashMap<String, String[]> resolver;
     private ConcurrentHashMap<String, Oracle.replicaState> replicaStates;
-    private ArrayList<String> branchReplicas;
-    private String currentPrimary;
+    //private ArrayList<String> branchReplicas;
+    //sprivate String currentPrimary;
     
-    private String getClientNumString(){
-    	if (clientNumber < 10){
-    		return "0" + clientNumber;
-    	} else {
-    		return "" + clientNumber;
-    	}
-    }
-    
-    //must be called after resolver init
-    //assumes replicas are listed in order
-    private ArrayList<String> buildBranchReplicas(){
-    	ArrayList<String> output = new ArrayList<String>();
+    private boolean isHead(String replicaID){
+    	ArrayList<String> replicas = new ArrayList<String>();
     	for (Map.Entry<String, String[]> entry : resolver.entrySet())
     	{
-    	    if (entry.getKey().substring(2,4) == getClientNumString()){
-    	    	output.add(entry.getKey());
+    	    if (entry.getKey().substring(0,2).equals(replicaID.substring(0,2))){
+    	    	replicas.add(entry.getKey());
     	    }
     	}
-    	return output;
+    	for (String entry : replicas){
+    		if (entry.equals(replicaID)){
+    			return true;
+    		} else if (replicaStates.get(entry) == replicaState.running){
+    			return false;
+    		}
+    	}
+    	System.out.println("error in isHead");
+    	return false;
     }
     
-    private void initializePrimary(){
-    	currentPrimary = branchReplicas.get(0);
-    }
-    
-    private void updatePrimary(){
-		for (String entry : branchReplicas){
-			if (replicaStates.get(entry) == Oracle.replicaState.running){
-				if (!entry.equals(currentPrimary)){
-					currentPrimary = entry;
-				}
-			}
-		}
+    private String getHead(String branch){
+    	ArrayList<String> replicas = new ArrayList<String>();
+    	for (Map.Entry<String, String[]> entry : resolver.entrySet())
+    	{
+    	    if (entry.getKey().substring(0,2).equals(branch)){
+    	    	replicas.add(entry.getKey());
+    	    }
+    	}
+    	for (String entry : replicas){
+    		if (replicaStates.get(entry) == replicaState.running){
+    			return entry;
+    		}
+    	}
+    	System.out.println("error in getHead");
+    	return null;
     }
     
     public void HandleOracleMessage(Message message){
         try {
         	if (message instanceof FailureOracle){
-        		replicaStates.put(((FailureOracle)message).failedReplicaID, replicaState.failed);
-        		m.branchstreams  //TODO
+        		FailureOracle fo = (FailureOracle)message;
+        		boolean headFailed = isHead(fo.failedReplicaID);
+        		replicaStates.put(fo.failedReplicaID, replicaState.failed);
+        		if (headFailed){
+        			int branchNum = Integer.parseInt(fo.failedReplicaID.substring(0,2));
+        			m.branchstreams.get(branchNum).close();
+        			String[] resolverEntry = resolver.get(getHead(fo.failedReplicaID.substring(0,2)));
+        			Socket newSocket = new Socket(InetAddress.getByName(resolverEntry[0]), Integer.parseInt(resolverEntry[1]));
+        			m.branchstreams.put(branchNum, new ObjectOutputStream(newSocket.getOutputStream()));
+        		}
+        		
         	} else if (message instanceof BackupOracle){
         		replicaStates.put(((BackupOracle)message).recoveredReplicaID, replicaState.running);
-        		updatePrimary();
+        		BackupOracle bo = (BackupOracle)message;
+        		boolean headRecovered = isHead(bo.recoveredReplicaID);
+        		
+        		if (headRecovered){
+        			int branchNum = Integer.parseInt(bo.recoveredReplicaID.substring(0,2));
+        			m.branchstreams.get(branchNum).close();
+        			String[] resolverEntry = resolver.get(bo.recoveredReplicaID);
+        			Socket newSocket = new Socket(InetAddress.getByName(resolverEntry[0]), Integer.parseInt(resolverEntry[1]));
+        			m.branchstreams.put(branchNum, new ObjectOutputStream(newSocket.getOutputStream()));
+        		}
         	} else {
         		System.out.println("invalid message type received by client from oracle");
         	}
@@ -101,8 +124,8 @@ public class Server
 			this.topology = Messaging.buildTopologyHelper("topology.txt");
 			this.resolver = Messaging.buildResolverHelper("resolver.txt");
 			this.replicaStates = Oracle.buildReplicaStates(this.resolver);
-			this.branchReplicas = this.buildBranchReplicas();
-			this.initializePrimary();
+			//this.branchReplicas = this.buildBranchReplicas();
+			//this.initializePrimary();
 		} catch (MessagingException e) {
 			System.out.println("reading files failed in server");
 			e.printStackTrace();
