@@ -3,7 +3,7 @@ package messaging;
 public class RequestBackup extends BackupMessage {
     Message message;
 
-    public RequestBackup(Integer r, Message m) {
+    public RequestBackup(String r, Message m) {
         this.replica = r;
         this.message = m;
     }

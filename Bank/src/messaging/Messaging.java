@@ -359,7 +359,7 @@ public class Messaging {
         return (QueryResponse)sendRequest(new QueryRequest(acnt, ser_number));
     }
 
-    public TransferResponse Transfer(Integer src_branch, Integer src_acnt, Integer dest_branch, Integer dest_acnt, Float amt, Integer ser_number) throws MessagingException {
+    public TransferResponse Transfer(String src_branch, Integer src_acnt, String dest_branch, Integer dest_acnt, Float amt, Integer ser_number) throws MessagingException {
         if (!src_branch.equals(this.branch))
             return new TransferResponse("Cannot transfer money from this branch");
         if (src_branch.compareTo(dest_branch) != 0 && !topology.get(src_branch).contains(dest_branch))
@@ -404,7 +404,7 @@ public class Messaging {
         }
     }
 
-    public void SendToReplica(Integer replica, Message M) {
+    public void SendToReplica(String replica, Message M) {
         try {
             this.sendMessage(this.replicastreams.get(replica), M);
         } catch (MessagingException e) {

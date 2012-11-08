@@ -20,12 +20,12 @@ import oracle.Oracle.replicaState;
 
 public class Server
 {
-    private int branchID;
-    private int replicaID;
+    private String branchID;
+    private String replicaID;
     private ConcurrentHashMap<AccountNumber, BankAccount> accounts;
     private Messaging m;
-    private HashSet<Integer> backups; //Set of all replicas excluding self. needs to be init
-    private HashMap<Integer, HashSet<Integer>> waiting_records; //SerialID to returned backups
+    private HashSet<String> backups; //Set of all replicas excluding self. needs to be init
+    private HashMap<Integer, HashSet<String>> waiting_records; //SerialID to returned backups
     
     private ConcurrentHashMap<Integer, Set<Integer>> topology;
     private ConcurrentHashMap<String, String[]> resolver;
@@ -76,7 +76,7 @@ public class Server
         		boolean headFailed = isHead(fo.failedReplicaID);
         		replicaStates.put(fo.failedReplicaID, replicaState.failed);
         		if (headFailed){
-        			int branchNum = Integer.parseInt(fo.failedReplicaID.substring(0,2));
+        			String branchNum = fo.failedReplicaID.substring(0,2);
         			m.branchstreams.get(branchNum).close();
         			String[] resolverEntry = resolver.get(getHead(fo.failedReplicaID.substring(0,2)));
         			Socket newSocket = new Socket(InetAddress.getByName(resolverEntry[0]), Integer.parseInt(resolverEntry[1]));
@@ -89,7 +89,7 @@ public class Server
         		boolean headRecovered = isHead(bo.recoveredReplicaID);
         		
         		if (headRecovered){
-        			int branchNum = Integer.parseInt(bo.recoveredReplicaID.substring(0,2));
+        			String branchNum = bo.recoveredReplicaID.substring(0,2);
         			m.branchstreams.get(branchNum).close();
         			String[] resolverEntry = resolver.get(bo.recoveredReplicaID);
         			Socket newSocket = new Socket(InetAddress.getByName(resolverEntry[0]), Integer.parseInt(resolverEntry[1]));
@@ -105,7 +105,7 @@ public class Server
     }
     
 
-    public Server(int branchID, int replicaID)
+    public Server(String branchID, String replicaID)
     {
         this.branchID = branchID;
         this.replicaID = replicaID;
@@ -189,8 +189,8 @@ public class Server
     }
 
     public void startBackup(RequestClient rc) {
-        waiting_records.put(rc.GetSerialNumber(), new HashSet<Integer>());
-        for(Integer i : this.backups) {
+        waiting_records.put(rc.GetSerialNumber(), new HashSet<String>());
+        for(String i : this.backups) {
             m.SendToReplica(i, new RequestBackup(this.replicaID, rc));
         }
     }
@@ -269,6 +269,6 @@ public class Server
 
     public static void main(String args[])
     {
-        new Server(new Integer(args[0]), new Integer(args[1])).run();
+        new Server(args[0], args[1]).run();
     }
 }

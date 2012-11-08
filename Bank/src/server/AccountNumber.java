@@ -4,19 +4,19 @@ import java.io.Serializable;
 
 public class AccountNumber implements Serializable
 {
-    private int branch;
+    private String branch;
     private int account;
 
-    public AccountNumber(int branch, int account)
+    public AccountNumber(String branch, int account)
     {
-        assert branch >= 0 && branch <= 99 : "branch: " + branch;
+        assert Integer.parseInt(branch) >= 0 && Integer.parseInt(branch) <= 99 : "branch: " + branch;
         assert account >= 0 && account <= 99999 : "account: " + account;
 
         this.branch = branch;
         this.account = account;
     }
 
-    public int getBranch()
+    public String getBranch()
     {
         return branch;
     }
@@ -29,7 +29,7 @@ public class AccountNumber implements Serializable
     @Override
     public String toString()
     {
-        return String.format("%02d.%05d", branch, account);
+        return String.format("%s.%05d", branch, account);
     }
 
     @Override
@@ -47,6 +47,6 @@ public class AccountNumber implements Serializable
 
     @Override
     public int hashCode() {
-        return branch * 100000 + account;
+        return Integer.parseInt(branch) * 100000 + account;
     }
 }

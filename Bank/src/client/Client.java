@@ -410,15 +410,15 @@ public class Client extends JFrame implements ActionListener {
 	    	result2.setText("");
 	    } else {
 	    	//result1.setText("valid account number and amount");
-	    	int branchNumberTo = Integer.parseInt(accountTo.substring(0, 2));
+	    	String branchNumberTo = accountTo.substring(0, 2);
 	    	int accountNumberTo = Integer.parseInt(accountTo.substring(3, accountTo.length()));
-	    	int branchNumberFrom = Integer.parseInt(accountFrom.substring(0, 2));
+	    	String branchNumberFrom = accountFrom.substring(0, 2);
 	    	int accountNumberFrom = Integer.parseInt(accountFrom.substring(3, accountFrom.length()));
 	    	float amountFloat = Float.parseFloat(amount);
 	    	int serialNumber = Integer.parseInt(serial);
 	    	TransferResponse response;
 	    	try {
-	        	response = messaging.Transfer(new Integer(branchNumberFrom), new Integer(accountNumberFrom), new Integer(branchNumberTo), new Integer(accountNumberTo), new Float(amountFloat), new Integer((serialNumber*100) + clientNumber));
+	        	response = messaging.Transfer(branchNumberFrom, new Integer(accountNumberFrom), branchNumberTo, new Integer(accountNumberTo), new Float(amountFloat), new Integer((serialNumber*100) + clientNumber));
 	        	if (response.GetSuccess()){
 					result1.setText("Transfer successful");
 					result2.setText("Balance in source account: " + response.getBalance());
