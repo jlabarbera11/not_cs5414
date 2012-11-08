@@ -6,22 +6,21 @@ public class TransferBranch extends BranchMessage {
     private Float amt = null;
     private Integer ser_number = null;
 
-    public TransferBranch(Integer to_acnt, Integer acnt, Float amt, Integer ser_number) {
-        this.branch = acnt;
-        this.acnt = to_acnt;
+    public TransferBranch(Integer acnt, Float amt, Integer ser_number) {
+        this.acnt = acnt;
         this.amt = amt;
         this.ser_number = ser_number;
     }
 
-    public Integer getAcnt() {
+    public Integer GetAcnt() {
         return this.acnt;
     }
 
-    public Float getAmt() {
+    public Float GetAmt() {
         return this.amt;
     }
 
-    public Integer getSerNumber() {
+    public Integer GetSerialNumber() {
         return this.ser_number;
     }
 

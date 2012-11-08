@@ -88,8 +88,9 @@ public class Server
 
     public void startBackup(RequestClient rc) {
         waiting_records.put(rc.GetSerialNumber(), new HashSet<Integer>());
-        for(Integer i : this.backups)
-            m.SendToReplica(i, rc);
+        for(Integer i : this.backups) {
+            m.SendToReplica(i, new RequestBackup(this.replicaID, rc));
+        }
     }
 
     //Add to our hashtable of completed transactions
@@ -97,76 +98,68 @@ public class Server
         if (rc instanceof DepositRequest) {
                 System.out.println("Deposit Request received");
                 DepositRequest request = (DepositRequest) rc;
-                return deposit(request.getAcnt(), request.getAmt(), request.getSerNumber());
+                return deposit(request.GetAcnt(), request.GetAmt(), request.GetSerialNumber());
 
             } else if (rc instanceof WithdrawRequest) {
                 System.out.println("Withdraw Request received");
                 WithdrawRequest request = (WithdrawRequest) rc;
-                return withdraw(request.getAcnt(), request.getAmt(), request.getSerNumber());
+                return withdraw(request.GetAcnt(), request.GetAmt(), request.GetSerialNumber());
 
             } else if (rc instanceof QueryRequest) {
                 System.out.println("Query Request received");
                 QueryRequest request = (QueryRequest) rc;
-                return query(request.getAcnt(), request.getSerNumber());
+                return query(request.GetAcnt(), request.GetSerialNumber());
 
             } else if (rc instanceof TransferRequest) {
                 System.out.println("Transfer Request received");
                 TransferRequest request = (TransferRequest) rc;
-                if (request.getDestBranch().equals(branchID)) {
-                    deposit(request.getDestAcnt(), request.getAmt(), request.getSerNumber());
-                    return null;
+                if (request.GetDestBranch().equals(branchID)) {
+                    deposit(request.GetDestAcnt(), request.GetAmt(), request.GetSerialNumber());
                 } else {
-                    withdraw(request.getSrcAcnt(), request.getAmt(), request.getSerNumber());
+                    withdraw(request.GetSrcAcnt(), request.GetAmt(), request.GetSerialNumber());
                     System.out.println("Sending request to second account");
-                    try {
-                        m.SendToBranch(request.GetDestBranch(), new TransferBranch(request.GetDestAcnt(), request.GetAmt(), request.GetSerialNumber()));
-                    } catch (MessagingException e) {
-                        System.out.println("Source branch could not send Destination branch deposit");
-                    }
+                    m.SendToBranch(request.GetDestBranch(), new TransferBranch(request.GetDestAcnt(), request.GetAmt(), request.GetSerialNumber()));
                 }
                 System.out.println("Transfer Request recorded");
 
             } else if (rc instanceof TransferBranch) {
                 System.out.println("DepositFromTransfer Request received");
-                TransferBranch = (TransferBranch) rc;
-                transferDeposit(rc.getAcnt(), rc.getAmt(), rc.getSerNumber());
+                TransferBranch request = (TransferBranch) rc;
+                transferDeposit(request.GetAcnt(), request.GetAmt(), request.GetSerialNumber());
                 System.out.println("DepsitFromTransfer Request recorded");
             }
+
+        return null;
     }
 
     public void run()
     {
         System.out.println("Server starting up!");
         while (true) {
-            Message mr = null;
-            try {
-                mr = m.ReceiveMessage();
-            } catch (MessagingException e) {
-                System.out.println("Server failed to receive message");
-                continue;
-            }  
+            Message mr = m.ReceiveMessage();
 
             if (mr instanceof RequestClient) {
-                startBackup(mr);
+                startBackup((RequestClient)mr);
            
             } else if (mr instanceof BranchMessage) {
-                startBackup(mr);
+                if(mr instanceof TransferBranch)
+                    startBackup((RequestClient)mr);
 
             } else if (mr instanceof RequestBackup) {
-                mr = (RequestBackup)mr;
-                ResponseClient rc = recordTransaction(mr.GetRequest());
-                m.sendToReplica(rc.GetReplica(), new BackupResponse(rc));
+                recordTransaction(((RequestBackup)mr).GetMessage());
+                m.SendToReplica(mr.GetReplica(), new ResponseBackup(this.replicaID, mr));
            
             } else if (mr instanceof ResponseBackup) {
-                mr = (RequestBackup)mr;
-                waiting_records.get(BackupMessage.GetRequest().getSerial()).add(mr.getReplica());
-                if(backup_records.get(BackupMessage.message.getSerial()).equals(this.backups)) {
-                    waiting_records.remove(BackupMessage.message.getSerial());
-                    m.sendMessage(recordTransaction(mr.GetClientRequest()));
+                ResponseBackup response = (ResponseBackup)mr;
+                RequestClient rc = (RequestClient)response.GetMessage();
+                waiting_records.get(rc.GetSerialNumber()).add(response.GetReplica());
+                if(waiting_records.get(rc.GetSerialNumber()).equals(this.backups)) {
+                    waiting_records.remove(rc.GetSerialNumber());
+                    m.SendToClient(recordTransaction(rc));
                 }
             
-            } else if (mr instanceof OracleMessage) {
-                mr = (OracleMessage)mr;
+            } else if (mr instanceof OracleMessage) { //TODO
+                OracleMessage m = (OracleMessage) mr;
             }
         }
     }
