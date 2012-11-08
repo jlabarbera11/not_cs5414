@@ -236,6 +236,7 @@ public class Messaging {
         try {
             Scanner scanner = new Scanner(new File(resolverfile));
             while (scanner.hasNextLine()) {
+            	System.out.println("resolver iteration");
                 String[] branch = scanner.nextLine().split(" ");
                 resolver.put(branch[0], new String[]{branch[1], branch[2]});
             }
