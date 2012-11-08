@@ -25,6 +25,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.lang.InterruptedException;
 
+import oracle.Oracle.replicaState;
+
 
 public class Messaging {
 
@@ -44,6 +46,10 @@ public class Messaging {
     private Socket oraclesocket = null;
     private ObjectOutputStream oracleoos = null;
     private ObjectInputStream oracleois = null;
+    
+    //Oracle fields
+    private Map<String, ObjectInputStream> replicaInputStreams;
+    private Map<String, ObjectOutputStream> replicaOutputStreams;
 
     private BlockingQueue<Message> messageBuffer = null;
 
@@ -340,6 +346,60 @@ public class Messaging {
         this.SendToBranch(branch, new TransferBranch(this.branch, acnt, amt, ser_number));
     }
     //End Server Methods
+    
+    /**try {
+        String[] res = this.resolver.get(this.branch);
+        this.clientsocket = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
+        this.clientoos = new ObjectOutputStream(this.clientsocket.getOutputStream());
+        this.clientoos.writeObject(new InitializeMessage(this.branch, null));
+        this.clientois = new ObjectInputStream(this.clientsocket.getInputStream());
+        
+        res = this.resolver.GetOracle();
+        this.oraclesocket = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
+        new ConnectionHandler(new ObjectInputStream(this.clientsocket.getInputStream()), t).run();
+    } catch (UnknownHostException e) {
+        throw new MessagingException(MessagingException.Type.UNKNOWN_HOST);
+    } catch(IOException e) {
+        throw new MessagingException(MessagingException.Type.FAILED_SOCKET_CREATION);
+    }*/
+    
+    //Begin Oracle Methods
+    public boolean OracleConnectToReplica(String id){
+    	System.out.println("Oracle is trying to initialize connection to replica " + id);
+    	try {
+	        String[] res = this.resolver.get(id);
+	        Socket replicaSocket = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
+	        ObjectOutputStream replicaoos = new ObjectOutputStream(replicaSocket.getOutputStream());
+	        replicaoos.writeObject(new InitializeMessage(null, null));
+	        ObjectInputStream replicaois = new ObjectInputStream(replicaSocket.getInputStream());
+	        this.replicaInputStreams.put(id, replicaois);
+	        this.replicaOutputStreams.put(id, replicaoos);
+	        return true;
+    	} catch(Exception e) {
+    		System.out.println("connection failed to " + id);
+    		e.printStackTrace();
+    		return false;
+    	}
+    }
+    
+    //private HashMap<Integer, Set<Integer>> topology;
+    //private Map<String, String[]> resolver;
+    
+    //private Map<Integer, Set<Integer>> topology = null;
+    //private Map<String, String[]> resolver = null;
+    
+    public void OracleConnectToAllReplicas(){
+    	for (Map.Entry<String, String[]> entry : resolver.entrySet())
+    	{
+    	    boolean result = OracleConnectToReplica(entry.getKey());
+    	    if (!result){
+    	    	throw new MessagingException(MessagingException.Type.FAILED_CONNECTION_TO_REPLICA);
+    	    }
+    	}
+    	
+    }
+    
+    
    
 }
 

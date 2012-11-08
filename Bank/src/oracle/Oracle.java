@@ -164,7 +164,7 @@ public class Oracle extends JFrame implements ActionListener {
 			replicaStates.put(failureText, replicaState.failed);
 			
 			//send broadcast
-			messaging.
+			//messaging.
 			
 	    	result1.setText("Failure recorded.");
 	    	result2.setText("");

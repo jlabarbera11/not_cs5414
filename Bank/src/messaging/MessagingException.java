@@ -18,7 +18,8 @@ public class MessagingException extends Exception {
         INVALID_SRC_BRANCH,
         INVALID_DEST_BRANCH,
         FAILED_SYNC_BUFFER,
-        UNKNOWN_ERROR
+        UNKNOWN_ERROR,
+        FAILED_CONNECTION_TO_REPLICA,
     }
 
     public Type type;
