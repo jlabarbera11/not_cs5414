@@ -35,8 +35,8 @@ import client.Client;
 
 public class Messaging {
 
-    private Integer branch = null;
-    private Integer  replica = null;
+    private String branch = null;
+    private String replica = null;
     private Map<Integer, Set<Integer>> topology = null;
     private Map<String, String[]> resolver = null;
 
@@ -46,8 +46,8 @@ public class Messaging {
     private ObjectInputStream clientois = null;
 
     private ServerSocket serversocket = null;
-    public Map<Integer, ObjectOutputStream> branchstreams = null;
-    public Map<Integer, ObjectOutputStream> replicastreams = null;
+    public Map<String, ObjectOutputStream> branchstreams = null;
+    public Map<String, ObjectOutputStream> replicastreams = null;
 
     private Socket oraclesocket = null;
     private ObjectOutputStream oracleoos = null;
@@ -58,8 +58,8 @@ public class Messaging {
     //Oracle fields
     private Map<String, ObjectInputStream> replicaInputStreams;
     private Map<String, ObjectOutputStream> replicaOutputStreams;
-    private Map<Integer, ObjectInputStream> clientInputStreams;
-    private Map<Integer, ObjectOutputStream> clientOutputStreams;
+    private Map<String, ObjectInputStream> clientInputStreams;
+    private Map<String, ObjectOutputStream> clientOutputStreams;
 
     private BlockingQueue<Message> messageBuffer = null;
 
@@ -128,11 +128,11 @@ public class Messaging {
         }
     }
 
-    public Messaging(Integer b, Integer r) throws MessagingException {
+    public Messaging(String b, String r) throws MessagingException {
         this(b, r, "topology.txt", "resolver.txt");
     }
 
-    public Messaging(Integer b, Integer r, String topologyfile, String resolverfile) throws MessagingException {
+    public Messaging(String b, String r, String topologyfile, String resolverfile) throws MessagingException {
         if(!buildTopology(topologyfile))
             throw new MessagingException(MessagingException.Type.INVALID_TOPOLOGY);
         buildResolver(resolverfile);
@@ -143,8 +143,8 @@ public class Messaging {
             try {
                 this.serversocket = new ServerSocket(Integer.parseInt(this.resolver.get(this.branch)[1]));
                 serversocket.setReuseAddress(true);
-                this.branchstreams= new HashMap<Integer, ObjectOutputStream>();
-                this.replicastreams= new HashMap<Integer, ObjectOutputStream>();
+                this.branchstreams= new HashMap<String, ObjectOutputStream>();
+                this.replicastreams= new HashMap<String, ObjectOutputStream>();
             } catch (IOException e) {
                 throw new MessagingException(MessagingException.Type.FAILED_SOCKET_CREATION);
             }
@@ -341,26 +341,26 @@ public class Messaging {
         }
     }
 
-    public DepositResponse Deposit(Integer branch, Integer acnt, Float amt, Integer ser_number) throws MessagingException {
-        if (branch.compareTo(this.branch) != 0)
+    public DepositResponse Deposit(String branch, Integer acnt, Float amt, Integer ser_number) throws MessagingException {
+        if (!branch.equals(this.branch))
             return new DepositResponse("Cannot desposit to this branch");
         return (DepositResponse)sendRequest(new DepositRequest(acnt, amt, ser_number));
     }
 
-    public WithdrawResponse Withdraw(Integer branch, Integer acnt, Float amt, Integer ser_number) throws MessagingException {
-        if (branch.compareTo(this.branch) != 0)
+    public WithdrawResponse Withdraw(String branch, Integer acnt, Float amt, Integer ser_number) throws MessagingException {
+        if (!branch.equals(this.branch))
             return new WithdrawResponse("Cannot withdraw from this branch");
         return (WithdrawResponse)sendRequest(new WithdrawRequest(acnt, amt, ser_number));
     }
 
-    public QueryResponse Query(Integer branch, Integer acnt, Integer ser_number) throws MessagingException {
-        if (branch.compareTo(this.branch) != 0)
+    public QueryResponse Query(String branch, Integer acnt, Integer ser_number) throws MessagingException {
+        if (!branch.equals(this.branch))
             return new QueryResponse("Cannot query account info from this branch");
         return (QueryResponse)sendRequest(new QueryRequest(acnt, ser_number));
     }
 
     public TransferResponse Transfer(Integer src_branch, Integer src_acnt, Integer dest_branch, Integer dest_acnt, Float amt, Integer ser_number) throws MessagingException {
-        if (this.branch.compareTo(src_branch) != 0)
+        if (!src_branch.equals(this.branch))
             return new TransferResponse("Cannot transfer money from this branch");
         if (src_branch.compareTo(dest_branch) != 0 && !topology.get(src_branch).contains(dest_branch))
             return new TransferResponse("Cannot transfer money to this branch");
@@ -382,7 +382,7 @@ public class Messaging {
         }
     }
 
-    public void SendToBranch(Integer branch, Message M) {
+    public void SendToBranch(String branch, Message M) {
         for(int i=0; i<5; i++) {
             try {
                 try {
@@ -416,7 +416,7 @@ public class Messaging {
         return this.receiveMessage();
     }
 
-    public void FinishTransfer(Integer branch, Integer acnt, Float amt, Integer ser_number) throws MessagingException {
+    public void FinishTransfer(String branch, Integer acnt, Float amt, Integer ser_number) throws MessagingException {
         this.SendToBranch(branch, new TransferBranch(acnt, amt, ser_number));
     }
     //End Server Methods
@@ -477,7 +477,7 @@ public class Messaging {
     }
 
     public void OracleSendMessageToAllClients(Message message) throws MessagingException{
-        for (Map.Entry<Integer, ObjectOutputStream> entry : clientOutputStreams.entrySet())
+        for (Map.Entry<String, ObjectOutputStream> entry : clientOutputStreams.entrySet())
         {
             try {
                 sendMessage(entry.getValue(), message);
@@ -504,7 +504,7 @@ public class Messaging {
     }
 
     //call after replica failure
-    public void OracleRemoveReplicaStreams(Float id) throws MessagingException{
+    public void OracleRemoveReplicaStreams(String id) throws MessagingException{
         if (replicaInputStreams.remove(id) == null){
             throw new MessagingException(MessagingException.Type.REPLICA_NOT_FOUND);
         }

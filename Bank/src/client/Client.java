@@ -38,7 +38,7 @@ public class Client extends JFrame implements ActionListener {
     public JLabel result1 = new JLabel(" ");
     public JLabel result2 = new JLabel(" ");
     //int serialNumber = 0;
-    int clientNumber;
+    String clientNumber;
     public Messaging messaging;
     boolean waitingForResponse;
     int number=0;
@@ -55,7 +55,7 @@ public class Client extends JFrame implements ActionListener {
     }
     
     private String getClientNumString(){
-    	if (clientNumber < 10){
+    	if (Integer.parseInt(clientNumber) < 10){
     		return "0" + clientNumber;
     	} else {
     		return "" + clientNumber;
@@ -114,7 +114,7 @@ public class Client extends JFrame implements ActionListener {
     
     //public String SetText
     
-	  public Client(int clientNum) {
+	  public Client(String clientNum) {
 	    super("Bank GUI for Branch " + clientNum);
 	    this.clientNumber = clientNum;
 	    setSize(400, 700);
@@ -323,14 +323,14 @@ public class Client extends JFrame implements ActionListener {
 			result2.setText("");
 		} else {
 			//result1.setText("valid account number and amount");
-			int branchNumber = Integer.parseInt(account.substring(0, 2));
+			String branchNumber = account.substring(0, 2);
 			int accountNumber = Integer.parseInt(account.substring(3, account.length()));
 			float amountFloat = Float.parseFloat(amount);
 			int serialNumber = Integer.parseInt(serial);
 			DepositResponse response;
 			try {
 				System.out.println("passing in serial " + serialNumber);
-				response = messaging.Deposit(new Integer(branchNumber), new Integer(accountNumber), new Float(amountFloat), new Integer((serialNumber*100) + clientNumber));
+				response = messaging.Deposit(branchNumber, new Integer(accountNumber), new Float(amountFloat), new Integer((serialNumber*100) + clientNumber));
 				if (response.GetSuccess()){
 					result1.setText("Deposit successful");
 					result2.setText("Balance: " + response.getBalance());
@@ -365,13 +365,13 @@ public class Client extends JFrame implements ActionListener {
 	    	result2.setText("");
 	    } else {
 	    	//result1.setText("valid account number and amount");
-	    	int branchNumber = Integer.parseInt(account.substring(0, 2));
+	    	String branchNumber = account.substring(0, 2);
 	    	int accountNumber = Integer.parseInt(account.substring(3, account.length()));
 	    	float amountFloat = Float.parseFloat(amount);
 	    	int serialNumber = Integer.parseInt(serial);
 	    	WithdrawResponse response;
 	    	try {
-	        	response = messaging.Withdraw(new Integer(branchNumber), new Integer(accountNumber), new Float(amountFloat), new Integer((serialNumber*100) + clientNumber));
+	        	response = messaging.Withdraw(branchNumber, new Integer(accountNumber), new Float(amountFloat), new Integer((serialNumber*100) + clientNumber));
 	        	if (response.GetSuccess()){
 					result1.setText("Withdrawal successful");
 					result2.setText("Balance: " + response.getBalance());
@@ -447,12 +447,12 @@ public class Client extends JFrame implements ActionListener {
 	    	result2.setText("");
 	    } else {
 	    	//result1.setText("valid account number and amount");
-	    	int branchNumber = Integer.parseInt(account.substring(0, 2));
+	    	String branchNumber = account.substring(0, 2);
 	    	int accountNumber = Integer.parseInt(account.substring(3, account.length()));
 	    	int serialNumber = Integer.parseInt(serial);
 	    	QueryResponse response;
 	    	try {
-	        	response = messaging.Query(new Integer(branchNumber), new Integer(accountNumber), (serialNumber*100) + clientNumber);
+	        	response = messaging.Query(branchNumber, new Integer(accountNumber), Integer.parseInt((serialNumber*100) + clientNumber));
 	        	if (response.GetSuccess()){
 					result1.setText("Query successful.");
 					result2.setText("Balance: " + response.getBalance());
@@ -498,16 +498,17 @@ public class Client extends JFrame implements ActionListener {
 	
 	
 	public static void main(String[] args){
-		int clientNum = -1;
+                String clientNum = null;
 		
 		try {
-                        clientNum = Integer.parseInt(args[0]);
+                        clientNum = args[0];
+                        Integer.parseInt(clientNum);
 		} catch (Exception e){
 			System.out.println("Please run the program with the client number as the first argument.");
 			System.exit(0);
 		}
 		
-		if ((clientNum < 0) || (clientNum > 99)){
+		if ((Integer.parseInt(clientNum) < 0 || Integer.parseInt(clientNum) > 99)){
 			System.out.println("Please enter a client number between 0 and 99.");
 			System.exit(0);
 		}
@@ -515,7 +516,7 @@ public class Client extends JFrame implements ActionListener {
 		Client client = new Client(clientNum);
 		
 		try {
-			client.messaging = new Messaging(new Integer(clientNum), null);
+			client.messaging = new Messaging(clientNum, null);
 			client.messaging.connectToServer(client.new OracleCallback());
 			client.messaging.initializeOracleAddress();
 		} catch (MessagingException e) {

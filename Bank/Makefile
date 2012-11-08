@@ -1,4 +1,5 @@
 all: client server oracle messaging
+jar: client-jar server-jar oracle-jar
 
 client:
 	javac -Xlint:unchecked -sourcepath src/ -d bin/ src/client/*.java

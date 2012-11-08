@@ -27,8 +27,8 @@ public class Oracle extends JFrame implements ActionListener {
     private JLabel result1 = new JLabel(" ");
     private JLabel result2 = new JLabel(" ");
     private ConcurrentHashMap<Integer, Set<Integer>> topology;
-    private ConcurrentHashMap<Float, String[]> resolver;
-    private ConcurrentHashMap<Float, replicaState> replicaStates;
+    private ConcurrentHashMap<String, String[]> resolver;
+    private ConcurrentHashMap<String, replicaState> replicaStates;
     Messaging messaging;
     
     public String GetResult(){
@@ -163,7 +163,7 @@ public class Oracle extends JFrame implements ActionListener {
 		String failureText = failureServerNumber.getText();
 		if (checkProcessorNumber(failureText) && replicaStates.containsKey(failureText)){
 			System.out.println("got failure from branch replica " + failureText);
-			Float replica = Float.parseFloat(failureText);
+			String replica = failureText;
 			replicaStates.put(replica, replicaState.failed);
 			
 			try {
@@ -190,7 +190,7 @@ public class Oracle extends JFrame implements ActionListener {
 		String recoveryText = recoveryServerNumber.getText();
 		if (checkProcessorNumber(recoveryText) && replicaStates.containsKey(recoveryText)){
 			System.out.println("got recover from branch replica " + recoveryText);
-			Float replica = Float.parseFloat(recoveryText);
+			String replica = recoveryText;
 			replicaStates.put(replica, replicaState.running);
 			
 			try {
