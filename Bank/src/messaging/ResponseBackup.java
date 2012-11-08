@@ -3,14 +3,15 @@ package messaging;
 import java.util.Map;
 
 public class ResponseBackup extends BackupMessage {
-    private Map bank_accounts;
-    private Map transactions;
+    Message message;
 
-    public ResponseBackup(Integer branch, Integer replica, Map bank_accounts, Map transactions) {
-        this.branch = branch;
-        this.replica = replica;
-        this.bank_accounts = bank_accounts;
-        this.transactions = transactions;
+    public ResponseBackup(Integer r, Message m) {
+        this.replica = r;
+        this.message = m;
+    }
+
+    public Message GetMessage() {
+        return this.message;
     }
 }
 

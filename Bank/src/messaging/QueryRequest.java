@@ -9,7 +9,7 @@ public class QueryRequest extends RequestClient {
         this.serial_number = serial_number;
     }
 
-    public Integer getAcnt() {
+    public Integer GetAcnt() {
         return this.acnt;
     }
 

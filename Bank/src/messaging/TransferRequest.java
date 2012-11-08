@@ -32,7 +32,7 @@ public class TransferRequest extends RequestClient {
         return this.acnt;
     }
 
-    public Float getAmt() {
+    public Float GetAmt() {
         return this.amt;
     }
 }

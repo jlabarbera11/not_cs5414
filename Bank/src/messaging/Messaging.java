@@ -236,19 +236,19 @@ public class Messaging {
     }
 
     //Primitive send and Receive
-    private void sendMessage(ObjectOutputStream oos, Message m) throws MessagingException {
+    private void sendMessage(ObjectOutputStream oos, Message m) {
         try {
             oos.writeObject(m);
         } catch (IOException e) {
-            throw new MessagingException(MessagingException.Type.FAILED_REQUEST_SEND);
+            System.out.println("Failed sending request");
         }
     }
 
-    private Message receiveMessage() throws MessagingException {
+    private Message receiveMessage() {
         try {
             return this.messageBuffer.take();
         } catch(java.lang.InterruptedException e) {
-            throw new MessagingException(MessagingException.Type.FAILED_SYNC_BUFFER);
+            System.out.println("Failed to receieve message");
         }
     }
 
@@ -316,28 +316,28 @@ public class Messaging {
         new Thread(this.new Acceptor()).start();
     }
 
-    public void SendToClient(ResponseClient M) throws MessagingException {
-        sendMessage(this.clientoos, M);
+    public void SendToClient(ResponseClient M) {
+        this.sendMessage(this.clientoos, M);
     }
 
-    public void SendToBranch(Integer branch, Message M) throws MessagingException {
-        sendMessage(this.branchstreams.get(branch), M);
+    public void SendToBranch(Integer branch, Message M) {
+        this.sendMessage(this.branchstreams.get(branch), M);
     }
 
-    public void SendToReplica(Integer replica, Message M) throws MessagingException {
-            this.sendMessage(this.replicastreams.get(replica), M);
+    public void SendToReplica(Integer replica, Message M) {
+        this.sendMessage(this.replicastreams.get(replica), M);
     }
 
-    public void SendToOracle(Message M) throws MessagingException {
+    public void SendToOracle(Message M) {
         this.sendMessage(this.oracleoos, M);
     }
     
-    public Message ReceiveMessage() throws MessagingException {
+    public Message ReceiveMessage() {
         return this.receiveMessage();
     }
 
     public void FinishTransfer(Integer branch, Integer acnt, Float amt, Integer ser_number) throws MessagingException {
-        this.SendToBranch(branch, new TransferBranch(this.branch, acnt, amt, ser_number));
+        this.SendToBranch(branch, new TransferBranch(acnt, amt, ser_number));
     }
     //End Server Methods
    
