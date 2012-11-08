@@ -30,7 +30,7 @@ public class Messaging {
 
     private Integer branch = null;
     private Map<Integer, Set<Integer>> topology = null;
-    private Map<Integer, String[]> resolver = null;
+    private Map<String, String[]> resolver = null;
 
     private Socket clientsocket = null;
     private ObjectOutputStream clientoos = null;
@@ -187,10 +187,9 @@ public class Messaging {
         }
         return true;
     }
-
-    //Returns true if every server can reach every other one
-    private boolean buildTopology(String topologyfile) throws MessagingException {
-        this.topology = new HashMap<Integer, Set<Integer>>();
+    
+    public static HashMap<Integer, Set<Integer>> buildTopologyHelper(String topologyfile) throws MessagingException {
+    	HashMap<Integer, Set<Integer>> map = new HashMap<Integer, Set<Integer>>();
         try {
             Scanner scanner = new Scanner(new File(topologyfile));
             while (scanner.hasNextLine()) {
@@ -199,33 +198,47 @@ public class Messaging {
                 Integer key = Integer.parseInt(a[0]);
                 Integer val = Integer.parseInt(a[1]);
 
-                if (this.topology.containsKey(key)) {
-                    this.topology.get(key).add(val);
+                if (map.containsKey(key)) {
+                    map.get(key).add(val);
                 }
 
                 else {
                     Set<Integer> s = new HashSet<Integer>();
                     s.add(val);
-                    this.topology.put(key, s);
+                    map.put(key, s);
                 }
             }
+            scanner.close();
         } catch (FileNotFoundException e) {
             throw new MessagingException(MessagingException.Type.FILE_NOT_FOUND);
         }
-        return checkTopology();
+    	return map;
     }
 
-    private void buildResolver(String resolverfile) throws MessagingException {
-        this.resolver = new HashMap<Integer, String[]>();
+    //Returns true if every server can reach every other one
+    private boolean buildTopology(String topologyfile) throws MessagingException {
+        this.topology = buildTopologyHelper(topologyfile);    
+        return checkTopology();
+    }
+    
+    public static Map<String, String[]> buildResolverHelper(String resolverfile) throws MessagingException {
+    	Map<String, String[]> resolver = new HashMap<String, String[]>();
         try {
             Scanner scanner = new Scanner(new File(resolverfile));
             while (scanner.hasNextLine()) {
                 String[] branch = scanner.nextLine().split(" ");
-                this.resolver.put(Integer.parseInt(branch[0]), new String[]{branch[1], branch[2]});
+                resolver.put(branch[0], new String[]{branch[1], branch[2]});
             }
+            scanner.close();
         } catch (FileNotFoundException e) {
             throw new MessagingException(MessagingException.Type.FILE_NOT_FOUND);
         } 
+    	return resolver;
+    }
+    
+    //a resolver key is now a string and has form aa.bb
+    private void buildResolver(String resolverfile) throws MessagingException {
+        this.resolver = buildResolverHelper(resolverfile);
     }
 
     //Client Methods
