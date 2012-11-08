@@ -27,8 +27,8 @@ public class Oracle extends JFrame implements ActionListener {
     private JLabel result1 = new JLabel(" ");
     private JLabel result2 = new JLabel(" ");
     private ConcurrentHashMap<Integer, Set<Integer>> topology;
-    private ConcurrentHashMap<String, String[]> resolver;
-    private ConcurrentHashMap<String, replicaState> replicaStates;
+    private ConcurrentHashMap<Float, String[]> resolver;
+    private ConcurrentHashMap<Float, replicaState> replicaStates;
     Messaging messaging;
     
     public String GetResult(){
@@ -147,8 +147,7 @@ public class Oracle extends JFrame implements ActionListener {
 		if (input.length() != 5) { return false; }
 		if (input.charAt(2) != '.') {return false; }
 		try {
-			int branch = Integer.parseInt(input.substring(0, 2));
-			int replica = Integer.parseInt(input.substring(3, 5));
+			float branch = Float.parseFloat(input);
 			return true;
 		} catch (NumberFormatException e) {
 			return false;
@@ -164,11 +163,12 @@ public class Oracle extends JFrame implements ActionListener {
 		String failureText = failureServerNumber.getText();
 		if (checkProcessorNumber(failureText) && replicaStates.containsKey(failureText)){
 			System.out.println("got failure from branch replica " + failureText);
-			replicaStates.put(failureText, replicaState.failed);
+			Float replica = Float.parseFloat(failureText);
+			replicaStates.put(replica, replicaState.failed);
 			
 			try {
-				messaging.OracleRemoveReplicaStreams(failureText);
-				Message m = new FailureOracle(failureText);
+				messaging.OracleRemoveReplicaStreams(replica);
+				Message m = new FailureOracle(replica);
 				messaging.OracleBroadcastMessage(m);
 		    	result1.setText("Failure recorded for replica " + failureText);
 		    	result2.setText("");
@@ -190,11 +190,12 @@ public class Oracle extends JFrame implements ActionListener {
 		String recoveryText = recoveryServerNumber.getText();
 		if (checkProcessorNumber(recoveryText) && replicaStates.containsKey(recoveryText)){
 			System.out.println("got recover from branch replica " + recoveryText);
-			replicaStates.put(recoveryText, replicaState.running);
+			Float replica = Float.parseFloat(recoveryText);
+			replicaStates.put(replica, replicaState.running);
 			
 			try {
-				messaging.OracleConnectToReplica(recoveryText);
-				Message m = new BackupOracle(recoveryText);
+				messaging.OracleConnectToReplica(replica);
+				Message m = new BackupOracle(replica);
 				messaging.OracleBroadcastMessage(m);
 		    	result1.setText("Recovery recorded for replica " + recoveryText);
 		    	result2.setText("");

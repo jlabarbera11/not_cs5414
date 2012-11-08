@@ -45,8 +45,8 @@ public class Messaging {
     private ObjectInputStream clientois = null;
 
     private ServerSocket serversocket = null;
-    private Map<Integer, ObjectOutputStream> branchstreams = null;
-    private Map<Integer, ObjectOutputStream> replicastreams = null;
+    public Map<Integer, ObjectOutputStream> branchstreams = null;
+    public Map<Integer, ObjectOutputStream> replicastreams = null;
 
     private Socket oraclesocket = null;
     private ObjectOutputStream oracleoos = null;
@@ -373,19 +373,16 @@ public class Messaging {
 
     public void SendToBranch(Integer branch, Message M) {
         try {
-            try {
-                this.sendMessage(this.branchstreams.get(branch), M);
-                return;
-            } catch (MessagingException e) {
-                Thread.sleep(1000);
-                String[] res = this.resolver.get(branch);
-                Socket s = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
-                ObjectInputStream oos = new ObjectOutputStream(s.getOutputStream());
-                oos.writeObject(new InitializeMessage(this.branch, this.replica));
-                this.branchstreams.put(branch, oos);
-            }
+        	while(true){
+	            try {
+	                this.sendMessage(this.branchstreams.get(branch), M);
+	                return;
+	            } catch (MessagingException e) {
+	                Thread.sleep(1000);
+	            }
+        	}
         } catch (IOException e) {
-            continue;
+            //continue;
         } catch (InterruptedException e) {
             System.out.println("Unexpected error");
         }
@@ -463,27 +460,27 @@ public class Messaging {
         new Thread(this.new OracleAcceptor()).start();
     }
 
-    public void OracleSendMessageToAllClients(Message message){
+    public void OracleSendMessageToAllClients(Message message) throws MessagingException{
         for (Map.Entry<Integer, ObjectOutputStream> entry : clientOutputStreams.entrySet())
         {
             sendMessage(entry.getValue(), message);
         }
     }
 
-    public void OracleSendMessageToAllReplicas(Message message){
+    public void OracleSendMessageToAllReplicas(Message message) throws MessagingException{
         for (Map.Entry<String, ObjectOutputStream> entry : replicaOutputStreams.entrySet())
         {
             sendMessage(entry.getValue(), message);
         }
     }
 
-    public void OracleBroadcastMessage(Message message){
+    public void OracleBroadcastMessage(Message message) throws MessagingException{
         OracleSendMessageToAllClients(message);
         OracleSendMessageToAllReplicas(message);
     }
 
     //call after replica failure
-    public void OracleRemoveReplicaStreams(String id) throws MessagingException{
+    public void OracleRemoveReplicaStreams(Float id) throws MessagingException{
         if (replicaInputStreams.remove(id) == null){
             throw new MessagingException(MessagingException.Type.REPLICA_NOT_FOUND);
         }

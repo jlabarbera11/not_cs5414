@@ -11,14 +11,76 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import oracle.Oracle;
+import oracle.Oracle.replicaState;
+
 public class Server
 {
     private int branchID;
     private int replicaID;
     private ConcurrentHashMap<AccountNumber, BankAccount> accounts;
     private Messaging m;
-    private HashSet<Integer> backups; //Set of all backups
+    private HashSet<Integer> backups; //Set of all replicas excluding self. needs to be init
     private HashMap<Integer, HashSet<Integer>> waiting_records; //SerialID to returned backups
+    
+    private ConcurrentHashMap<Integer, Set<Integer>> topology;
+    private ConcurrentHashMap<String, String[]> resolver;
+    private ConcurrentHashMap<String, Oracle.replicaState> replicaStates;
+    private ArrayList<String> branchReplicas;
+    private String currentPrimary;
+    
+    private String getClientNumString(){
+    	if (clientNumber < 10){
+    		return "0" + clientNumber;
+    	} else {
+    		return "" + clientNumber;
+    	}
+    }
+    
+    //must be called after resolver init
+    //assumes replicas are listed in order
+    private ArrayList<String> buildBranchReplicas(){
+    	ArrayList<String> output = new ArrayList<String>();
+    	for (Map.Entry<String, String[]> entry : resolver.entrySet())
+    	{
+    	    if (entry.getKey().substring(2,4) == getClientNumString()){
+    	    	output.add(entry.getKey());
+    	    }
+    	}
+    	return output;
+    }
+    
+    private void initializePrimary(){
+    	currentPrimary = branchReplicas.get(0);
+    }
+    
+    private void updatePrimary(){
+		for (String entry : branchReplicas){
+			if (replicaStates.get(entry) == Oracle.replicaState.running){
+				if (!entry.equals(currentPrimary)){
+					currentPrimary = entry;
+				}
+			}
+		}
+    }
+    
+    public void HandleOracleMessage(Message message){
+        try {
+        	if (message instanceof FailureOracle){
+        		replicaStates.put(((FailureOracle)message).failedReplicaID, replicaState.failed);
+        		m.branchstreams  //TODO
+        	} else if (message instanceof BackupOracle){
+        		replicaStates.put(((BackupOracle)message).recoveredReplicaID, replicaState.running);
+        		updatePrimary();
+        	} else {
+        		System.out.println("invalid message type received by client from oracle");
+        	}
+        } catch(Exception e) {
+            System.out.println(e.toString() + " thrown from HandleOracleMessages Thread");
+            e.printStackTrace();
+        }
+    }
+    
 
     public Server(int branchID, int replicaID)
     {
@@ -32,6 +94,23 @@ public class Server
         } catch (MessagingException e) {
             System.out.println("Server failed to create Messaging");
         }
+
+        //init oracle address?
+		
+	    try {
+			this.topology = Messaging.buildTopologyHelper("topology.txt");
+			this.resolver = Messaging.buildResolverHelper("resolver.txt");
+			this.replicaStates = Oracle.buildReplicaStates(this.resolver);
+			this.branchReplicas = this.buildBranchReplicas();
+			this.initializePrimary();
+		} catch (MessagingException e) {
+			System.out.println("reading files failed in server");
+			e.printStackTrace();
+			return;
+		}
+        
+        
+        
     }
 
     public DepositResponse deposit(int accountID, float amount, int serialNumber)
@@ -138,18 +217,18 @@ public class Server
         while (true) {
             Message mr = m.ReceiveMessage();
 
-            if (mr instanceof RequestClient) {
+            if (mr instanceof RequestClient) { //from client
                 startBackup((RequestClient)mr);
            
             } else if (mr instanceof BranchMessage) {
                 if(mr instanceof TransferBranch)
                     startBackup((RequestClient)mr);
 
-            } else if (mr instanceof RequestBackup) {
+            } else if (mr instanceof RequestBackup) { //from primary
                 recordTransaction(((RequestBackup)mr).GetMessage());
                 m.SendToReplica(mr.GetReplica(), new ResponseBackup(this.replicaID, mr));
            
-            } else if (mr instanceof ResponseBackup) {
+            } else if (mr instanceof ResponseBackup) { //from backup
                 ResponseBackup response = (ResponseBackup)mr;
                 RequestClient rc = (RequestClient)response.GetMessage();
                 waiting_records.get(rc.GetSerialNumber()).add(response.GetReplica());
@@ -160,6 +239,7 @@ public class Server
             
             } else if (mr instanceof OracleMessage) { //TODO
                 OracleMessage m = (OracleMessage) mr;
+                
             }
         }
     }
