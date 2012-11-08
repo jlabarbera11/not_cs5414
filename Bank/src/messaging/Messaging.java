@@ -27,6 +27,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.lang.InterruptedException;
 
+import client.Client;
+
 //import oracle.Oracle.replicaState;
 
 
@@ -276,7 +278,21 @@ public class Messaging {
     public void ClientUpdateois(ObjectInputStream newois){
         this.clientois = newois;
     }
-
+    
+    public void ClientUpdatePrimary(String id) throws MessagingException{
+    	try {
+	        String[] res = this.resolver.get(id);
+	        this.clientsocket = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
+	        this.clientoos = new ObjectOutputStream(this.clientsocket.getOutputStream());
+	        this.clientoos.writeObject(new InitializeMessage(this.branch, null));
+	        this.clientois = new ObjectInputStream(this.clientsocket.getInputStream());
+        } catch (UnknownHostException e) {
+            throw new MessagingException(MessagingException.Type.UNKNOWN_HOST);
+        } catch(IOException e) {
+            throw new MessagingException(MessagingException.Type.FAILED_SOCKET_CREATION);
+        }
+    }
+    
     public void initializeOracleAddress() throws MessagingException{
         try {
             Scanner scanner = new Scanner(new File("oracle.txt"));
@@ -416,8 +432,7 @@ public class Messaging {
             }
         }
     }
-
-
+    
     public void OracleConnectToReplica(String id) throws MessagingException {
         System.out.println("Oracle is trying to initialize connection to replica " + id);
         try {
