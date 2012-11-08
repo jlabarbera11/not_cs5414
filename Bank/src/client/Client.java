@@ -76,7 +76,7 @@ public class Client extends JFrame implements ActionListener {
     }
     
     private void initializePrimary(){
-    	
+    	currentPrimary = branchReplicas.get(0);
     }
     
     private void updatePrimary(){

@@ -46,8 +46,8 @@ public class Messaging {
     private ObjectInputStream clientois = null;
 
     private ServerSocket serversocket = null;
-    private Map<Integer, ObjectOutputStream> branchstreams = null;
-    private Map<Integer, ObjectOutputStream> replicastreams = null;
+    public Map<Integer, ObjectOutputStream> branchstreams = null;
+    public Map<Integer, ObjectOutputStream> replicastreams = null;
 
     private Socket oraclesocket = null;
     private ObjectOutputStream oracleoos = null;
@@ -476,7 +476,7 @@ public class Messaging {
         new Thread(this.new OracleAcceptor()).start();
     }
 
-    public void OracleSendMessageToAllClients(Message message){
+    public void OracleSendMessageToAllClients(Message message) throws MessagingException{
         for (Map.Entry<Integer, ObjectOutputStream> entry : clientOutputStreams.entrySet())
         {
             try {
@@ -487,7 +487,7 @@ public class Messaging {
         }
     }
 
-    public void OracleSendMessageToAllReplicas(Message message){
+    public void OracleSendMessageToAllReplicas(Message message) throws MessagingException{
         for (Map.Entry<String, ObjectOutputStream> entry : replicaOutputStreams.entrySet())
         {
             try {
@@ -498,13 +498,13 @@ public class Messaging {
         }
     }
 
-    public void OracleBroadcastMessage(Message message){
+    public void OracleBroadcastMessage(Message message) throws MessagingException{
         OracleSendMessageToAllClients(message);
         OracleSendMessageToAllReplicas(message);
     }
 
     //call after replica failure
-    public void OracleRemoveReplicaStreams(String id) throws MessagingException{
+    public void OracleRemoveReplicaStreams(Float id) throws MessagingException{
         if (replicaInputStreams.remove(id) == null){
             throw new MessagingException(MessagingException.Type.REPLICA_NOT_FOUND);
         }
