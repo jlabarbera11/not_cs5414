@@ -26,6 +26,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.lang.InterruptedException;
 
+import client.Client;
+
 //import oracle.Oracle.replicaState;
 
 
@@ -275,6 +277,20 @@ public class Messaging {
     	this.clientois = newois;
     }
     
+    public void ClientUpdatePrimary(String id) throws MessagingException{
+    	try {
+	        String[] res = this.resolver.get(id);
+	        this.clientsocket = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
+	        this.clientoos = new ObjectOutputStream(this.clientsocket.getOutputStream());
+	        this.clientoos.writeObject(new InitializeMessage(this.branch, null));
+	        this.clientois = new ObjectInputStream(this.clientsocket.getInputStream());
+        } catch (UnknownHostException e) {
+            throw new MessagingException(MessagingException.Type.UNKNOWN_HOST);
+        } catch(IOException e) {
+            throw new MessagingException(MessagingException.Type.FAILED_SOCKET_CREATION);
+        }
+    }
+    
     public void initializeOracleAddress() throws MessagingException{
         try {
             Scanner scanner = new Scanner(new File("oracle.txt"));
@@ -286,7 +302,7 @@ public class Messaging {
     }
     
     //must call initializeOracleAddress before this
-    public void connectToServer() throws MessagingException {
+    public void connectToServer(Callback t) throws MessagingException {
         try {
             String[] res = this.resolver.get(this.branch + "01"); //hard-coded 01 because replica 1 should not start failed
             this.clientsocket = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
@@ -295,7 +311,7 @@ public class Messaging {
             this.clientois = new ObjectInputStream(this.clientsocket.getInputStream());
             
             this.oraclesocket = new Socket(InetAddress.getByName(this.oracleAddress[0]), Integer.parseInt(this.oracleAddress[1]));
-            new ConnectionHandler(new ObjectInputStream(this.clientsocket.getInputStream())).run();
+            new ConnectionHandler(new ObjectInputStream(this.clientsocket.getInputStream()), t).run();
         } catch (UnknownHostException e) {
             throw new MessagingException(MessagingException.Type.UNKNOWN_HOST);
         } catch(IOException e) {
@@ -393,7 +409,6 @@ public class Messaging {
             }
         }
     }
-    
     
     public void OracleConnectToReplica(String id) throws MessagingException {
     	System.out.println("Oracle is trying to initialize connection to replica " + id);

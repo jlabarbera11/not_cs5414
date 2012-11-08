@@ -7,6 +7,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,6 +47,8 @@ public class Client extends JFrame implements ActionListener {
     private ConcurrentHashMap<String, String[]> resolver;
     private ConcurrentHashMap<String, Oracle.replicaState> replicaStates;
     private ArrayList<String> branchReplicas;
+    private String currentPrimary;
+    private Map<Integer, String> serialsSeen;
     
     public String GetResult(){
     	return result1.getText();
@@ -60,6 +63,7 @@ public class Client extends JFrame implements ActionListener {
     }
     
     //must be called after resolver init
+    //assumes replicas are listed in order
     private ArrayList<String> buildBranchReplicas(){
     	ArrayList<String> output = new ArrayList<String>();
     	for (Map.Entry<String, String[]> entry : resolver.entrySet())
@@ -71,37 +75,41 @@ public class Client extends JFrame implements ActionListener {
     	return output;
     }
     
-    private void updatePrimary(){
-    	synchronized(this){
-    		for (String entry : branchReplicas){
-    			if (replicaStates.get(entry) == Oracle.replicaState.running){
-    				//TODO!
-    			}
-    		}
-    		
-    	}
+    private void initializePrimary(){
+    	
     }
     
-    private class HandleOracleMessages implements Runnable {
-        public void run() {
-            while(true) {
-                try {
-                	Message message = messaging.ReceiveMessage();
-                	if (message instanceof FailureOracle){
-                		replicaStates.put(((FailureOracle)message).failedReplicaID, replicaState.failed);
-                		updatePrimary();
-                	} else if (message instanceof BackupOracle){
-                		replicaStates.put(((BackupOracle)message).recoveredReplicaID, replicaState.running);
-                		updatePrimary();
-                	} else {
-                		System.out.println("invalid message type received by client from oracle");
-                	}
-                } catch(Exception e) {
-                    System.out.println(e.toString() + " thrown from HandleOracleMessages Thread");
-                    e.printStackTrace();
-                }
-            }
-        }
+    private void updatePrimary(){
+		for (String entry : branchReplicas){
+			if (replicaStates.get(entry) == Oracle.replicaState.running){
+				if (!entry.equals(currentPrimary)){
+					try {
+						messaging.ClientUpdatePrimary(entry);
+					} catch (MessagingException e) {
+						System.out.println("updating primary failed");
+					}
+				}
+			}
+		}
+    }
+    
+    private class OracleCallback implements Callback {
+	    public void Callback(Message message){
+	        try {
+	        	if (message instanceof FailureOracle){
+	        		replicaStates.put(((FailureOracle)message).failedReplicaID, replicaState.failed);
+	        		updatePrimary();
+	        	} else if (message instanceof BackupOracle){
+	        		replicaStates.put(((BackupOracle)message).recoveredReplicaID, replicaState.running);
+	        		updatePrimary();
+	        	} else {
+	        		System.out.println("invalid message type received by client from oracle");
+	        	}
+	        } catch(Exception e) {
+	            System.out.println(e.toString() + " thrown from HandleOracleMessages Thread");
+	            e.printStackTrace();
+	        }
+	    }
     }
     
     //public String SetText
@@ -265,7 +273,14 @@ public class Client extends JFrame implements ActionListener {
 	  private boolean checkSerial(String input){
 		  try {
 			  int serial = Integer.parseInt(input);
-			  return (serial > 0);
+			  if (serial < 0){
+				  return false;
+			  }
+			  if (serialsSeen.containsKey(serial)){
+				  return false;
+			  }
+			  serialsSeen.put(serial, "");
+			  return true;
 		  } catch (NumberFormatException e) {
 			  System.out.println("checkSerial is returning false on input " + input);
 			  return false;
@@ -501,7 +516,7 @@ public class Client extends JFrame implements ActionListener {
 		
 		try {
 			client.messaging = new Messaging(new Integer(clientNum), null);
-			client.messaging.connectToServer();
+			client.messaging.connectToServer(client.new OracleCallback());
 			client.messaging.initializeOracleAddress();
 		} catch (MessagingException e) {
 			System.out.println("Could not create socket");
@@ -512,6 +527,7 @@ public class Client extends JFrame implements ActionListener {
 			client.resolver = Messaging.buildResolverHelper("resolver.txt");
 			client.replicaStates = Oracle.buildReplicaStates(client.resolver);
 			client.branchReplicas = client.buildBranchReplicas();
+			client.initializePrimary();
 		} catch (MessagingException e) {
 			System.out.println("reading files failed in client");
 			e.printStackTrace();
