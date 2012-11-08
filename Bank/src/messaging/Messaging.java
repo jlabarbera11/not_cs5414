@@ -249,6 +249,7 @@ public class Messaging {
     //a resolver key is now a string and has form aa.bb
     private void buildResolver(String resolverfile) throws MessagingException {
         this.resolver = buildResolverHelper(resolverfile);
+        System.out.println(this.resolver);
     }
 
     //Primitive send and Receive
@@ -300,8 +301,7 @@ public class Messaging {
     //must call initializeOracleAddress before this
     public void connectToServer(Callback t) throws MessagingException {
         try {
-            String[] res = this.resolver.get(this.branch + .01); //hard-coded 01 because replica 1 should not start failed
-            System.out.println(res);
+            String[] res = this.resolver.get(this.branch + ".01"); //hard-coded 01 because replica 1 should not start failed
             this.clientsocket = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
             this.clientoos = new ObjectOutputStream(this.clientsocket.getOutputStream());
             this.clientoos.writeObject(new InitializeMessage(this.branch, null));

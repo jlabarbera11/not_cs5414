@@ -68,7 +68,7 @@ public class Client extends JFrame implements ActionListener {
     	ArrayList<String> output = new ArrayList<String>();
     	for (Map.Entry<String, String[]> entry : resolver.entrySet())
     	{
-    	    if (entry.getKey() == getClientNumString()){
+    	    if (entry.getKey().substring(0,2).equals(getClientNumString())){
     	    	output.add(entry.getKey());
     	    }
     	}
