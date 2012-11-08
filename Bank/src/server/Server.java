@@ -158,8 +158,8 @@ public class Server
                     m.SendToClient(recordTransaction(rc));
                 }
             
-            } else if (mr instanceof OracleMessage) {
-                mr = (OracleMessage)mr;
+            } else if (mr instanceof OracleMessage) { //TODO
+                OracleMessage m = (OracleMessage) mr;
             }
         }
     }

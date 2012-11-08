@@ -250,6 +250,7 @@ public class Messaging {
         } catch(java.lang.InterruptedException e) {
             System.out.println("Failed to receieve message");
         }
+        return null;
     }
 
     //Client Methods
@@ -261,7 +262,7 @@ public class Messaging {
             this.clientoos.writeObject(new InitializeMessage(this.branch, null));
             this.clientois = new ObjectInputStream(this.clientsocket.getInputStream());
             
-            res = this.resolver.GetOracle();
+            res = this.resolver.GetOracle(); //TODO
             this.oraclesocket = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
             new ConnectionHandler(new ObjectInputStream(this.clientsocket.getInputStream()), t).run();
         } catch (UnknownHostException e) {
@@ -272,14 +273,10 @@ public class Messaging {
     }
 
     //Convient method to send a message and return a response for client
-    private ResponseClient sendRequest(RequestClient M) throws MessagingException {
+    private ResponseClient sendRequest(RequestClient M) {
         while(true) {
-            try {
-                sendMessage(this.clientoos, M);
-                return (ResponseClient)receiveMessage();
-            } catch(MessagingException e) {
-                continue;
-            }
+            sendMessage(this.clientoos, M);
+            return (ResponseClient)receiveMessage();
         }
     }
 

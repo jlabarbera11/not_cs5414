@@ -249,11 +249,11 @@ public class Client extends JFrame implements ActionListener {
 			try {
 				System.out.println("passing in serial " + serialNumber);
 				response = messaging.Deposit(new Integer(branchNumber), new Integer(accountNumber), new Float(amountFloat), new Integer((serialNumber*100) + clientNumber));
-				if (response.getSuccess()){
+				if (response.GetSuccess()){
 					result1.setText("Deposit successful");
 					result2.setText("Balance: " + response.getBalance());
 				} else {
-					result1.setText(response.getFailureReason());
+					result1.setText(response.GetFailureReason());
 					result2.setText("");
 				}
 			} catch (MessagingException e1) {
@@ -290,11 +290,11 @@ public class Client extends JFrame implements ActionListener {
 	    	WithdrawResponse response;
 	    	try {
 	        	response = messaging.Withdraw(new Integer(branchNumber), new Integer(accountNumber), new Float(amountFloat), new Integer((serialNumber*100) + clientNumber));
-	        	if (response.getSuccess()){
+	        	if (response.GetSuccess()){
 					result1.setText("Withdrawal successful");
 					result2.setText("Balance: " + response.getBalance());
 	        	} else {
-					result1.setText(response.getFailureReason());
+					result1.setText(response.GetFailureReason());
 					result2.setText("");
 	        	}
 	    	} catch (MessagingException e2){
@@ -337,11 +337,11 @@ public class Client extends JFrame implements ActionListener {
 	    	TransferResponse response;
 	    	try {
 	        	response = messaging.Transfer(new Integer(branchNumberFrom), new Integer(accountNumberFrom), new Integer(branchNumberTo), new Integer(accountNumberTo), new Float(amountFloat), new Integer((serialNumber*100) + clientNumber));
-	        	if (response.getSuccess()){
+	        	if (response.GetSuccess()){
 					result1.setText("Transfer successful");
 					result2.setText("Balance in source account: " + response.getBalance());
 	        	} else {
-					result1.setText(response.getFailureReason());
+					result1.setText(response.GetFailureReason());
 					result2.setText("");
 	        	}
 	    	} catch (MessagingException e2){
@@ -371,30 +371,17 @@ public class Client extends JFrame implements ActionListener {
 	    	QueryResponse response;
 	    	try {
 	        	response = messaging.Query(new Integer(branchNumber), new Integer(accountNumber), (serialNumber*100) + clientNumber);
-	        	if (response.getSuccess()){
+	        	if (response.GetSuccess()){
 					result1.setText("Query successful.");
 					result2.setText("Balance: " + response.getBalance());
 	        	} else {
-					result1.setText(response.getFailureReason());
+					result1.setText(response.GetFailureReason());
 					result2.setText("");
 	        	}
 	    	} catch (MessagingException e2){
 				result1.setText("A network error occurred");
 				result2.setText("");
 	    	}
-	    }
-	}
-	
-	public void handleSnapshot(){
-		System.out.println("taking snapshot");
-	    try {
-	        messaging.TakeSnapshot(number);
-	        number++;
-	        result1.setText("Taking a snapshot...");
-	        result2.setText("");
-	    } catch (MessagingException e2){
-	        result1.setText("A network error occurred");
-	        result2.setText("");
 	    }
 	}
 	
@@ -418,8 +405,6 @@ public class Client extends JFrame implements ActionListener {
 		    	handleTransfer();
 		    } else if (action.equals("query")){
 		    	handleQuery();
-		    } else if (action.equals("snapshot")){
-		    	handleSnapshot();
 		    } else {
 		        System.out.println("Invalid action type received from GUI");
 		    }
@@ -444,7 +429,7 @@ public class Client extends JFrame implements ActionListener {
 		}
 		Client client = new Client(clientNum);
 		try {
-			client.messaging = new Messaging(new Integer(clientNum), Messaging.Type.CLIENT);
+			client.messaging = new Messaging(new Integer(clientNum), null);
 			client.messaging.connectToServer(new ClientSnapshot());
 		} catch (MessagingException e) {
 			System.out.println("Could not create socket");
