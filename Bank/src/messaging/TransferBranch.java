@@ -1,12 +1,12 @@
 package messaging;
 
-public class DepositFromTransferMessage extends Message {
+public class TransferBranch extends BranchMessage {
     
     private Integer acnt = null;
     private Float amt = null;
     private Integer ser_number = null;
 
-    public DepositFromTransferMessage(Integer to_acnt, Integer acnt, Float amt, Integer ser_number) {
+    public TransferBranch(Integer to_acnt, Integer acnt, Float amt, Integer ser_number) {
         this.branch = acnt;
         this.acnt = to_acnt;
         this.amt = amt;

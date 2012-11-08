@@ -3,7 +3,6 @@ package messaging;
 public class WithdrawRequest extends RequestClient {
 
     private Integer acnt;
-    private Integer ser_number;
     private Float amt;
 
     public WithdrawRequest(Integer acnt, Float amt, Integer ser_number) {
@@ -12,15 +11,11 @@ public class WithdrawRequest extends RequestClient {
         this.ser_number = ser_number;
     }
 
-    public Integer getAcnt() {
+    public Integer GetAcnt() {
         return this.acnt;
     }
     
-    public Integer getSerNumber() {
-        return this.ser_number;
-    }
-
-    public Float getAmt() {
+    public Float GetAmt() {
         return this.amt;
     }
 

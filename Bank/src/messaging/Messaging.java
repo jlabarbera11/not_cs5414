@@ -32,7 +32,7 @@ public class Messaging {
     private Map<Integer, Set<Integer>> topology = null;
     private Map<Integer, String[]> resolver = null;
 
-    private String head = null;
+    private Callback tc;
     private Socket clientsocket = null;
     private ObjectOutputStream clientoos = null;
     private ObjectInputStream clientois = null;
@@ -45,25 +45,37 @@ public class Messaging {
     private ObjectOutputStream oracleoos = null;
     private ObjectInputStream oracleois = null;
 
-    private BlockingQueue<Message> messageBuffer; 
+    private BlockingQueue<Message> messageBuffer = null;
 
     public enum Type {
         CLIENT,
-        SERVER
+        BRANCH,
+        REPLICA,
+        ORACLE
     }
 
     //This class receives messages and puts them into a synchronized buffer
     private class ConnectionHandler implements Runnable {
         private ObjectInputStream ois = null;
+        private Callback callback = null;
 
         public ConnectionHandler(ObjectInputStream ois) {
             this.ois = ois;
         }
+        
+        public ConnectionHandler(ObjectInputStream ois, Callback c) {
+            this.ois = ois;
+            this.callback = c;
+        }
+
         public void run() {
             try {
                 while(true) {
                     Message r = (Message)this.ois.readObject();
-                    messageBuffer.put(r);
+                    if(callback != null)
+                        this.callback.Callback(r);
+                    else
+                        messageBuffer.put(r);
                 }
             } catch(Exception e) {
                 System.out.println(e.toString() + " thrown from ConnectionHandler");
@@ -71,8 +83,8 @@ public class Messaging {
         }
     }
 
-    //This class listens for new connections, distributing ones that are made
-    //to a connection handler
+    //This class listens for new connections, distributing input streams to
+    //connection handlers
     private class Acceptor implements Runnable {
         public void run() {
             while(true) {
@@ -81,10 +93,16 @@ public class Messaging {
                     Socket newsocket = serversocket.accept();
 
                     ObjectInputStream ois = new ObjectInputStream(newsocket.getInputStream());
-                    InitializeRequest ir = (InitializeRequest)ois.readObject();
-                    if(ir.getType() == Type.CLIENT)
+                    InitializeMessage ir = (InitializeMessage)ois.readObject();
+                    if(ir.GetBranch() == branch && ir.GetReplica() == null)
                         clientoos = new ObjectOutputStream(newsocket.getOutputStream());
-                    System.out.println("Established incoming connection from " + ir.getBranch());
+                    else if(ir.GetBranch() == null) {/*This is the oracle*/}
+                    else if(ir.GetBranch() == branch)
+                        replicastreams.put(ir.getReplica(), new ObjectOutputStream(newsocket.getOutputStream()));
+                    else if(ir.GetBranch() != branch)
+                        branchstreams.put(ir.getBranch(), new ObjectOutputStream(newsocket.getOutputStream()));
+                    else
+                        continue;
 
                     new Thread(new ConnectionHandler(ois)).start();
                 } catch(Exception e) {
@@ -94,18 +112,18 @@ public class Messaging {
         }
     }
 
-    public Messaging(Integer b, Type T) throws MessagingException {
-        this(b, T, "topology.txt", "resolver.txt");
+    public Messaging(Integer b, Integer r) throws MessagingException {
+        this(b, r, "topology.txt", "resolver.txt");
     }
 
-    public Messaging(Integer b, Type T, String topologyfile, String resolverfile) throws MessagingException {
+    public Messaging(Integer b, Integer r, String topologyfile, String resolverfile) throws MessagingException {
         if(!buildTopology(topologyfile))
             throw new MessagingException(MessagingException.Type.INVALID_TOPOLOGY);
         buildResolver(resolverfile);
         
         this.branch = b;        
         this.messageBuffer = new LinkedBlockingQueue<Message>();
-        if (T == Type.SERVER) {
+        if (r != null) {
             try {
                 this.serversocket = new ServerSocket(Integer.parseInt(this.resolver.get(this.branch)[1]));
                 serversocket.setReuseAddress(true);
@@ -208,7 +226,6 @@ public class Messaging {
     private void sendMessage(ObjectOutputStream oos, Message m) throws MessagingException {
         try {
             oos.writeObject(m);
-            System.out.println("message sent");
         } catch (IOException e) {
             throw new MessagingException(MessagingException.Type.FAILED_REQUEST_SEND);
         }
@@ -223,17 +240,17 @@ public class Messaging {
     }
 
     //Client Methods
-    public void connectToServer(Callback c) throws MessagingException {
+    public void connectToServer(Callback t) throws MessagingException {
         try {
             String[] res = this.resolver.get(this.branch);
-            System.out.println("Connecting to server");
             this.clientsocket = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
-            System.out.println("Connected to server!");
             this.clientoos = new ObjectOutputStream(this.clientsocket.getOutputStream());
-            System.out.println("Sending initialize request");
-            this.clientoos.writeObject(new InitializeRequest(Type.CLIENT, -1));
-            System.out.println("Sent initialize request");
+            this.clientoos.writeObject(new InitializeMessage(Type.CLIENT, null, null));
             this.clientois = new ObjectInputStream(this.clientsocket.getInputStream());
+            
+            res = this.resolver.GetOracle();
+            this.oraclesocket = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
+            new ConnectionHandler(new ObjectInputStream(this.clientsocket.getInputStream()), t).run();
         } catch (UnknownHostException e) {
             throw new MessagingException(MessagingException.Type.UNKNOWN_HOST);
         } catch(IOException e) {
@@ -242,24 +259,13 @@ public class Messaging {
     }
 
     //Convient method to send a message and return a response for client
-    ////TODO: Make asynchrounous
     private ResponseClient sendRequest(RequestClient M) throws MessagingException {
         while(true) {
             try {
-                sendMessage(this.oracleoos, new WhoIsHeadRequest());
-                WhoIsHeadResponse r = (WhoIsHeadResponse)receiveMessage();
-                if (r.GetHead() != this.head) {
-                    String[] head = r.GetHead().split(":");
-                    this.clientsocket = new Socket(InetAddress.getByName(head[0]), Integer.parseInt(head[1]));
-                    this.clientoos = new ObjectOutputStream(this.clientsocket.getOutputStream());
-                    this.clientois = new ObjectInputStream(this.clientsocket.getInputStream());
-                }
                 sendMessage(this.clientoos, M);
                 return (ResponseClient)receiveMessage();
             } catch(MessagingException e) {
                 continue;
-            } catch(IOException e) {
-                throw new MessagingException(MessagingException.Type.FAILED_SOCKET_CREATION);
             }
         }
     }
@@ -318,9 +324,7 @@ public class Messaging {
     }
 
     public void FinishTransfer(Integer branch, Integer acnt, Float amt, Integer ser_number) throws MessagingException {
-        if(this.branch.compareTo(branch) == 0)
-            return;
-        this.SendToBranch(branch, new DepositFromTransferMessage(this.branch, acnt, amt, ser_number));
+        this.SendToBranch(branch, new TransferBranch(this.branch, acnt, amt, ser_number));
     }
     //End Server Methods
    

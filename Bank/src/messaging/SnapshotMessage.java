@@ -5,7 +5,7 @@ public class SnapshotMessage extends Message {
     private Integer ID;
 
     public SnapshotMessage(Integer branch, Integer ID) {
-        this.sender = branch;
+        this.branch = branch;
         this.ID = ID;
     }
 

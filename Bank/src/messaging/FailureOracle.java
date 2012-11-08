@@ -1,0 +1,2 @@
+public FailureOracle extends OracleMessage {
+}

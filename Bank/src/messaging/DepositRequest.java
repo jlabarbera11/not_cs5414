@@ -3,7 +3,6 @@ package messaging;
 public class DepositRequest extends RequestClient {
 
     private Integer acnt;
-    private Integer ser_number;
     private Float amt;
 
     public DepositRequest(Integer acnt, Float amt, Integer ser_number) {
@@ -12,16 +11,12 @@ public class DepositRequest extends RequestClient {
         this.ser_number = ser_number;
     }
 
-    public Integer getAcnt() {
+    public Integer GetAcnt() {
         return this.acnt;
     }
 
-    public Float getAmt() {
+    public Float GetAmt() {
         return this.amt;
-    }
-
-    public Integer getSerNumber() {
-        return this.ser_number;
     }
 
     @Override

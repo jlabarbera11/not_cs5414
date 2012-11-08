@@ -4,8 +4,7 @@ public class SnapshotRequest extends RequestClient {
 
     private Integer ID;
 
-    public SnapshotRequest(Integer branch, Integer ID) {
-        this.sender = branch;
+    public SnapshotRequest(Integer ID) {
         this.ID = branch*1000000 + ID;
     }
 

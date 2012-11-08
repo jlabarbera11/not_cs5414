@@ -1,18 +1,6 @@
 package server;
 
-import messaging.Snapshot;
-import messaging.Messaging;
-import messaging.Message;
-import messaging.Request;
-import messaging.DepositRequest;
-import messaging.WithdrawRequest;
-import messaging.QueryRequest;
-import messaging.TransferRequest;
-import messaging.SnapshotRequest;
-import messaging.DepositFromTransferMessage;
-import messaging.SnapshotMessage;
-import messaging.SnapshotResponse;
-import messaging.MessagingException;
+import messaging.*;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.TreeSet;
@@ -26,47 +14,44 @@ import java.util.HashSet;
 public class Server
 {
     private int branchID;
+    private int replicaID;
     private ConcurrentHashMap<AccountNumber, BankAccount> accounts;
     private Messaging m;
-    private Snapshots ss;
+    private HashSet<Integer> backups; //Set of all backups
+    private HashMap<Integer, HashSet<Integer>> waiting_records; //SerialID to returned backups
 
-    public Server(int branchID)
+    public Server(int branchID, int replicaID)
     {
         this.branchID = branchID;
+        this.replicaID = replicaID;
         accounts = new ConcurrentHashMap<AccountNumber, BankAccount>();
 
         try {
-            m = new Messaging(branchID, Messaging.Type.SERVER);
+            m = new Messaging(branchID, replicaID);
             m.makeConnections();
         } catch (MessagingException e) {
             System.out.println("Server failed to create Messaging");
         }
-
-        // -1 because we don't listen to the neighbor we got the snapshot message from
-        ss = new Snapshots(((ArrayList<Set<Integer>>) m.whoNeighbors()).get(1).size());
     }
 
-    /**
-     * @param resp whether to send response
-     */
-    public void deposit(int accountID, float amount, int serialNumber, boolean resp)
+    public DepositResponse deposit(int accountID, float amount, int serialNumber)
     {
-        getAccount(accountID).deposit(amount, serialNumber, resp);
+        return getAccount(accountID).deposit(amount, serialNumber);
     }
 
-    public void withdraw(int accountID, float amount, int serialNumber)
+    public WithdrawResponse withdraw(int accountID, float amount, int serialNumber)
     {
-        getAccount(accountID).withdraw(amount, serialNumber);
+        return getAccount(accountID).withdraw(amount, serialNumber);
     }
 
-    public void query(int accountID, int serialNumber)
+    public QueryResponse query(int accountID, int serialNumber)
     {
-        getAccount(accountID).query(serialNumber);
+        return getAccount(accountID).query(serialNumber);
     }
 
-    public void transferWithdraw(int accountID, float amount, int serialNumber)
+    public TransferResponse transferWithdraw(int accountID, float amount, int serialNumber)
     {
-        getAccount(accountID).transferWithdraw(amount, serialNumber);
+        return getAccount(accountID).transferWithdraw(amount, serialNumber);
     }
 
     public void transferDeposit(int accountID, float amount, int serialNumber)
@@ -79,7 +64,7 @@ public class Server
         AccountNumber accountNumber = new AccountNumber(branchID, accountID);
 
         if (!accounts.containsKey(accountNumber)) {
-            BankAccount bankAccount = new BankAccount(accountNumber, m);
+            BankAccount bankAccount = new BankAccount(accountNumber);
             accounts.put(accountNumber, bankAccount);
             return bankAccount;
         }
@@ -98,8 +83,55 @@ public class Server
         }
 
         System.out.println("Size of set " + branchState.size());
-
         return branchState;
+    }
+
+    public void startBackup(RequestClient rc) {
+        waiting_records.put(rc.GetSerialNumber(), new HashSet<Integer>());
+        for(Integer i : this.backups)
+            m.SendToReplica(i, rc);
+    }
+
+    //Add to our hashtable of completed transactions
+    public ResponseClient recordTransaction(Message rc) {
+        if (rc instanceof DepositRequest) {
+                System.out.println("Deposit Request received");
+                DepositRequest request = (DepositRequest) rc;
+                return deposit(request.getAcnt(), request.getAmt(), request.getSerNumber());
+
+            } else if (rc instanceof WithdrawRequest) {
+                System.out.println("Withdraw Request received");
+                WithdrawRequest request = (WithdrawRequest) rc;
+                return withdraw(request.getAcnt(), request.getAmt(), request.getSerNumber());
+
+            } else if (rc instanceof QueryRequest) {
+                System.out.println("Query Request received");
+                QueryRequest request = (QueryRequest) rc;
+                return query(request.getAcnt(), request.getSerNumber());
+
+            } else if (rc instanceof TransferRequest) {
+                System.out.println("Transfer Request received");
+                TransferRequest request = (TransferRequest) rc;
+                if (request.getDestBranch().equals(branchID)) {
+                    deposit(request.getDestAcnt(), request.getAmt(), request.getSerNumber());
+                    return null;
+                } else {
+                    withdraw(request.getSrcAcnt(), request.getAmt(), request.getSerNumber());
+                    System.out.println("Sending request to second account");
+                    try {
+                        m.SendToBranch(request.GetDestBranch(), new TransferBranch(request.GetDestAcnt(), request.GetAmt(), request.GetSerialNumber()));
+                    } catch (MessagingException e) {
+                        System.out.println("Source branch could not send Destination branch deposit");
+                    }
+                }
+                System.out.println("Transfer Request recorded");
+
+            } else if (rc instanceof TransferBranch) {
+                System.out.println("DepositFromTransfer Request received");
+                TransferBranch = (TransferBranch) rc;
+                transferDeposit(rc.getAcnt(), rc.getAmt(), rc.getSerNumber());
+                System.out.println("DepsitFromTransfer Request recorded");
+            }
     }
 
     public void run()
@@ -114,131 +146,33 @@ public class Server
                 continue;
             }  
 
-            // TODO (KKH48): Reimplement using Visitor pattern
-            if (mr instanceof DepositRequest) {
-                System.out.println("Deposit Request received");
-                DepositRequest request = (DepositRequest) mr;
-                deposit(request.getAcnt(), request.getAmt(), request.getSerNumber(), true);
-                ss.recordMessage(request.getSender(), request);
-                System.out.println("Deposit Request handled");
+            if (mr instanceof RequestClient) {
+                startBackup(mr);
+           
+            } else if (mr instanceof BranchMessage) {
+                startBackup(mr);
 
-            } else if (mr instanceof WithdrawRequest) {
-                System.out.println("Withdraw Request received");
-                WithdrawRequest request = (WithdrawRequest) mr;
-                withdraw(request.getAcnt(), request.getAmt(), request.getSerNumber());
-                ss.recordMessage(request.getSender(), request);
-                System.out.println("Withdraw Request handled");
-
-            } else if (mr instanceof QueryRequest) {
-                System.out.println("Query Request received");
-                QueryRequest request = (QueryRequest) mr;
-                query(request.getAcnt(), request.getSerNumber());
-                ss.recordMessage(request.getSender(), request);
-                System.out.println("Query Request handled");
-
-            } else if (mr instanceof TransferRequest) {
-                System.out.println("Transfer Request received");
-                TransferRequest request = (TransferRequest) mr;
-                ss.recordMessage(request.getSender(), request);
-                if (request.getDestBranch().equals(branchID) && request.getSrcAcnt().equals(request.getDestAcnt())) {
-                    System.out.println("Transfering to itself");
-                    transferWithdraw(request.getSrcAcnt(), 0.0f, request.getSerNumber());
-                } else if (request.getDestBranch().equals(branchID)) {
-                    transferWithdraw(request.getSrcAcnt(), request.getAmt(), request.getSerNumber());
-                    deposit(request.getDestAcnt(), request.getAmt(), request.getSerNumber(), false);
-                } else {
-                    transferWithdraw(request.getSrcAcnt(), request.getAmt(), request.getSerNumber());
-                    System.out.println("Sending request to second account");
-                    try {
-                        m.FinishTransfer(request.getDestBranch(), request.getDestAcnt(), request.getAmt(), request.getSerNumber());
-                    } catch (MessagingException e) {
-                        System.out.println("Source branch could not send Destination branch deposit");
-                    }
+            } else if (mr instanceof RequestBackup) {
+                mr = (RequestBackup)mr;
+                ResponseClient rc = recordTransaction(mr.GetRequest());
+                m.sendToReplica(rc.GetReplica(), new BackupResponse(rc));
+           
+            } else if (mr instanceof ResponseBackup) {
+                mr = (RequestBackup)mr;
+                waiting_records.get(BackupMessage.GetRequest().getSerial()).add(mr.getReplica());
+                if(backup_records.get(BackupMessage.message.getSerial()).equals(this.backups)) {
+                    waiting_records.remove(BackupMessage.message.getSerial());
+                    m.sendMessage(recordTransaction(mr.GetClientRequest()));
                 }
-                System.out.println("Transfer Request handled");
-
-            } else if (mr instanceof DepositFromTransferMessage) {
-                System.out.println("DepositFromTransfer Request received");
-                DepositFromTransferMessage request = (DepositFromTransferMessage) mr;
-                ss.recordMessage(request.getSender(), request);
-                transferDeposit(request.getAcnt(), request.getAmt(), request.getSerNumber());
-                System.out.println("DepsitFromTransfer Request handled");
             
-            } else if (mr instanceof SnapshotRequest) {
-
-                System.out.println("Received snapshot request");
-                // should only be received from client
-                SnapshotRequest request = (SnapshotRequest) mr;
-                // all branchIDs are positive
-                ss.startSnapshot(true, request.getID(), getBranchState(), new Integer(-1000));
-                try {
-                    System.out.println("trying to propogate request");
-                    m.PropogateSnapshot(new SnapshotMessage(this.branchID, request.getID()));
-                } catch (Exception e) {
-                    System.out.println("propogate failed");
-
-                }
-
-            } else if (mr instanceof SnapshotMessage) {
-                SnapshotMessage message = (SnapshotMessage) mr;
-                Integer ssID = message.getID();
-
-                SSInfo ssinfo = ss.getSSInfo(ssID);
-                System.out.println("Received snapshot message ID: " + ssinfo);
-
-
-                if (!ss.snapshotExists(ssID)) {
-                    System.out.println("creating new snapshot");
-                    ss.startSnapshot(false, ssID, getBranchState(), message.getSender());
-
-                    try {
-                        if (ss.getOngoingSnapshots().contains(ssID))
-                            m.PropogateSnapshot(new SnapshotMessage(this.branchID, message.getID()));
-                    } catch (Exception e) {
-                        System.out.println("propogate failed");
-
-                    }
-
-                    if (ss.getSSInfo(ssID).getNumChannels() == 0) {
-                        System.out.println("Only one neighbor so sending response");
-                        ss.removeOngoingSnapshot(ssID);
-                        try {
-                            m.SendResponse(new SnapshotResponse(new Snapshot(ss.getSSInfo(ssID))));
-                        } catch (Exception e) {
-                            System.out.println(e.toString());
-                            e.printStackTrace();
-                            System.out.println("failed to send response with no incoming neighbors");
-                        }
-                    }
-                } else {
-                        System.out.println("more than 1 neighbor");
-
-                        try {
-                            if (ss.getOngoingSnapshots().contains(ssID))
-                                m.PropogateSnapshot(new SnapshotMessage(this.branchID, message.getID()));
-                        } catch (Exception e) {
-                            System.out.println("propogate failed");
-                        }
-
-                        if (ss.closeChannel(ssID, message.getSender())) {
-                            System.out.println("All channels are closed");
-                            // All channels are closed; send snapshot response
-                            try {
-                                Snapshot snapshot = new Snapshot(ss.getSSInfo(ssID));
-                                //System.out.println("snapshot response branchstate size: " + snapshot.getNumNonZeroAccounts());
-                                m.SendResponse(new SnapshotResponse(snapshot));
-                            } catch (Exception e) {
-                                System.out.println("failed to send response at channels closed");
-                            }
-                        }
-
-                }
+            } else if (mr instanceof OracleMessage) {
+                mr = (OracleMessage)mr;
             }
         }
     }
 
     public static void main(String args[])
     {
-        new Server(new Integer(args[0])).run();
+        new Server(new Integer(args[0]), new Integer(args[1])).run();
     }
 }

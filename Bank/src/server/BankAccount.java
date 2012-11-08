@@ -1,6 +1,7 @@
 package server;
 
 import messaging.Messaging;
+import messaging.ResponseClient;
 import messaging.DepositResponse;
 import messaging.WithdrawResponse;
 import messaging.QueryResponse;
@@ -17,7 +18,6 @@ public class BankAccount implements Comparable<BankAccount>, Serializable {
     private AccountNumber accountNumber;
     private Float balance;
     private HashSet<Integer> serials;
-    private Messaging m;
 
     private enum Transaction
     {
@@ -28,22 +28,11 @@ public class BankAccount implements Comparable<BankAccount>, Serializable {
         TRANSFER_DEPOSIT
     }
 
-    public BankAccount(AccountNumber accountNumber, Messaging m)
+    public BankAccount(AccountNumber accountNumber)
     {
         this.accountNumber = accountNumber;
         balance = 0.0f;
         serials = new HashSet<Integer>();
-        this.m = m;
-    }
-
-    public List<Object> getObjects()
-    {
-        List<Object> list = new ArrayList<Object>();
-        list.add(accountNumber.getBranch());
-        list.add(accountNumber.getAccount());
-        list.add(balance);
-
-        return list;
     }
 
     public Float getBalance()
@@ -51,35 +40,35 @@ public class BankAccount implements Comparable<BankAccount>, Serializable {
         return balance;
     }
 
-    public void deposit(Float amount, int serialNumber, boolean resp)
+    public DepositResponse deposit(Float amount, int serialNumber)
     {
-        transaction(Transaction.DEPOSIT, amount, serialNumber, resp);
+        return (DepositResponse)transaction(Transaction.DEPOSIT, amount, serialNumber);
     }
 
-    public void withdraw(Float amount, int serialNumber)
+    public WithdrawResponse withdraw(Float amount, int serialNumber)
     {
-        transaction(Transaction.WITHDRAW, amount, serialNumber, true);
+        return (WithdrawResponse)transaction(Transaction.WITHDRAW, amount, serialNumber);
     }
 
-    public void query(int serialNumber)
+    public QueryResponse query(int serialNumber)
     {
-        transaction(Transaction.QUERY, 0.0f, serialNumber, true);
+        return (QueryResponse)transaction(Transaction.QUERY, 0.0f, serialNumber);
     }
 
-    public void transferWithdraw(Float amount, int serialNumber)
+    public TransferResponse transferWithdraw(Float amount, int serialNumber)
     {
-        transaction(Transaction.TRANSFER_WITHDRAW, amount, serialNumber, true);
+        return (TransferResponse)transaction(Transaction.TRANSFER_WITHDRAW, amount, serialNumber);
     }
 
     public void transferDeposit(Float amount, int serialNumber)
     {
-        transaction(Transaction.TRANSFER_DEPOSIT, amount, serialNumber, true);
+        transaction(Transaction.TRANSFER_DEPOSIT, amount, serialNumber);
     }
 
-    private void transaction(Transaction t, Float amount, int serialNumber, boolean resp) 
+    private ResponseClient transaction(Transaction t, Float amount, int serialNumber) 
     {
         boolean valid = !(serials.contains(serialNumber));
-        
+
         if (valid) {
             System.out.println("new transaction number " + serialNumber);
             serials.add(serialNumber);
@@ -98,28 +87,19 @@ public class BankAccount implements Comparable<BankAccount>, Serializable {
             }
         }
 
-        try {
-            if (resp) {
-                switch (t) {
-                    case DEPOSIT:
-                        m.SendResponse(valid ? new DepositResponse(balance) : new DepositResponse("Invalid Serial Number"));
-                        break;
-                    case WITHDRAW:
-                        m.SendResponse(valid ? new WithdrawResponse(balance) : new WithdrawResponse("Invalid Serial Number"));
-                        break;
-                    case QUERY:
-                        m.SendResponse(valid ? new QueryResponse(balance) : new QueryResponse("Invalid Serial Number"));
-                        break;
-                    case TRANSFER_WITHDRAW:
-                        m.SendResponse(valid ? new TransferResponse(balance) : new TransferResponse("Invalid Serial Number"));
-                        break;
-                    case TRANSFER_DEPOSIT:
-                        break;
-                }
-            } 
-        } catch (MessagingException e) {
-            System.out.println("Failed to send response");
-        }
+        switch (t) {
+            case DEPOSIT:
+                return (valid ? new DepositResponse(balance) : new DepositResponse("Invalid Serial Number"));
+            case WITHDRAW:
+                return (valid ? new WithdrawResponse(balance) : new WithdrawResponse("Invalid Serial Number"));
+            case QUERY:
+                return (valid ? new QueryResponse(balance) : new QueryResponse("Invalid Serial Number"));
+            case TRANSFER_WITHDRAW:
+                return (valid ? new TransferResponse(balance) : new TransferResponse("Invalid Serial Number"));
+            case TRANSFER_DEPOSIT:
+                break;
+        } 
+        return (valid ? new ResponseClient() : new ResponseClient()); //TODO: This is strange.
     }
 
     public AccountNumber getAccountNumber()

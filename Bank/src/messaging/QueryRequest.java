@@ -3,7 +3,6 @@ package messaging;
 public class QueryRequest extends RequestClient {
     
     private Integer acnt;
-    private Integer ser_number;
     
     public QueryRequest(Integer acnt, Integer ser_number) {
         this.acnt = acnt;
@@ -12,10 +11,6 @@ public class QueryRequest extends RequestClient {
 
     public Integer getAcnt() {
         return this.acnt;
-    }
-
-    public Integer getSerNumber() {
-        return this.ser_number;
     }
 
     @Override
