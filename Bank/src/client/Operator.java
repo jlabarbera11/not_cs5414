@@ -1,6 +1,7 @@
 // Removed my oracle and ghetto messaging. Thought the GUI looked nice so I left the barebones
+package client;
 
-public class OperatorUI extends javax.swing.JFrame 
+public class Operator extends javax.swing.JFrame 
 {
 
     private javax.swing.JLabel branchLabel;
@@ -10,7 +11,7 @@ public class OperatorUI extends javax.swing.JFrame
     private javax.swing.JTextField output;
     private javax.swing.JButton recovery;
 
-    public OperatorUI() 
+    public Operator() 
     {
         initComponents();
     }
@@ -147,7 +148,7 @@ public class OperatorUI extends javax.swing.JFrame
         // TODO: Add Messaging
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new OperatorUI().setVisible(true);
+                new Operator().setVisible(true);
             }
         });
     }
