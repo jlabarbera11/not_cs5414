@@ -20,6 +20,7 @@ public class MessagingException extends Exception {
         FAILED_SYNC_BUFFER,
         UNKNOWN_ERROR,
         FAILED_CONNECTION_TO_REPLICA,
+        REPLICA_NOT_FOUND,
     }
 
     public Type type;

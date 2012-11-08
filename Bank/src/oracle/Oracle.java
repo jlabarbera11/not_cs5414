@@ -7,10 +7,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.swing.*;
 
-import client.ClientSnapshot;
+//import client.ClientSnapshot;
 
 import messaging.*;
 
@@ -19,15 +20,15 @@ import messaging.*;
 
 public class Oracle extends JFrame implements ActionListener {
 	
-	enum replicaState {running, failed, recovering}
+	public enum replicaState {running, failed}
 
     private JTextField failureServerNumber = new JTextField(16);
     private JTextField recoveryServerNumber = new JTextField(16);
     private JLabel result1 = new JLabel(" ");
     private JLabel result2 = new JLabel(" ");
-    private HashMap<Integer, Set<Integer>> topology;
-    private Map<String, String[]> resolver;
-    private Map<String, replicaState> replicaStates;
+    private ConcurrentHashMap<Integer, Set<Integer>> topology;
+    private ConcurrentHashMap<String, String[]> resolver;
+    private ConcurrentHashMap<String, replicaState> replicaStates;
     Messaging messaging;
     
     public String GetResult(){
@@ -42,19 +43,21 @@ public class Oracle extends JFrame implements ActionListener {
 	    try {
 			topology = Messaging.buildTopologyHelper("topology.txt");
 			resolver = Messaging.buildResolverHelper("resolver.txt");
+			replicaStates = buildReplicaStates(this.resolver);
 		} catch (MessagingException e) {
-			System.out.println("creating topology failed in oracle");
+			System.out.println("reading files failed in oracle");
 			e.printStackTrace();
 			return;
 		}
-	    replicaStates = buildReplicaStates(this.resolver);
 	    
 		try {
 			messaging = new Messaging(null, null);
 			//messaging.connectToServer(new ClientSnapshot());  //FIXME
-			messaging.makeConnections(); //is this right?
+			//messaging.makeConnections(); //is this right?
+			messaging.OracleAcceptClientConnections();
+			messaging.OracleConnectToAllReplicas();
 		} catch (MessagingException e) {
-			System.out.println("Could not create socket");
+			System.out.println("Failure initializeing oracle");
 		}
 	    
 	    //create gui
@@ -70,8 +73,8 @@ public class Oracle extends JFrame implements ActionListener {
 	    setVisible(true);
     }
     
-    private Map<String, replicaState> buildReplicaStates(Map<String, String[]> resolver) {
-    	Map<String, replicaState> replicaStates = new HashMap<String, replicaState>();
+    public static ConcurrentHashMap<String, replicaState> buildReplicaStates(Map<String, String[]> resolver) {
+    	ConcurrentHashMap<String, replicaState> replicaStates = new ConcurrentHashMap<String, replicaState>();
     	for (Map.Entry<String, String[]> entry : resolver.entrySet())
     	{
     	    replicaStates.put(entry.getKey(), replicaState.running);
@@ -163,11 +166,18 @@ public class Oracle extends JFrame implements ActionListener {
 			System.out.println("got failure from branch replica " + failureText);
 			replicaStates.put(failureText, replicaState.failed);
 			
-			//send broadcast
-			//messaging.
-			
-	    	result1.setText("Failure recorded.");
-	    	result2.setText("");
+			try {
+				messaging.OracleRemoveReplicaStreams(failureText);
+				Message m = new FailureOracle(failureText);
+				messaging.OracleBroadcastMessage(m);
+		    	result1.setText("Failure recorded for replica " + failureText);
+		    	result2.setText("");
+			} catch (MessagingException e) {
+				//e.printStackTrace();
+		    	result1.setText("Replica could not be found.");
+		    	result2.setText("Please make sure you have entered a valid replica number.");
+			}
+
 		} else {
 			System.out.println("invalid processor number");
 	    	result1.setText("Invalid processor number.");
@@ -180,9 +190,20 @@ public class Oracle extends JFrame implements ActionListener {
 		String recoveryText = recoveryServerNumber.getText();
 		if (checkProcessorNumber(recoveryText) && replicaStates.containsKey(recoveryText)){
 			System.out.println("got recover from branch replica " + recoveryText);
-			replicaStates.put(recoveryText, replicaState.recovering);
-	    	result1.setText("Recovery recorded.");
-	    	result2.setText("");
+			replicaStates.put(recoveryText, replicaState.running);
+			
+			try {
+				messaging.OracleConnectToReplica(recoveryText);
+				Message m = new BackupOracle(recoveryText);
+				messaging.OracleBroadcastMessage(m);
+		    	result1.setText("Recovery recorded for replica " + recoveryText);
+		    	result2.setText("");
+			} catch (MessagingException e) {
+				//e.printStackTrace();
+		    	result1.setText("Replica could not be found.");
+		    	result2.setText("Please make sure you have entered a valid replica number.");
+			}
+			
 		} else {
 			System.out.println("invalid processor number");
 	    	result1.setText("Invalid processor number.");

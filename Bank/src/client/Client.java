@@ -3,9 +3,18 @@ package client;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.swing.*;
+
+import oracle.Oracle;
+import oracle.Oracle.replicaState;
 import messaging.*;
 
 //TODO: server must return error if it gets duplicate serial!
@@ -33,8 +42,66 @@ public class Client extends JFrame implements ActionListener {
     boolean waitingForResponse;
     int number=0;
     
+    private ConcurrentHashMap<Integer, Set<Integer>> topology;
+    private ConcurrentHashMap<String, String[]> resolver;
+    private ConcurrentHashMap<String, Oracle.replicaState> replicaStates;
+    private ArrayList<String> branchReplicas;
+    
     public String GetResult(){
     	return result1.getText();
+    }
+    
+    private String getClientNumString(){
+    	if (clientNumber < 10){
+    		return "0" + clientNumber;
+    	} else {
+    		return "" + clientNumber;
+    	}
+    }
+    
+    //must be called after resolver init
+    private ArrayList<String> buildBranchReplicas(){
+    	ArrayList<String> output = new ArrayList<String>();
+    	for (Map.Entry<String, String[]> entry : resolver.entrySet())
+    	{
+    	    if (entry.getKey().substring(2,4) == getClientNumString()){
+    	    	output.add(entry.getKey());
+    	    }
+    	}
+    	return output;
+    }
+    
+    private void updatePrimary(){
+    	synchronized(this){
+    		for (String entry : branchReplicas){
+    			if (replicaStates.get(entry) == Oracle.replicaState.running){
+    				//TODO!
+    			}
+    		}
+    		
+    	}
+    }
+    
+    private class HandleOracleMessages implements Runnable {
+        public void run() {
+            while(true) {
+                try {
+                	Message message = messaging.ReceiveMessage();
+                	if (message instanceof FailureOracle){
+                		replicaStates.put(((FailureOracle)message).failedReplicaID, replicaState.failed);
+                		updatePrimary();
+                	} else if (message instanceof BackupOracle){
+                		replicaStates.put(((BackupOracle)message).recoveredReplicaID, replicaState.running);
+                		updatePrimary();
+                	} else {
+                		System.out.println("invalid message type received by client from oracle");
+                	}
+                } catch(Exception e) {
+                    System.out.println(e.toString() + " thrown from HandleOracleMessages Thread");
+                    e.printStackTrace();
+                }
+            }
+        }
     }
     
     //public String SetText
@@ -417,23 +484,40 @@ public class Client extends JFrame implements ActionListener {
 	
 	public static void main(String[] args){
 		int clientNum = -1;
+		
 		try {
 			clientNum = Integer.parseInt(args[0]); 
 		} catch (Exception e){
 			System.out.println("Please run the program with the client number as the first argument.");
 			System.exit(0);
 		}
+		
 		if ((clientNum < 0) || (clientNum > 99)){
 			System.out.println("Please enter a client number between 0 and 99.");
 			System.exit(0);
 		}
+		
 		Client client = new Client(clientNum);
+		
 		try {
 			client.messaging = new Messaging(new Integer(clientNum), null);
-			client.messaging.connectToServer(new ClientSnapshot());
+			client.messaging.connectToServer();
+			client.messaging.initializeOracleAddress();
 		} catch (MessagingException e) {
 			System.out.println("Could not create socket");
 		}
+		
+	    try {
+			client.topology = Messaging.buildTopologyHelper("topology.txt");
+			client.resolver = Messaging.buildResolverHelper("resolver.txt");
+			client.replicaStates = Oracle.buildReplicaStates(client.resolver);
+			client.branchReplicas = client.buildBranchReplicas();
+		} catch (MessagingException e) {
+			System.out.println("reading files failed in client");
+			e.printStackTrace();
+			return;
+		}
+		
 		//client.messaging.branch = clientNum;
 	}
 

@@ -22,10 +22,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.lang.InterruptedException;
 
-import oracle.Oracle.replicaState;
+//import oracle.Oracle.replicaState;
 
 
 public class Messaging {
@@ -47,9 +48,13 @@ public class Messaging {
     private ObjectOutputStream oracleoos = null;
     private ObjectInputStream oracleois = null;
     
+    private String[] oracleAddress;
+    
     //Oracle fields
     private Map<String, ObjectInputStream> replicaInputStreams;
     private Map<String, ObjectOutputStream> replicaOutputStreams;
+    private Map<Integer, ObjectInputStream> clientInputStreams;
+    private Map<Integer, ObjectOutputStream> clientOutputStreams;
 
     private BlockingQueue<Message> messageBuffer = null;
 
@@ -188,8 +193,8 @@ public class Messaging {
         return true;
     }
     
-    public static HashMap<Integer, Set<Integer>> buildTopologyHelper(String topologyfile) throws MessagingException {
-    	HashMap<Integer, Set<Integer>> map = new HashMap<Integer, Set<Integer>>();
+    public static ConcurrentHashMap<Integer, Set<Integer>> buildTopologyHelper(String topologyfile) throws MessagingException {
+    	ConcurrentHashMap<Integer, Set<Integer>> map = new ConcurrentHashMap<Integer, Set<Integer>>();
         try {
             Scanner scanner = new Scanner(new File(topologyfile));
             while (scanner.hasNextLine()) {
@@ -221,8 +226,8 @@ public class Messaging {
         return checkTopology();
     }
     
-    public static Map<String, String[]> buildResolverHelper(String resolverfile) throws MessagingException {
-    	Map<String, String[]> resolver = new HashMap<String, String[]>();
+    public static ConcurrentHashMap<String, String[]> buildResolverHelper(String resolverfile) throws MessagingException {
+    	ConcurrentHashMap<String, String[]> resolver = new ConcurrentHashMap<String, String[]>();
         try {
             Scanner scanner = new Scanner(new File(resolverfile));
             while (scanner.hasNextLine()) {
@@ -260,17 +265,37 @@ public class Messaging {
     }
 
     //Client Methods
-    public void connectToServer(Callback t) throws MessagingException {
+    
+    //must be called in a synchronized block
+    public void ClientUpdateoos(ObjectOutputStream newoos){
+    	this.clientoos = newoos;
+    }
+    
+    public void ClientUpdateois(ObjectInputStream newois){
+    	this.clientois = newois;
+    }
+    
+    public void initializeOracleAddress() throws MessagingException{
         try {
-            String[] res = this.resolver.get(this.branch);
+            Scanner scanner = new Scanner(new File("oracle.txt"));
+            this.oracleAddress = scanner.nextLine().split(" ");
+            scanner.close();
+        } catch (FileNotFoundException e) {
+            throw new MessagingException(MessagingException.Type.FILE_NOT_FOUND);
+        } 
+    }
+    
+    //must call initializeOracleAddress before this
+    public void connectToServer() throws MessagingException {
+        try {
+            String[] res = this.resolver.get(this.branch + "01"); //hard-coded 01 because replica 1 should not start failed
             this.clientsocket = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
             this.clientoos = new ObjectOutputStream(this.clientsocket.getOutputStream());
             this.clientoos.writeObject(new InitializeMessage(this.branch, null));
             this.clientois = new ObjectInputStream(this.clientsocket.getInputStream());
             
-            res = this.resolver.GetOracle(); //TODO
-            this.oraclesocket = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
-            new ConnectionHandler(new ObjectInputStream(this.clientsocket.getInputStream()), t).run();
+            this.oraclesocket = new Socket(InetAddress.getByName(this.oracleAddress[0]), Integer.parseInt(this.oracleAddress[1]));
+            new ConnectionHandler(new ObjectInputStream(this.clientsocket.getInputStream())).run();
         } catch (UnknownHostException e) {
             throw new MessagingException(MessagingException.Type.UNKNOWN_HOST);
         } catch(IOException e) {
@@ -344,24 +369,33 @@ public class Messaging {
     }
     //End Server Methods
     
-    /**try {
-        String[] res = this.resolver.get(this.branch);
-        this.clientsocket = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
-        this.clientoos = new ObjectOutputStream(this.clientsocket.getOutputStream());
-        this.clientoos.writeObject(new InitializeMessage(this.branch, null));
-        this.clientois = new ObjectInputStream(this.clientsocket.getInputStream());
-        
-        res = this.resolver.GetOracle();
-        this.oraclesocket = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
-        new ConnectionHandler(new ObjectInputStream(this.clientsocket.getInputStream()), t).run();
-    } catch (UnknownHostException e) {
-        throw new MessagingException(MessagingException.Type.UNKNOWN_HOST);
-    } catch(IOException e) {
-        throw new MessagingException(MessagingException.Type.FAILED_SOCKET_CREATION);
-    }*/
+
     
     //Begin Oracle Methods
-    public boolean OracleConnectToReplica(String id){
+    
+    //A client should send a InitializeMessage with its branch number
+    //OracleAcceptor never terminates -> OK?
+    private class OracleAcceptor implements Runnable {
+        public void run() {
+            while(true) {
+                try {
+                    System.out.println("Oracle attempting to accept connection from clients");
+                    Socket newsocket = serversocket.accept();
+
+                    ObjectInputStream ois = new ObjectInputStream(newsocket.getInputStream());
+                    InitializeMessage ir = (InitializeMessage)ois.readObject();
+                    clientInputStreams.put(ir.GetBranch(), ois);
+                    clientOutputStreams.put(ir.GetBranch(), new ObjectOutputStream(newsocket.getOutputStream()));
+                    
+                } catch(Exception e) {
+                    System.out.println(e.toString() + " thrown from OracleAcceptor Thread");
+                }
+            }
+        }
+    }
+    
+    
+    public void OracleConnectToReplica(String id) throws MessagingException {
     	System.out.println("Oracle is trying to initialize connection to replica " + id);
     	try {
 	        String[] res = this.resolver.get(id);
@@ -371,32 +405,59 @@ public class Messaging {
 	        ObjectInputStream replicaois = new ObjectInputStream(replicaSocket.getInputStream());
 	        this.replicaInputStreams.put(id, replicaois);
 	        this.replicaOutputStreams.put(id, replicaoos);
-	        return true;
     	} catch(Exception e) {
     		System.out.println("connection failed to " + id);
     		e.printStackTrace();
-    		return false;
+    		throw new MessagingException(MessagingException.Type.FAILED_CONNECTION_TO_REPLICA);
     	}
     }
     
-    //private HashMap<Integer, Set<Integer>> topology;
-    //private Map<String, String[]> resolver;
-    
-    //private Map<Integer, Set<Integer>> topology = null;
-    //private Map<String, String[]> resolver = null;
-    
-    public void OracleConnectToAllReplicas(){
+    //This fails if any replica is not up -> OK?
+    public void OracleConnectToAllReplicas() throws MessagingException{
     	for (Map.Entry<String, String[]> entry : resolver.entrySet())
     	{
-    	    boolean result = OracleConnectToReplica(entry.getKey());
-    	    if (!result){
-    	    	throw new MessagingException(MessagingException.Type.FAILED_CONNECTION_TO_REPLICA);
-    	    }
+    	    OracleConnectToReplica(entry.getKey());
     	}
     	
     }
     
+    public void OracleAcceptClientConnections(){
+    	 new Thread(this.new OracleAcceptor()).start();
+    }
     
-   
+    public void OracleSendMessageToAllClients(Message message){
+    	for (Map.Entry<Integer, ObjectOutputStream> entry : clientOutputStreams.entrySet())
+    	{
+    	    sendMessage(entry.getValue(), message);
+    	}
+    }
+    
+    public void OracleSendMessageToAllReplicas(Message message){
+    	for (Map.Entry<String, ObjectOutputStream> entry : replicaOutputStreams.entrySet())
+    	{
+    	    sendMessage(entry.getValue(), message);
+    	}
+    }
+    
+    public void OracleBroadcastMessage(Message message){
+    	OracleSendMessageToAllClients(message);
+    	OracleSendMessageToAllReplicas(message);
+    }
+    
+    //call after replica failure
+    public void OracleRemoveReplicaStreams(String id) throws MessagingException{
+    	if (replicaInputStreams.remove(id) == null){
+    		throw new MessagingException(MessagingException.Type.REPLICA_NOT_FOUND);
+    	}
+    	if (replicaOutputStreams.remove(id) == null){
+    		throw new MessagingException(MessagingException.Type.REPLICA_NOT_FOUND);
+    	}
+    	
+    }
+    
 }
+
+
+
+
 
