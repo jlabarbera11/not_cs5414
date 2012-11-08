@@ -26,6 +26,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.lang.InterruptedException;
+import java.lang.ClassNotFoundException;
 
 import client.Client;
 
@@ -35,7 +36,7 @@ import client.Client;
 public class Messaging {
 
     private Integer branch = null;
-    private Integer replica = null;
+    private Integer  replica = null;
     private Map<Integer, Set<Integer>> topology = null;
     private Map<String, String[]> resolver = null;
 
@@ -271,17 +272,10 @@ public class Messaging {
     //Client Methods
 
     //must be called in a synchronized block
-    public void ClientUpdateoos(ObjectOutputStream newoos){
-        this.clientoos = newoos;
-    }
-
-    public void ClientUpdateois(ObjectInputStream newois){
-        this.clientois = newois;
-    }
-    
     public void ClientUpdatePrimary(String id) throws MessagingException{
     	try {
 	        String[] res = this.resolver.get(id);
+                this.clientsocket.close();
 	        this.clientsocket = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
 	        this.clientoos = new ObjectOutputStream(this.clientsocket.getOutputStream());
 	        this.clientoos.writeObject(new InitializeMessage(this.branch, null));
@@ -306,14 +300,15 @@ public class Messaging {
     //must call initializeOracleAddress before this
     public void connectToServer(Callback t) throws MessagingException {
         try {
-            String[] res = this.resolver.get(this.branch + "01"); //hard-coded 01 because replica 1 should not start failed
+            String[] res = this.resolver.get(this.branch + .01); //hard-coded 01 because replica 1 should not start failed
+            System.out.println(res);
             this.clientsocket = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
             this.clientoos = new ObjectOutputStream(this.clientsocket.getOutputStream());
             this.clientoos.writeObject(new InitializeMessage(this.branch, null));
             this.clientois = new ObjectInputStream(this.clientsocket.getInputStream());
 
             this.oraclesocket = new Socket(InetAddress.getByName(this.oracleAddress[0]), Integer.parseInt(this.oracleAddress[1]));
-            new Thread(new ConnectionHandler(new ObjectInputStream(oraclesocket), t)).start();
+            new Thread(new ConnectionHandler(new ObjectInputStream(this.oraclesocket.getInputStream()), t)).start();
         } catch (UnknownHostException e) {
             throw new MessagingException(MessagingException.Type.UNKNOWN_HOST);
         } catch(IOException e) {
@@ -325,11 +320,23 @@ public class Messaging {
     private ResponseClient sendRequest(RequestClient M) {
         while(true) {
             try {
-                sendMessage(this.clientoos, M);
-                return (Message)this.clientois.readObject();
-            } catch (SocketTimeoutException e) {
-                System.out.println("Failed sending message to primary");
-                sleep(1000);
+                try {
+                    sendMessage(this.clientoos, M);
+                    return (ResponseClient)this.clientois.readObject();
+                } catch (MessagingException e) {
+                    System.out.println("Failed sending message to primary");
+                    Thread.sleep(1000);
+                } catch (SocketTimeoutException e) {
+                    System.out.println("Failed receiving message from primary");
+                    Thread.sleep(1000);
+                } catch (IOException e) {
+                    System.out.println("Failed receiving message from primary");
+                    Thread.sleep(1000);
+                } catch (ClassNotFoundException e) {
+                    System.out.println("Unexpected ClassNotFoundException occurred");
+                }
+            } catch (InterruptedException e) {
+                System.out.println("Unexpected exception");
             }
         }
     }
@@ -368,35 +375,41 @@ public class Messaging {
     }
 
     public void SendToClient(ResponseClient M) {
-        this.sendMessage(this.clientoos, M);
+        try {
+            this.sendMessage(this.clientoos, M);
+        } catch (MessagingException e) {
+            System.out.println("Could not send to client");
+        }
     }
 
     public void SendToBranch(Integer branch, Message M) {
-        try {
+        for(int i=0; i<5; i++) {
             try {
-                this.sendMessage(this.branchstreams.get(branch), M);
-                return;
-            } catch (MessagingException e) {
-                Thread.sleep(1000);
-                String[] res = this.resolver.get(branch);
-                Socket s = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
-                ObjectInputStream oos = new ObjectOutputStream(s.getOutputStream());
-                oos.writeObject(new InitializeMessage(this.branch, this.replica));
-                this.branchstreams.put(branch, oos);
+                try {
+                    this.sendMessage(this.branchstreams.get(branch), M);
+                    return;
+                } catch (MessagingException e) {
+                    Thread.sleep(1000);
+                    String[] res = this.resolver.get(branch);
+                    Socket s = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
+                    ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
+                    oos.writeObject(new InitializeMessage(this.branch, this.replica));
+                    this.branchstreams.put(branch, oos);
+                }
+            } catch (IOException e) {
+                continue;
+            } catch (InterruptedException e) {
+                System.out.println("Unexpected InterruptedException occurred");
             }
-        } catch (IOException e) {
-            continue;
-        } catch (InterruptedException e) {
-            System.out.println("Unexpected error");
         }
     }
 
     public void SendToReplica(Integer replica, Message M) {
-        this.sendMessage(this.replicastreams.get(replica), M);
-    }
-
-    public void SendToOracle(Message M) {
-        this.sendMessage(this.oracleoos, M);
+        try {
+            this.sendMessage(this.replicastreams.get(replica), M);
+        } catch (MessagingException e) {
+            System.out.println("Failed sending message to replica");
+        }
     }
 
     public Message ReceiveMessage() {
@@ -466,14 +479,22 @@ public class Messaging {
     public void OracleSendMessageToAllClients(Message message){
         for (Map.Entry<Integer, ObjectOutputStream> entry : clientOutputStreams.entrySet())
         {
-            sendMessage(entry.getValue(), message);
+            try {
+                sendMessage(entry.getValue(), message);
+            } catch (MessagingException e) {
+                System.out.println("Failed sending message to all clients");
+            }
         }
     }
 
     public void OracleSendMessageToAllReplicas(Message message){
         for (Map.Entry<String, ObjectOutputStream> entry : replicaOutputStreams.entrySet())
         {
-            sendMessage(entry.getValue(), message);
+            try {
+                sendMessage(entry.getValue(), message);
+            } catch (MessagingException e) {
+                System.out.println("Failed sending message to all replicas");
+            }
         }
     }
 

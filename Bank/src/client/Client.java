@@ -68,7 +68,7 @@ public class Client extends JFrame implements ActionListener {
     	ArrayList<String> output = new ArrayList<String>();
     	for (Map.Entry<String, String[]> entry : resolver.entrySet())
     	{
-    	    if (entry.getKey().substring(2,4) == getClientNumString()){
+    	    if (entry.getKey() == getClientNumString()){
     	    	output.add(entry.getKey());
     	    }
     	}
@@ -80,36 +80,36 @@ public class Client extends JFrame implements ActionListener {
     }
     
     private void updatePrimary(){
-		for (String entry : branchReplicas){
-			if (replicaStates.get(entry) == Oracle.replicaState.running){
-				if (!entry.equals(currentPrimary)){
-					try {
-						messaging.ClientUpdatePrimary(entry);
-					} catch (MessagingException e) {
-						System.out.println("updating primary failed");
-					}
-				}
-			}
-		}
+        for (String entry : branchReplicas){
+            if (replicaStates.get(entry) == Oracle.replicaState.running){
+                if (!entry.equals(currentPrimary)){
+                    try {
+                        messaging.ClientUpdatePrimary(entry);
+                    } catch (MessagingException e) {
+                        System.out.println("updating primary failed");
+                    }
+                }
+            }
+        }
     }
-    
+
     private class OracleCallback implements Callback {
-	    public void Callback(Message message){
-	        try {
-	        	if (message instanceof FailureOracle){
-	        		replicaStates.put(((FailureOracle)message).failedReplicaID, replicaState.failed);
-	        		updatePrimary();
-	        	} else if (message instanceof BackupOracle){
-	        		replicaStates.put(((BackupOracle)message).recoveredReplicaID, replicaState.running);
-	        		updatePrimary();
-	        	} else {
-	        		System.out.println("invalid message type received by client from oracle");
-	        	}
-	        } catch(Exception e) {
-	            System.out.println(e.toString() + " thrown from HandleOracleMessages Thread");
-	            e.printStackTrace();
-	        }
-	    }
+        public void Callback(Message message){
+            try {
+                if (message instanceof FailureOracle){
+                    replicaStates.put(((FailureOracle)message).failedReplicaID, replicaState.failed);
+                    updatePrimary();
+                } else if (message instanceof BackupOracle){
+                    replicaStates.put(((BackupOracle)message).recoveredReplicaID, replicaState.running);
+                    updatePrimary();
+                } else {
+                    System.out.println("invalid message type received by client from oracle");
+                }
+            } catch(Exception e) {
+                System.out.println(e.toString() + " thrown from HandleOracleMessages Thread");
+                e.printStackTrace();
+            }
+        }
     }
     
     //public String SetText
@@ -501,7 +501,7 @@ public class Client extends JFrame implements ActionListener {
 		int clientNum = -1;
 		
 		try {
-			clientNum = Integer.parseInt(args[0]); 
+                        clientNum = Integer.parseInt(args[0]);
 		} catch (Exception e){
 			System.out.println("Please run the program with the client number as the first argument.");
 			System.exit(0);
