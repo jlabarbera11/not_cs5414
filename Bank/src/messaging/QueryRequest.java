@@ -1,6 +1,6 @@
 package messaging;
 
-public class QueryRequest extends Request {
+public class QueryRequest extends RequestClient {
     
     private Integer acnt;
     private Integer ser_number;

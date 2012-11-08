@@ -32,12 +32,18 @@ public class Messaging {
     private Map<Integer, Set<Integer>> topology = null;
     private Map<String, String[]> resolver = null;
 
+    private String head = null;
     private Socket clientsocket = null;
     private ObjectOutputStream clientoos = null;
     private ObjectInputStream clientois = null;
 
     private ServerSocket serversocket = null;
-    private Map<Integer, ObjectOutputStream> outputstreams = null;
+    private Map<Integer, ObjectOutputStream> branchstreams = null;
+    private Map<Integer, ObjectOutputStream> replicastreams = null;
+    
+    private Socket oraclesocket = null;
+    private ObjectOutputStream oracleoos = null;
+    private ObjectInputStream oracleois = null;
 
     private BlockingQueue<Message> messageBuffer; 
 
@@ -46,50 +52,21 @@ public class Messaging {
         SERVER
     }
 
-    //This class listens for messages sent to the client.
-    //If the message is a snapshot, we call the callback.
-    //Otherwise we add it to the messagebuffer for receive to handle.
-    private class SnapshotListener implements Runnable {
-        Callback callback;
-
-        public SnapshotListener(Callback callback) {
-            this.callback = callback;
-        }
-
-        public void run() {
-            while(true) {
-                try {
-                    Response m = (Response)clientois.readObject();
-                    if(m instanceof SnapshotResponse)
-                        callback.callback(m);
-                    else
-                        messageBuffer.add(m);
-                } catch(Exception e) {
-                }
-            }
-        }
-
-    }
-
     //This class receives messages and puts them into a synchronized buffer
     private class ConnectionHandler implements Runnable {
-        private Integer branch;
         private ObjectInputStream ois = null;
 
-        public ConnectionHandler(ObjectInputStream ois, Integer branch) {
-            this.branch = branch;
+        public ConnectionHandler(ObjectInputStream ois) {
             this.ois = ois;
         }
         public void run() {
-            System.out.println("Running connection handler for " + this.branch + "!");
             try {
                 while(true) {
                     Message r = (Message)this.ois.readObject();
-                    System.out.println("Got message!");
                     messageBuffer.put(r);
                 }
             } catch(Exception e) {
-                System.out.println(e.toString() + " thrown from ConnectionHandler " + this.branch);
+                System.out.println(e.toString() + " thrown from ConnectionHandler");
             }
         }
     }
@@ -105,13 +82,11 @@ public class Messaging {
 
                     ObjectInputStream ois = new ObjectInputStream(newsocket.getInputStream());
                     InitializeRequest ir = (InitializeRequest)ois.readObject();
-                    if(ir.getType() == Type.CLIENT) {
-                        outputstreams.put(-1, new ObjectOutputStream(newsocket.getOutputStream()));
-                        System.out.println("Added client to output streams");
-                    }
+                    if(ir.getType() == Type.CLIENT)
+                        clientoos = new ObjectOutputStream(newsocket.getOutputStream());
                     System.out.println("Established incoming connection from " + ir.getBranch());
 
-                    new Thread(new ConnectionHandler(ois, ir.getBranch())).start();
+                    new Thread(new ConnectionHandler(ois)).start();
                 } catch(Exception e) {
                     System.out.println(e.toString() + " thrown from Acceptor Thread");
                 }
@@ -134,7 +109,8 @@ public class Messaging {
             try {
                 this.serversocket = new ServerSocket(Integer.parseInt(this.resolver.get(this.branch)[1]));
                 serversocket.setReuseAddress(true);
-                this.outputstreams= new HashMap<Integer, ObjectOutputStream>();
+                this.branchstreams= new HashMap<Integer, ObjectOutputStream>();
+                this.replicastreams= new HashMap<Integer, ObjectOutputStream>();
             } catch (IOException e) {
                 throw new MessagingException(MessagingException.Type.FAILED_SOCKET_CREATION);
             }
@@ -241,6 +217,24 @@ public class Messaging {
         this.resolver = buildResolverHelper(resolverfile);
     }
 
+    //Primitive send and Receive
+    private void sendMessage(ObjectOutputStream oos, Message m) throws MessagingException {
+        try {
+            oos.writeObject(m);
+            System.out.println("message sent");
+        } catch (IOException e) {
+            throw new MessagingException(MessagingException.Type.FAILED_REQUEST_SEND);
+        }
+    }
+
+    private Message receiveMessage() throws MessagingException {
+        try {
+            return this.messageBuffer.take();
+        } catch(java.lang.InterruptedException e) {
+            throw new MessagingException(MessagingException.Type.FAILED_SYNC_BUFFER);
+        }
+    }
+
     //Client Methods
     public void connectToServer(Callback c) throws MessagingException {
         try {
@@ -253,7 +247,6 @@ public class Messaging {
             this.clientoos.writeObject(new InitializeRequest(Type.CLIENT, -1));
             System.out.println("Sent initialize request");
             this.clientois = new ObjectInputStream(this.clientsocket.getInputStream());
-            new Thread(this.new SnapshotListener(c)).start();
         } catch (UnknownHostException e) {
             throw new MessagingException(MessagingException.Type.UNKNOWN_HOST);
         } catch(IOException e) {
@@ -261,22 +254,26 @@ public class Messaging {
         }
     }
 
-    private void sendMessage(Request M) throws MessagingException {
-        System.out.println("Sending message!");
-        try {
-            this.clientoos.writeObject(M);
-            System.out.println("Sent message!");
-        } catch (IOException e) {
-            throw new MessagingException(MessagingException.Type.FAILED_REQUEST_SEND);
-        }
-    }
-
-    private Response sendRequest(Request M) throws MessagingException {
-        try {
-            sendMessage(M);
-            return (Response)this.messageBuffer.take();
-        } catch(InterruptedException e) {
-            throw new MessagingException(MessagingException.Type.FAILED_RESPONSE_RECEIVE);
+    //Convient method to send a message and return a response for client
+    ////TODO: Make asynchrounous
+    private ResponseClient sendRequest(RequestClient M) throws MessagingException {
+        while(true) {
+            try {
+                sendMessage(this.oracleoos, new WhoIsHeadRequest());
+                WhoIsHeadResponse r = (WhoIsHeadResponse)receiveMessage();
+                if (r.GetHead() != this.head) {
+                    String[] head = r.GetHead().split(":");
+                    this.clientsocket = new Socket(InetAddress.getByName(head[0]), Integer.parseInt(head[1]));
+                    this.clientoos = new ObjectOutputStream(this.clientsocket.getOutputStream());
+                    this.clientois = new ObjectInputStream(this.clientsocket.getInputStream());
+                }
+                sendMessage(this.clientoos, M);
+                return (ResponseClient)receiveMessage();
+            } catch(MessagingException e) {
+                continue;
+            } catch(IOException e) {
+                throw new MessagingException(MessagingException.Type.FAILED_SOCKET_CREATION);
+            }
         }
     }
 
@@ -305,10 +302,6 @@ public class Messaging {
             return new TransferResponse("Cannot transfer money to this branch");
         return (TransferResponse)sendRequest(new TransferRequest(dest_branch, src_acnt, dest_acnt, amt, ser_number));
     }
-
-    public void TakeSnapshot(Integer id) throws MessagingException {
-        sendMessage(new SnapshotRequest(-1, id));
-    }
     //End Client Methods
 
 
@@ -317,61 +310,30 @@ public class Messaging {
         new Thread(this.new Acceptor()).start();
     }
 
-    private void sendMessage(Integer branch, Object o) throws MessagingException {
-        for(int i=0; i<5; i++) {
-            try {
-                try {
-                    if(this.outputstreams.get(branch) == null)
-                        throw new IOException();
-                    this.outputstreams.get(branch).writeObject(o);
-                    System.out.println("message sent");
-                    return;
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    System.out.println("Could not connect to branch " + branch + ", trying again");
-                    Thread.sleep(1000);
-                    String[] res = this.resolver.get(branch);
-                    Socket s = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
-                    ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
-                    oos.writeObject(new InitializeRequest(Type.SERVER, this.branch));
-                    this.outputstreams.put(branch, oos);
-                }
-            } catch (IOException e) {
-                System.out.println("in io exception");
-                continue;
-            } catch (InterruptedException e) {
-                System.out.println("how did i end up here?");
-                throw new MessagingException(MessagingException.Type.UNKNOWN_ERROR);
-            }
-        }
-        System.out.println("dead");
-        throw new MessagingException(MessagingException.Type.FAILED_REQUEST_SEND);
+    public void SendToClient(ResponseClient M) throws MessagingException {
+        sendMessage(this.clientoos, M);
     }
 
-    //For responding to client
-    public void SendResponse(Response M) throws MessagingException {
-        System.out.println("Sending response!");
-        sendMessage(-1, M);
-        System.out.println("Sent response!");
+    public void SendToBranch(Integer branch, Message M) throws MessagingException {
+        sendMessage(this.branchstreams.get(branch), M);
+    }
+
+    public void SendToReplica(Integer replica, Message M) throws MessagingException {
+            this.sendMessage(this.replicastreams.get(replica), M);
+    }
+
+    public void SendToOracle(Message M) throws MessagingException {
+        this.sendMessage(this.oracleoos, M);
+    }
+    
+    public Message ReceiveMessage() throws MessagingException {
+        return this.receiveMessage();
     }
 
     public void FinishTransfer(Integer branch, Integer acnt, Float amt, Integer ser_number) throws MessagingException {
         if(this.branch.compareTo(branch) == 0)
             return;
-        sendMessage(branch, new DepositFromTransferMessage(this.branch, acnt, amt, ser_number));
-    }
-
-    public void PropogateSnapshot(SnapshotMessage sm) throws MessagingException {
-        for(Integer i : this.topology.get(this.branch))
-            sendMessage(i, sm);
-    }
-
-    public Message ReceiveMessage() throws MessagingException {
-        try {
-            return this.messageBuffer.take();
-        } catch(java.lang.InterruptedException e) {
-            throw new MessagingException(MessagingException.Type.FAILED_SYNC_BUFFER);
-        }
+        this.SendToBranch(branch, new DepositFromTransferMessage(this.branch, acnt, amt, ser_number));
     }
     //End Server Methods
    

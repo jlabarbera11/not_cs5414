@@ -1,6 +1,6 @@
 package messaging;
 
-public class TransferResponse extends Response {
+public class TransferResponse extends ResponseClient {
 
     private Float balance;
 

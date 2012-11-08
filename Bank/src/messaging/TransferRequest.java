@@ -1,6 +1,6 @@
 package messaging;
 
-public class TransferRequest extends Request {
+public class TransferRequest extends RequestClient {
     
     private Integer acnt;
     private Integer ser_number;

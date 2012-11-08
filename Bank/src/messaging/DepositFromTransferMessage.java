@@ -2,13 +2,13 @@ package messaging;
 
 public class DepositFromTransferMessage extends Message {
     
-    private Integer acnt;
-    private Float amt;
-    private Integer ser_number;
+    private Integer acnt = null;
+    private Float amt = null;
+    private Integer ser_number = null;
 
     public DepositFromTransferMessage(Integer to_acnt, Integer acnt, Float amt, Integer ser_number) {
-        this.sender = to_acnt;
-        this.acnt = acnt;
+        this.branch = acnt;
+        this.acnt = to_acnt;
         this.amt = amt;
         this.ser_number = ser_number;
     }
@@ -28,6 +28,6 @@ public class DepositFromTransferMessage extends Message {
     @Override
     public String toString()
     {
-        return String.format("DepositFromTransfer = Sender: %d, Account: %d, Amount: %.2f, Serial: %d", sender, acnt, amt, ser_number);
+        return String.format("DepositFromTransfer = Sender: %d, Account: %d, Amount: %.2f, Serial: %d", branch, acnt, amt, ser_number);
     }
 }

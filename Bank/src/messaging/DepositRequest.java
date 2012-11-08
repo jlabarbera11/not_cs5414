@@ -1,6 +1,6 @@
 package messaging;
 
-public class DepositRequest extends Request {
+public class DepositRequest extends RequestClient {
 
     private Integer acnt;
     private Integer ser_number;

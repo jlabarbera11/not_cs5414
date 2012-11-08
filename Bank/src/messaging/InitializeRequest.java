@@ -1,8 +1,6 @@
 package messaging;
 
-import java.io.Serializable;
-
-public class InitializeRequest extends Request {
+public class InitializeRequest extends BranchMessage {
 
     private Messaging.Type type;
     private Integer branch;
