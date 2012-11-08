@@ -98,9 +98,9 @@ public class Messaging {
                         clientoos = new ObjectOutputStream(newsocket.getOutputStream());
                     else if(ir.GetBranch() == null) {/*This is the oracle*/}
                     else if(ir.GetBranch() == branch)
-                        replicastreams.put(ir.getReplica(), new ObjectOutputStream(newsocket.getOutputStream()));
+                        replicastreams.put(ir.GetReplica(), new ObjectOutputStream(newsocket.getOutputStream()));
                     else if(ir.GetBranch() != branch)
-                        branchstreams.put(ir.getBranch(), new ObjectOutputStream(newsocket.getOutputStream()));
+                        branchstreams.put(ir.GetBranch(), new ObjectOutputStream(newsocket.getOutputStream()));
                     else
                         continue;
 
@@ -258,7 +258,7 @@ public class Messaging {
             String[] res = this.resolver.get(this.branch);
             this.clientsocket = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
             this.clientoos = new ObjectOutputStream(this.clientsocket.getOutputStream());
-            this.clientoos.writeObject(new InitializeMessage(Type.CLIENT, null, null));
+            this.clientoos.writeObject(new InitializeMessage(this.branch, null));
             this.clientois = new ObjectInputStream(this.clientsocket.getInputStream());
             
             res = this.resolver.GetOracle();
