@@ -54,13 +54,13 @@ public class Client extends JFrame implements ActionListener {
     	return result1.getText();
     }
     
-    private String getClientNumString(){
-    	if (Integer.parseInt(clientNumber) < 10){
-    		return "0" + clientNumber;
-    	} else {
-    		return "" + clientNumber;
-    	}
-    }
+//    private String getClientNumString(){
+//    	if (Integer.parseInt(clientNumber) < 10){
+//    		return "0" + clientNumber;
+//    	} else {
+//    		return "" + clientNumber;
+//    	}
+//    }
     
     //must be called after resolver init
     //assumes replicas are listed in order
@@ -68,7 +68,9 @@ public class Client extends JFrame implements ActionListener {
     	ArrayList<String> output = new ArrayList<String>();
     	for (Map.Entry<String, String[]> entry : resolver.entrySet())
     	{
-    	    if (entry.getKey().substring(0,2).equals(getClientNumString())){
+	    	System.out.println("resolver key is " + entry.getKey().substring(0,2) + " and client number is " + clientNumber);
+    	    if (entry.getKey().substring(0,2).equals(clientNumber)){
+    	    	//System.out.println("resolver key is " + entry.getKey().substring(0,2) + " and client number is " + getClientNumString());
     	    	output.add(entry.getKey());
     	    }
     	}
