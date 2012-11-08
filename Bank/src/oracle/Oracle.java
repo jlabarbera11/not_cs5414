@@ -58,6 +58,7 @@ public class Oracle extends JFrame implements ActionListener {
 			messaging.OracleConnectToAllReplicas();
 		} catch (MessagingException e) {
 			System.out.println("Failure initializeing oracle");
+                        e.printStackTrace();
 		}
 	    
 	    //create gui

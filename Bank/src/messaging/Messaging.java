@@ -136,12 +136,22 @@ public class Messaging {
         if(!buildTopology(topologyfile))
             throw new MessagingException(MessagingException.Type.INVALID_TOPOLOGY);
         buildResolver(resolverfile);
+        initializeOracleAddress();
 
-        this.branch = b;        
+        this.branch = b;
+        this.replica = r;
         this.messageBuffer = new LinkedBlockingQueue<Message>();
-        if (r != null) {
+        if(b == null && r == null) { /*Oracle*/
             try {
-                this.serversocket = new ServerSocket(Integer.parseInt(this.resolver.get(this.branch)[1]));
+                this.serversocket = new ServerSocket(Integer.parseInt(this.oracleAddress[1]));
+            } catch (IOException e) {
+                throw new MessagingException(MessagingException.Type.FAILED_SOCKET_CREATION);
+            }
+
+        }
+        else if (r != null) { /*Server*/
+            try {
+                this.serversocket = new ServerSocket(Integer.parseInt(this.resolver.get(this.branch+"."+this.replica)[1]));
                 serversocket.setReuseAddress(true);
                 this.branchstreams= new HashMap<String, ObjectOutputStream>();
                 this.replicastreams= new HashMap<String, ObjectOutputStream>();
@@ -249,7 +259,6 @@ public class Messaging {
     //a resolver key is now a string and has form aa.bb
     private void buildResolver(String resolverfile) throws MessagingException {
         this.resolver = buildResolverHelper(resolverfile);
-        System.out.println(this.resolver);
     }
 
     //Primitive send and Receive
