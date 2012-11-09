@@ -4,7 +4,7 @@ public class QueryRequest extends RequestClient {
     
     private Integer acnt;
     
-    public QueryRequest(Integer acnt, Integer ser_number) {
+    public QueryRequest(Integer acnt, Integer serial_number) {
         this.acnt = acnt;
         this.serial_number = serial_number;
     }
