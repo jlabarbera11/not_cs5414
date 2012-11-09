@@ -113,7 +113,7 @@ public class Client extends JFrame implements ActionListener {
                     updatePrimary();
                 } else if (message instanceof BackupOracle){
                 	System.out.println("client got recovery from oracle");
-                    replicaStates.put(((BackupOracle)message).recoveredReplicaID, replicaState.running);
+                    replicaStates.put(((BackupOracle)message).GetRecoveredReplicaID(), replicaState.running);
                     updatePrimary();
                 } else {
                     System.out.println("invalid message type received by client from oracle");
