@@ -56,7 +56,6 @@ public class Messaging {
     private String[] oracleAddress;
 
     //Oracle fields
-    private Map<String, ObjectInputStream> replicaInputStreams;
     private Map<String, ObjectOutputStream> replicaOutputStreams;
     private Map<String, ObjectInputStream> clientInputStreams;
     private Map<String, ObjectOutputStream> clientOutputStreams;
@@ -110,13 +109,20 @@ public class Messaging {
 
                     ObjectInputStream ois = new ObjectInputStream(newsocket.getInputStream());
                     InitializeMessage ir = (InitializeMessage)ois.readObject();
-                    if(ir.GetBranch() == branch && ir.GetReplica() == null)
+                    System.out.println("Accepted connection from " + ir.GetBranch() + "." + ir.GetReplica());
+                    if(ir.GetBranch() == null && ir.GetReplica() == null) {} /*This is the oracle*/
+                    else if(ir.GetBranch().equals(branch) && ir.GetReplica() == null) {
+                        System.out.println("Found client");
                         clientoos = new ObjectOutputStream(newsocket.getOutputStream());
-                    else if(ir.GetBranch() == null) {/*This is the oracle*/}
-                    else if(ir.GetBranch() == branch)
+                    }
+                    else if(ir.GetBranch().equals(branch)) /*This is a replica*/ {
+                        System.out.println("Found replica");
                         replicastreams.put(ir.GetReplica(), new ObjectOutputStream(newsocket.getOutputStream()));
-                    else if(ir.GetBranch() != branch)
+                    }
+                    else if(ir.GetBranch() != branch) {
+                        System.out.println("Found branch");
                         branchstreams.put(ir.GetBranch(), new ObjectOutputStream(newsocket.getOutputStream()));
+                    }
                     else
                         continue;
 
@@ -140,25 +146,26 @@ public class Messaging {
 
         this.branch = b;
         this.replica = r;
-        this.messageBuffer = new LinkedBlockingQueue<Message>();
         if(b == null && r == null) { /*Oracle*/
             try {
                 this.serversocket = new ServerSocket(Integer.parseInt(this.oracleAddress[1]));
+                this.replicaOutputStreams = new HashMap<String, ObjectOutputStream>();
             } catch (IOException e) {
                 throw new MessagingException(MessagingException.Type.FAILED_SOCKET_CREATION);
             }
 
-        }
-        else if (r != null) { /*Server*/
+        } else if (r != null) { /*Server*/
             try {
                 this.serversocket = new ServerSocket(Integer.parseInt(this.resolver.get(this.branch+"."+this.replica)[1]));
                 serversocket.setReuseAddress(true);
                 this.branchstreams= new HashMap<String, ObjectOutputStream>();
                 this.replicastreams= new HashMap<String, ObjectOutputStream>();
+                this.messageBuffer = new LinkedBlockingQueue<Message>();
             } catch (IOException e) {
                 throw new MessagingException(MessagingException.Type.FAILED_SOCKET_CREATION);
             }
         }
+
     }
 
     //We've extended whoNeighbors to return an array:
@@ -393,32 +400,37 @@ public class Messaging {
     }
 
     public void SendToBranch(String branch, Message M) {
+        try {
+            this.sendMessage(this.branchstreams.get(branch), M);
+            return;
+        } catch(Exception e) {System.out.println("fixme");}
+    }
+
+    public void SendToReplica(String replica, Message M) {
         for(int i=0; i<5; i++) {
             try {
                 try {
-                    this.sendMessage(this.branchstreams.get(branch), M);
+                    if(this.replicastreams.get(replica) == null)
+                        throw new MessagingException(MessagingException.Type.UNKNOWN_HOST);
+                    this.sendMessage(this.replicastreams.get(replica), M);
+                    System.out.println("Sent message to " + replica);
                     return;
                 } catch (MessagingException e) {
+                    System.out.println("Failed sending to replica " + replica);
                     Thread.sleep(1000);
-                    String[] res = this.resolver.get(branch);
+                    String[] res = this.resolver.get(this.branch+"."+replica);
                     Socket s = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
                     ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
                     oos.writeObject(new InitializeMessage(this.branch, this.replica));
-                    this.branchstreams.put(branch, oos);
+                    this.replicastreams.put(replica, oos);
+                    ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
+                    new Thread(new ConnectionHandler(ois)).start();
                 }
             } catch (IOException e) {
                 continue;
             } catch (InterruptedException e) {
                 System.out.println("Unexpected InterruptedException occurred");
             }
-        }
-    }
-
-    public void SendToReplica(String replica, Message M) {
-        try {
-            this.sendMessage(this.replicastreams.get(replica), M);
-        } catch (MessagingException e) {
-            System.out.println("Failed sending message to replica");
         }
     }
 
@@ -463,8 +475,6 @@ public class Messaging {
             Socket replicaSocket = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
             ObjectOutputStream replicaoos = new ObjectOutputStream(replicaSocket.getOutputStream());
             replicaoos.writeObject(new InitializeMessage(null, null));
-            ObjectInputStream replicaois = new ObjectInputStream(replicaSocket.getInputStream());
-            this.replicaInputStreams.put(id, replicaois);
             this.replicaOutputStreams.put(id, replicaoos);
         } catch(Exception e) {
             System.out.println("connection failed to " + id);
@@ -477,8 +487,10 @@ public class Messaging {
     public void OracleConnectToAllReplicas() throws MessagingException{
         for (Map.Entry<String, String[]> entry : resolver.entrySet())
         {
+            System.out.println(entry.getKey());
             OracleConnectToReplica(entry.getKey());
         }
+        System.out.println("done");
 
     }
 
@@ -515,9 +527,6 @@ public class Messaging {
 
     //call after replica failure
     public void OracleRemoveReplicaStreams(String id) throws MessagingException{
-        if (replicaInputStreams.remove(id) == null){
-            throw new MessagingException(MessagingException.Type.REPLICA_NOT_FOUND);
-        }
         if (replicaOutputStreams.remove(id) == null){
             throw new MessagingException(MessagingException.Type.REPLICA_NOT_FOUND);
         }

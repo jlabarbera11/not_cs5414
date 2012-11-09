@@ -120,6 +120,7 @@ public class Client extends JFrame implements ActionListener {
 	    super("Bank GUI for Branch " + clientNum);
 	    this.clientNumber = clientNum;
 	    setSize(400, 700);
+            this.serialsSeen = new HashMap<Integer, String>();
 	    //this.setResizable(false);
 	    JPanel mainPanel = new JPanel();
 	    BoxLayout layout = new BoxLayout(mainPanel, BoxLayout.Y_AXIS);

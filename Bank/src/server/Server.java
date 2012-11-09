@@ -103,6 +103,17 @@ public class Server
             e.printStackTrace();
         }
     }
+
+    public HashSet<String> createBackups(String branchID, String replicaID){
+        HashSet<String> output = new HashSet<String>();
+        for (Map.Entry<String, String[]> entry : resolver.entrySet()){
+            if (entry.getKey().substring(0,2).equals(branchID) && !entry.getKey().substring(3,5).equals(replicaID)){
+                System.out.println(entry.getKey());
+                output.add(entry.getKey().substring(3,5));
+            }
+        }
+        return output;
+    }
     
 
     public Server(String branchID, String replicaID)
@@ -110,6 +121,7 @@ public class Server
         this.branchID = branchID;
         this.replicaID = replicaID;
         accounts = new ConcurrentHashMap<AccountNumber, BankAccount>();
+        this.waiting_records = new HashMap<Integer, HashSet<String>>();
 
         try {
             m = new Messaging(branchID, replicaID);
@@ -124,6 +136,7 @@ public class Server
 			this.topology = Messaging.buildTopologyHelper("topology.txt");
 			this.resolver = Messaging.buildResolverHelper("resolver.txt");
 			this.replicaStates = Oracle.buildReplicaStates(this.resolver);
+                        this.backups = createBackups(branchID, replicaID);
 			//this.branchReplicas = this.buildBranchReplicas();
 			//this.initializePrimary();
 		} catch (MessagingException e) {
@@ -239,8 +252,10 @@ public class Server
         System.out.println("Server starting up!");
         while (true) {
             Message mr = m.ReceiveMessage();
+            System.out.println("Got message");
 
             if (mr instanceof RequestClient) { //from client
+                System.out.println("Received message from client");
                 startBackup((RequestClient)mr);
            
             } else if (mr instanceof BranchMessage) {
@@ -248,10 +263,12 @@ public class Server
                     startBackup((RequestClient)mr);
 
             } else if (mr instanceof RequestBackup) { //from primary
+                System.out.println("Received backup request");
                 recordTransaction(((RequestBackup)mr).GetMessage());
-                m.SendToReplica(mr.GetReplica(), new ResponseBackup(this.replicaID, mr));
+                m.SendToReplica(mr.GetReplica(), new ResponseBackup(this.replicaID, ((RequestBackup)mr).GetMessage()));
            
             } else if (mr instanceof ResponseBackup) { //from backup
+                System.out.println("Received backup response");
                 ResponseBackup response = (ResponseBackup)mr;
                 RequestClient rc = (RequestClient)response.GetMessage();
                 waiting_records.get(rc.GetSerialNumber()).add(response.GetReplica());
@@ -262,8 +279,9 @@ public class Server
             
             } else if (mr instanceof OracleMessage) { //TODO
                 OracleMessage m = (OracleMessage) mr;
-                
             }
+            else
+                System.out.println("Received nothing");
         }
     }
 
