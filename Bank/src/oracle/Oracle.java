@@ -222,6 +222,7 @@ public class Oracle extends JFrame implements ActionListener {
 			System.out.println("got recover from branch replica " + recoveryText);
 			String replica = recoveryText;
 			String headBeforeRecovery = getHead(replica);
+			System.out.println("head before recover is " + headBeforeRecovery);
 			replicaStates.put(replica, replicaState.running);
 			
 			try {

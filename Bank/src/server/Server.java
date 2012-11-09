@@ -138,11 +138,13 @@ public class Server
         		replicaStates.put(((BackupOracle)message).GetRecoveredReplicaID(), replicaState.running);
         		BackupOracle bo = (BackupOracle)message;
         		System.out.println("got recovery from oracle for replica " + bo.GetRecoveredReplicaID());
-        		
-        		if(this.replicaID.equals(bo.GetRecoveredReplicaID())) {
-                            m.SendToReplica(bo.GetPrimary(), new RecoverReplicaRequest(this.replicaID));
-                        }
-                        
+        		System.out.println("old primary is " + bo.GetPrimary());
+        		System.out.println("my replicaID is " + replicaID + " and received recovering replicaId is " + bo.GetRecoveredReplicaID());
+        		if((this.branchID + "." + this.replicaID).equals(bo.GetRecoveredReplicaID())) {
+        			System.out.println("starting recovery");
+                    m.SendToReplica(bo.GetPrimary(), new RecoverReplicaRequest(this.replicaID));
+                }
+                    
         		boolean headRecovered = isHead(bo.GetRecoveredReplicaID());
                         if (headRecovered){
         			String branchNum = bo.GetRecoveredReplicaID().substring(0,2);
