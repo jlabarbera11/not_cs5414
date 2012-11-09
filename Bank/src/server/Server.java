@@ -7,6 +7,8 @@ import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.TreeSet;
 import java.util.LinkedList;
 import java.util.Set;
@@ -41,6 +43,13 @@ public class Server
     	    	replicas.add(entry.getKey());
     	    }
     	}
+    	
+    	Collections.sort(replicas,new Comparator<String>() {
+            public int compare(String string1, String string2) {
+                return string1.substring(3,5).compareTo(string2.substring(3,5));
+            }
+        });
+    	
     	for (String entry : replicas){
     		if (entry.equals(replicaID)){
     			return true;
@@ -60,6 +69,13 @@ public class Server
     	    	replicas.add(entry.getKey());
     	    }
     	}
+    	
+    	Collections.sort(replicas,new Comparator<String>() {
+            public int compare(String string1, String string2) {
+                return string1.substring(3,5).compareTo(string2.substring(3,5));
+            }
+        });
+    	
     	for (String entry : replicas){
     		if (replicaStates.get(entry) == replicaState.running){
     			return entry;
@@ -82,7 +98,7 @@ public class Server
         			Socket newSocket = new Socket(InetAddress.getByName(resolverEntry[0]), Integer.parseInt(resolverEntry[1]));
         			m.branchstreams.put(branchNum, new ObjectOutputStream(newSocket.getOutputStream()));
         		}
-        		
+        		//TODO
         	} else if (message instanceof BackupOracle){
         		replicaStates.put(((BackupOracle)message).recoveredReplicaID, replicaState.running);
         		BackupOracle bo = (BackupOracle)message;
