@@ -28,12 +28,33 @@ public class Server
     private Messaging m;
     private HashSet<String> backups; //Set of all replicas excluding self. needs to be init
     private HashMap<Integer, HashSet<String>> waiting_records; //SerialID to returned backups
+    private HashMap<Integer, RequestClient> waiting_clients = new HashMap<Integer, RequestClient>();
     
     private ConcurrentHashMap<Integer, Set<Integer>> topology;
     private ConcurrentHashMap<String, String[]> resolver;
     private ConcurrentHashMap<String, Oracle.replicaState> replicaStates;
     //private ArrayList<String> branchReplicas;
     //sprivate String currentPrimary;
+    
+    /**ResponseBackup response = (ResponseBackup)mr;
+    RequestClient rc = (RequestClient)response.GetMessage();
+    waiting_records.get(rc.GetSerialNumber()).add(response.GetReplica());
+    if(waiting_records.get(rc.GetSerialNumber()).equals(this.backups)) {
+        waiting_records.remove(rc.GetSerialNumber());
+        waiting_clients.remove(rc.GetSerialNumber());
+        m.SendToClient(recordTransaction(rc));
+    }*/
+    
+    private void checkWaitingRecords(){
+    	for (Map.Entry<Integer, HashSet<String>> entry : waiting_records.entrySet()){
+    		if (entry.getValue().equals(this.backups)){
+    			RequestClient rc = waiting_clients.get(entry.getKey());
+    	        waiting_records.remove(rc.GetSerialNumber());
+    	        waiting_clients.remove(rc.GetSerialNumber());
+    	        m.SendToClient(recordTransaction(rc));
+    		}
+    	}
+    }
     
     private boolean isHead(String replicaID){
     	ArrayList<String> replicas = new ArrayList<String>();
@@ -98,7 +119,8 @@ public class Server
         			Socket newSocket = new Socket(InetAddress.getByName(resolverEntry[0]), Integer.parseInt(resolverEntry[1]));
         			m.branchstreams.put(branchNum, new ObjectOutputStream(newSocket.getOutputStream()));
         		}
-        		//TODO
+        		backups.remove(fo.failedReplicaID.substring(3,5));
+        		checkWaitingRecords();
         	} else if (message instanceof BackupOracle){
         		replicaStates.put(((BackupOracle)message).recoveredReplicaID, replicaState.running);
         		BackupOracle bo = (BackupOracle)message;
@@ -206,6 +228,7 @@ public class Server
 
     public void startBackup(RequestClient rc) {
         waiting_records.put(rc.GetSerialNumber(), new HashSet<String>());
+        waiting_clients.put(rc.GetSerialNumber(), rc);
         for(String i : this.backups) {
             m.SendToReplica(i, new RequestBackup(this.replicaID, rc));
         }
@@ -273,6 +296,7 @@ public class Server
                 waiting_records.get(rc.GetSerialNumber()).add(response.GetReplica());
                 if(waiting_records.get(rc.GetSerialNumber()).equals(this.backups)) {
                     waiting_records.remove(rc.GetSerialNumber());
+                    waiting_clients.remove(rc.GetSerialNumber());
                     m.SendToClient(recordTransaction(rc));
                 }
             
