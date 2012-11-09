@@ -1,18 +1,7 @@
 We used junit to test our implementation, which we have included in our
 submission.
 
-To test the client,
-
-    > javac -Xlint:unchecked -sourcepath src/ -cp lib/junit-4.10.jar -d bin src/client/test/ClientTest.java
-    > java -cp lib/junit-4.10.jar:bin/ org.junit.runner.JUnitCore client.test.ClientTest
-
-
-To test messaging,
-
-    > javac -Xlint:unchecked -sourcepath src/ -cp lib/junit-4.10.jar -d bin src/messaging/test/MessagingTest.java
-    > java -cp lib/junit-4.10.jar:bin/ org.junit.runner.JUnitCore messaging.test.MessagingTest
-
-
 The client must interact with the server in performing its tests, so we feel
-that it the client tests sufficiently test the server.
+that the client tests sufficiently test the server.
 
+The test cases can be found in client.test and messaging.test.

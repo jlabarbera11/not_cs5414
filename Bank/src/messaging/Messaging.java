@@ -446,6 +446,7 @@ public class Messaging {
     }
 
     public void SendToReplica(String replica, Message M) {
+    	System.out.println("sending to replica " + replica);
         for(int i=0; i<5; i++) {
             try {
                 try {
@@ -457,7 +458,12 @@ public class Messaging {
                 } catch (MessagingException e) {
                     System.out.println("Failed sending to replica " + replica);
                     Thread.sleep(1000);
-                    String[] res = this.resolver.get(this.branch+"."+replica);
+                    try {
+						buildResolver("resolver.txt");
+					} catch (MessagingException e1) {
+						System.out.println("failed to build resolver");
+					}
+                    String[] res = this.resolver.get(replica);
                     Socket s = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
                     ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
                     oos.writeObject(new InitializeMessage(this.branch, this.replica));

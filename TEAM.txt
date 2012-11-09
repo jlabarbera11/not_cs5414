@@ -1,14 +1,14 @@
 Ben Schoener
 bas265
 
-Ben wrote the graphical user interface for the client. The client accepts input from the user,
-and calls methods from the messaging class to send information to the server. The GUI was created
-using the javax.swing package. Ben spent about 20 hours on the project.
+Ben worked on the server, oracle, client, and messaging packages. He was the main person
+working on the oracle and client. He spent about 20 hours.
 
 Joe LaBarbera
 jyl76
 
-Joe worked on the networking class for this assignment. This class abstracts
-all threading necessities for the client and server, as well as provides
-containers for the objects that are passed around on the network. This took
-about 20 hours.
+Joe also worked on the server, oracle, client, and messaging packages. He was the main
+person working on the server. He spent about 20 hours.
+
+Kyle Hsu
+Kyle wrote a gui for the oracle, but due to a misunderstanding, this work had already been done.
