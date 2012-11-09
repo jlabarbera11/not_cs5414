@@ -24,11 +24,11 @@ public class Server
 {
     private String branchID;
     private String replicaID;
-    private ConcurrentHashMap<AccountNumber, BankAccount> accounts;
+    private Map<AccountNumber, BankAccount> accounts;
     private Messaging m;
-    private HashSet<String> backups; //Set of all replicas excluding self. needs to be init
-    private HashMap<Integer, HashSet<String>> waiting_records; //SerialID to returned backups
-    private HashMap<Integer, RequestClient> waiting_clients = new HashMap<Integer, RequestClient>();
+    private Set<String> backups; //Set of all replicas excluding self. needs to be init
+    private Map<Integer, HashSet<String>> waiting_records; //SerialID to returned backups
+    private Map<Integer, RequestClient> waiting_clients = new HashMap<Integer, RequestClient>();
     
     private ConcurrentHashMap<Integer, Set<Integer>> topology;
     private ConcurrentHashMap<String, String[]> resolver;
@@ -131,17 +131,19 @@ public class Server
         		backups.remove(fo.failedReplicaID.substring(3,5));
         		checkWaitingRecords();
         	} else if (message instanceof BackupOracle){
-        		replicaStates.put(((BackupOracle)message).recoveredReplicaID, replicaState.running);
+        		replicaStates.put(((BackupOracle)message).GetRecoveredReplicaID(), replicaState.running);
         		BackupOracle bo = (BackupOracle)message;
-        		System.out.println("got recovery from oracle for replica " + bo.recoveredReplicaID);
-        		boolean headRecovered = isHead(bo.recoveredReplicaID);
+        		System.out.println("got recovery from oracle for replica " + bo.GetRecoveredReplicaID());
         		
-        		if(this.replicaID.equals(bo.GetHead()))
+        		if(this.replicaID.equals(bo.GetRecoveredReplicaID())) {
+                            m.SendToReplica(bo.GetPrimary(), new RecoverReplicaRequest(this.replicaID));
+                        }
                         
+        		boolean headRecovered = isHead(bo.GetRecoveredReplicaID());
                         if (headRecovered){
-        			String branchNum = bo.recoveredReplicaID.substring(0,2);
+        			String branchNum = bo.GetRecoveredReplicaID().substring(0,2);
         			m.branchstreams.get(branchNum).close();
-        			String[] resolverEntry = resolver.get(bo.recoveredReplicaID);
+        			String[] resolverEntry = resolver.get(bo.GetRecoveredReplicaID());
         			Socket newSocket = new Socket(InetAddress.getByName(resolverEntry[0]), Integer.parseInt(resolverEntry[1]));
         			m.branchstreams.put(branchNum, new ObjectOutputStream(newSocket.getOutputStream()));
         		}
@@ -181,21 +183,18 @@ public class Server
         }
 
         //init oracle address?
-		
-	    try {
-			this.topology = Messaging.buildTopologyHelper("topology.txt");
-			this.resolver = Messaging.buildResolverHelper("resolver.txt");
-			this.replicaStates = Oracle.buildReplicaStates(this.resolver);
-                        this.backups = createBackups(branchID, replicaID);
-			//this.branchReplicas = this.buildBranchReplicas();
-			//this.initializePrimary();
-		} catch (MessagingException e) {
-			System.out.println("reading files failed in server");
-			e.printStackTrace();
-			return;
-		}
-        
-        
+        try {
+            this.topology = Messaging.buildTopologyHelper("topology.txt");
+            this.resolver = Messaging.buildResolverHelper("resolver.txt");
+            this.replicaStates = Oracle.buildReplicaStates(this.resolver);
+            this.backups = createBackups(branchID, replicaID);
+            //this.branchReplicas = this.buildBranchReplicas();
+            //this.initializePrimary();
+        } catch (MessagingException e) {
+            System.out.println("reading files failed in server");
+            e.printStackTrace();
+            return;
+        }
         
     }
 
@@ -333,12 +332,25 @@ public class Server
                     m.SendToClient(recordTransaction(rc));
                 }
             
-            } else if (mr instanceof OracleMessage) { //TODO
+            } else if (mr instanceof OracleMessage) {
                 OracleMessage m = (OracleMessage) mr;
                 HandleOracleMessage(m);
-            }
-            else
-                System.out.println("Received nothing");
+            
+            } else if (mr instanceof RecoverReplicaRequest) {
+                RecoverReplicaRequest r = (RecoverReplicaRequest)mr;
+                m.SendToReplica(mr.GetReplica(), new RecoverReplicaResponse(this.backups, this.accounts, this.waiting_clients));
+
+            } else if (mr instanceof RecoverReplicaResponse) {
+                RecoverReplicaResponse r = (RecoverReplicaResponse)mr;
+                this.backups = r.GetBackups();
+                this.accounts = r.GetBankAccounts();
+                for(RequestClient rc : r.GetWaitingClients().values()) {
+                    recordTransaction(rc);
+                    m.SendToReplica(r.GetReplica(), new ResponseBackup(this.replicaID, rc));
+                }
+
+            } else
+                System.out.println("Don't know how to handle message");
         }
     }
 

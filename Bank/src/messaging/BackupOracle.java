@@ -9,7 +9,7 @@ public class BackupOracle extends OracleMessage {
 		this.recoveredReplicaID = id;
 	}
 
-        public String recoveredReplicaID() {
+        public String GetRecoveredReplicaID() {
             return this.recoveredReplicaID;
         }
 

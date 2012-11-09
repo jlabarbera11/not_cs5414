@@ -110,7 +110,7 @@ public class Client extends JFrame implements ActionListener {
                     replicaStates.put(((FailureOracle)message).failedReplicaID, replicaState.failed);
                     updatePrimary();
                 } else if (message instanceof BackupOracle){
-                    replicaStates.put(((BackupOracle)message).recoveredReplicaID, replicaState.running);
+                    replicaStates.put(((BackupOracle)message).GetRecoveredReplicaID(), replicaState.running);
                     updatePrimary();
                 } else {
                     System.out.println("invalid message type received by client from oracle");
