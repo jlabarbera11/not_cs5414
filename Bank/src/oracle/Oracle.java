@@ -226,7 +226,8 @@ public class Oracle extends JFrame implements ActionListener {
 			
 			try {
 				messaging.OracleConnectToReplica(replica);
-				Message m = new BackupOracle(replica);
+				BackupOracle m = new BackupOracle(replica);
+				m.setPrimary(headBeforeRecovery);
 				//m.setPrimary(headBeforeRecovery);
 				messaging.OracleBroadcastMessage(m);
 		    	result1.setText("Recovery recorded for replica " + recoveryText);

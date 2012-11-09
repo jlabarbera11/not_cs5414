@@ -10,15 +10,16 @@ Tutorial:
         > javac -Xlint:unchecked -sourcepath src/ -d bin/ src/client/*.java
         > javac -Xlint:unchecked -sourcepath src/ -d bin/ src/messaging/*.java
         > jar cfe client.jar client.Client -C bin .
-3. Enter the following command:
+5. To make the oracle, enter the following commands:
+        > javac -Xlint:unchecked -sourcepath src/ -d bin/ src/oracle/*.java
+        > javac -Xlint:unchecked -sourcepath src/ -d bin/ src/messaging/*.java
+        > jar cfe oracle.jar oracle.Oracle -C bin .
+6. Enter the following command:
         > LAUNCH.cmd
-4. Using the 4 GUIs, try some test deposits, withdrawals, transfers, and queries.
-   To make a deposit, click on the first GUI that was created. Enter deposit account 
-   01.11111 and deposit amount 100 and click "Deposit". Enter query account 
-   01.11111 and click "query". Enter withdrawal amount 10 and click "Withdraw". Enter
-   transfer to account 02.11111 and transfer from account 01.11111 and transfer amount
-   50 and click "Transfer". Click on the second GUI generated. Enter query account 02.11111
-   and click query.
+7. Using the 4, try some test deposits, withdrawals, transfers, and queries.
+   Use ctrl-c to kill a processor, register this on the oracle, start the 
+   processor again, register this on the oracle, verify that everything still works.
+
 
 Names and Descriptions of Files:
 
@@ -30,4 +31,6 @@ test directory to test some of the checks performed at the Messaging level.
 
 The server directory contains files for running the server.
 
-Phase II was based on our own Phase I solution.
+The oracle directory contains files for running the oracle GUI and logic.
+
+Phase III was based on our own Phase I solution.

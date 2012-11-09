@@ -146,7 +146,11 @@ public class Server
         		boolean headRecovered = isHead(bo.GetRecoveredReplicaID());
                         if (headRecovered){
         			String branchNum = bo.GetRecoveredReplicaID().substring(0,2);
-        			m.branchstreams.get(branchNum).close();
+        			try {
+        				m.branchstreams.get(branchNum).close();
+        			} catch (Exception e ){
+        				//ignore
+        			}
         			String[] resolverEntry = resolver.get(bo.GetRecoveredReplicaID());
         			Socket newSocket = new Socket(InetAddress.getByName(resolverEntry[0]), Integer.parseInt(resolverEntry[1]));
         			m.branchstreams.put(branchNum, new ObjectOutputStream(newSocket.getOutputStream()));

@@ -1,0 +1,21 @@
+LOGIC a .txt file that contains
+A rationale for your choice of primary/backup protocol, if you implement a protocol 
+that is different from the ones we discussed in class. If the protocol is not one we 
+discussed in class then include a description (at most 2 pages) and a pointer to a 
+publication (paper or textbook) where this protocol is discussed.
+
+A description (at most 2 pages) of the recovery protocol that was implemented along 
+with an informal correctness argument (at the level that might be presented during a 
+lecture in cs5414). Give a pointer to a publication (paper or textbook) if your protocol 
+is derived from that prior work.
+
+Replication protocol:
+As discussed in class, we used primary-backup for our replication protocol. 
+
+Recovery protocol:
+After the user notifies the oracle that a replica has recovered, the oracle broadcasts
+this fact to all servers and clients so they can update their state accordingly. When the newly 
+recovered replica receives this message, it contacts its current primary, who sends it all
+data stored, transactions in progress, and current states of all replicas. The replica is now
+up-to-date. If it should be the head, it will take over the duties of the head when the client
+starts sending transactions to it.

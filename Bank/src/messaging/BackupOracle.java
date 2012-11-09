@@ -9,12 +9,16 @@ public class BackupOracle extends OracleMessage {
 		this.recoveredReplicaID = id;
 	}
 
-        public String GetRecoveredReplicaID() {
-            return this.recoveredReplicaID;
-        }
+    public String GetRecoveredReplicaID() {
+        return this.recoveredReplicaID;
+    }
 
-        public String GetPrimary() {
-            return this.primaryForRecoveringReplica;
-        }
+    public String GetPrimary() {
+        return this.primaryForRecoveringReplica;
+    }
+    
+    public void setPrimary(String primary){
+    	this.primaryForRecoveringReplica = primary;
+    }
 	
 }

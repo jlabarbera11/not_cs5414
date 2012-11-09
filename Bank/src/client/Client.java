@@ -93,8 +93,10 @@ public class Client extends JFrame implements ActionListener {
         for (String entry : branchReplicas){
             if (replicaStates.get(entry) == Oracle.replicaState.running){
                 if (!entry.equals(currentPrimary)){
+                	System.out.println("updatePrimary is looking at entry " + entry + ", currentPrimary is " + currentPrimary);
                     try {
                         messaging.ClientUpdatePrimary(entry);
+                        currentPrimary = entry;
                     } catch (MessagingException e) {
                         System.out.println("updating primary failed");
                     }
