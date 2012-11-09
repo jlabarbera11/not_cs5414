@@ -7,6 +7,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -63,7 +65,6 @@ public class Client extends JFrame implements ActionListener {
 //    }
     
     //must be called after resolver init
-    //assumes replicas are listed in order
     private ArrayList<String> buildBranchReplicas(){
     	ArrayList<String> output = new ArrayList<String>();
     	for (Map.Entry<String, String[]> entry : resolver.entrySet())
@@ -74,6 +75,13 @@ public class Client extends JFrame implements ActionListener {
     	    	output.add(entry.getKey());
     	    }
     	}
+    	//a negative integer, zero, or a positive integer as the first argument is less than, equal to, or greater than the second.
+    	Collections.sort(output,new Comparator<String>() {
+            public int compare(String string1, String string2) {
+                return string1.substring(3,5).compareTo(string2.substring(3,5));
+            }
+        });
+    	
     	return output;
     }
     

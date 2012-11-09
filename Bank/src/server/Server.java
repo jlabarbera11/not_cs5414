@@ -7,6 +7,8 @@ import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.TreeSet;
 import java.util.LinkedList;
 import java.util.Set;
@@ -26,12 +28,33 @@ public class Server
     private Messaging m;
     private HashSet<String> backups; //Set of all replicas excluding self. needs to be init
     private HashMap<Integer, HashSet<String>> waiting_records; //SerialID to returned backups
+    private HashMap<Integer, RequestClient> waiting_clients = new HashMap<Integer, RequestClient>();
     
     private ConcurrentHashMap<Integer, Set<Integer>> topology;
     private ConcurrentHashMap<String, String[]> resolver;
     private ConcurrentHashMap<String, Oracle.replicaState> replicaStates;
     //private ArrayList<String> branchReplicas;
     //sprivate String currentPrimary;
+    
+    /**ResponseBackup response = (ResponseBackup)mr;
+    RequestClient rc = (RequestClient)response.GetMessage();
+    waiting_records.get(rc.GetSerialNumber()).add(response.GetReplica());
+    if(waiting_records.get(rc.GetSerialNumber()).equals(this.backups)) {
+        waiting_records.remove(rc.GetSerialNumber());
+        waiting_clients.remove(rc.GetSerialNumber());
+        m.SendToClient(recordTransaction(rc));
+    }*/
+    
+    private void checkWaitingRecords(){
+    	for (Map.Entry<Integer, HashSet<String>> entry : waiting_records.entrySet()){
+    		if (entry.getValue().equals(this.backups)){
+    			RequestClient rc = waiting_clients.get(entry.getKey());
+    	        waiting_records.remove(rc.GetSerialNumber());
+    	        waiting_clients.remove(rc.GetSerialNumber());
+    	        m.SendToClient(recordTransaction(rc));
+    		}
+    	}
+    }
     
     private boolean isHead(String replicaID){
     	ArrayList<String> replicas = new ArrayList<String>();
@@ -41,6 +64,13 @@ public class Server
     	    	replicas.add(entry.getKey());
     	    }
     	}
+    	
+    	Collections.sort(replicas,new Comparator<String>() {
+            public int compare(String string1, String string2) {
+                return string1.substring(3,5).compareTo(string2.substring(3,5));
+            }
+        });
+    	
     	for (String entry : replicas){
     		if (entry.equals(replicaID)){
     			return true;
@@ -60,6 +90,13 @@ public class Server
     	    	replicas.add(entry.getKey());
     	    }
     	}
+    	
+    	Collections.sort(replicas,new Comparator<String>() {
+            public int compare(String string1, String string2) {
+                return string1.substring(3,5).compareTo(string2.substring(3,5));
+            }
+        });
+    	
     	for (String entry : replicas){
     		if (replicaStates.get(entry) == replicaState.running){
     			return entry;
@@ -82,7 +119,8 @@ public class Server
         			Socket newSocket = new Socket(InetAddress.getByName(resolverEntry[0]), Integer.parseInt(resolverEntry[1]));
         			m.branchstreams.put(branchNum, new ObjectOutputStream(newSocket.getOutputStream()));
         		}
-        		
+        		backups.remove(fo.failedReplicaID.substring(3,5));
+        		checkWaitingRecords();
         	} else if (message instanceof BackupOracle){
         		replicaStates.put(((BackupOracle)message).recoveredReplicaID, replicaState.running);
         		BackupOracle bo = (BackupOracle)message;
@@ -203,6 +241,7 @@ public class Server
 
     public void startBackup(RequestClient rc) {
         waiting_records.put(rc.GetSerialNumber(), new HashSet<String>());
+        waiting_clients.put(rc.GetSerialNumber(), rc);
         for(String i : this.backups) {
             m.SendToReplica(i, new RequestBackup(this.replicaID, rc));
         }
@@ -274,6 +313,7 @@ public class Server
                 waiting_records.get(rc.GetSerialNumber()).add(response.GetReplica());
                 if(waiting_records.get(rc.GetSerialNumber()).equals(this.backups)) {
                     waiting_records.remove(rc.GetSerialNumber());
+                    waiting_clients.remove(rc.GetSerialNumber());
                     m.SendToClient(recordTransaction(rc));
                 }
             
