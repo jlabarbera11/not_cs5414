@@ -136,7 +136,9 @@ public class Server
         		System.out.println("got recovery from oracle for replica " + bo.recoveredReplicaID);
         		boolean headRecovered = isHead(bo.recoveredReplicaID);
         		
-        		if (headRecovered){
+        		if(this.replicaID.equals(bo.GetHead()))
+                        
+                        if (headRecovered){
         			String branchNum = bo.recoveredReplicaID.substring(0,2);
         			m.branchstreams.get(branchNum).close();
         			String[] resolverEntry = resolver.get(bo.recoveredReplicaID);
