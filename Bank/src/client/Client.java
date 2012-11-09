@@ -98,6 +98,7 @@ public class Client extends JFrame implements ActionListener {
                     } catch (MessagingException e) {
                         System.out.println("updating primary failed");
                     }
+                    return;
                 }
             }
         }
@@ -107,9 +108,11 @@ public class Client extends JFrame implements ActionListener {
         public void Callback(Message message){
             try {
                 if (message instanceof FailureOracle){
+                	System.out.println("client got failure from oracle");
                     replicaStates.put(((FailureOracle)message).failedReplicaID, replicaState.failed);
                     updatePrimary();
                 } else if (message instanceof BackupOracle){
+                	System.out.println("client got recovery from oracle");
                     replicaStates.put(((BackupOracle)message).recoveredReplicaID, replicaState.running);
                     updatePrimary();
                 } else {
@@ -381,10 +384,10 @@ public class Client extends JFrame implements ActionListener {
 	}
 	
 	public void handleTransfer(){
-	    //System.out.println("got transfer");
-	    //System.out.println("from account number is: " + transferFromAccount.getText());
-	    //System.out.println("to account number is: " + transferToAccount.getText());
-	    //System.out.println("transfer amount is: " + transferAmount.getText());
+	    System.out.println("got transfer");
+	    System.out.println("from account number is: " + transferFromAccount.getText());
+	    System.out.println("to account number is: " + transferToAccount.getText());
+	    System.out.println("transfer amount is: " + transferAmount.getText());
 		System.out.println("transfer serial is: " + transferSerial.getText());
 	    String accountTo = transferToAccount.getText();
 	    String accountFrom = transferFromAccount.getText();
@@ -412,6 +415,12 @@ public class Client extends JFrame implements ActionListener {
 	    	int serialNumber = Integer.parseInt(serial);
 	    	TransferResponse response;
 	    	try {
+	    		System.out.println(branchNumberFrom);
+	    		System.out.println(new Integer(accountNumberFrom));
+	    		System.out.println(branchNumberTo);
+	    		System.out.println(new Integer(accountNumberTo));
+	    		System.out.println(new Float(amountFloat));
+	    		System.out.println(new Integer((serialNumber*100) + clientNumber));
 	        	response = messaging.Transfer(branchNumberFrom, new Integer(accountNumberFrom), branchNumberTo, new Integer(accountNumberTo), new Float(amountFloat), new Integer((serialNumber*100) + clientNumber));
 	        	if (response.GetSuccess()){
 					result1.setText("Transfer successful");

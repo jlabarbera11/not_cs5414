@@ -291,13 +291,23 @@ public class Messaging {
 
     //must be called in a synchronized block
     public void ClientUpdatePrimary(String id) throws MessagingException{
+    	System.out.println("client updating primary for id " + id);
     	try {
 	        String[] res = this.resolver.get(id);
-                this.clientsocket.close();
+            try {
+            	this.clientsocket.close();
+            } catch (Exception e){
+            	//ignore
+            }
+            System.out.println("1");
 	        this.clientsocket = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
+	        System.out.println("2");
 	        this.clientoos = new ObjectOutputStream(this.clientsocket.getOutputStream());
+	        System.out.println("3");
 	        this.clientoos.writeObject(new InitializeMessage(this.branch, null));
+	        System.out.println("4");
 	        this.clientois = new ObjectInputStream(this.clientsocket.getInputStream());
+	        System.out.println("client done updating primary");
         } catch (UnknownHostException e) {
             throw new MessagingException(MessagingException.Type.UNKNOWN_HOST);
         } catch(IOException e) {

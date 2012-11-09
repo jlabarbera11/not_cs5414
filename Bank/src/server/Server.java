@@ -123,7 +123,11 @@ public class Server
         		removeFromBackups(fo.failedReplicaID);
         		if (headFailed){
         			String branchNum = fo.failedReplicaID.substring(0,2);
-        			m.branchstreams.get(branchNum).close();
+        			try {
+        				m.branchstreams.get(branchNum).close();
+        			} catch (Exception e){
+        				//ignore
+        			}
         			String[] resolverEntry = resolver.get(getHead(fo.failedReplicaID.substring(0,2)));
         			Socket newSocket = new Socket(InetAddress.getByName(resolverEntry[0]), Integer.parseInt(resolverEntry[1]));
         			m.branchstreams.put(branchNum, new ObjectOutputStream(newSocket.getOutputStream()));
@@ -138,7 +142,11 @@ public class Server
         		
         		if (headRecovered){
         			String branchNum = bo.recoveredReplicaID.substring(0,2);
-        			m.branchstreams.get(branchNum).close();
+        			try {
+        				m.branchstreams.get(branchNum).close();
+        			} catch (Exception e) {
+        				//ignore
+        			}
         			String[] resolverEntry = resolver.get(bo.recoveredReplicaID);
         			Socket newSocket = new Socket(InetAddress.getByName(resolverEntry[0]), Integer.parseInt(resolverEntry[1]));
         			m.branchstreams.put(branchNum, new ObjectOutputStream(newSocket.getOutputStream()));

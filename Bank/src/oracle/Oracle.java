@@ -4,6 +4,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -186,17 +188,46 @@ public class Oracle extends JFrame implements ActionListener {
 		}
 	}
 	
+	private String getHead(String replica){
+		String branch = replica.substring(0,2);
+    	ArrayList<String> replicas = new ArrayList<String>();
+    	for (Map.Entry<String, String[]> entry : resolver.entrySet())
+    	{
+    	    if (entry.getKey().substring(0,2).equals(branch)){
+    	    	replicas.add(entry.getKey());
+    	    }
+    	}
+    	
+    	Collections.sort(replicas,new Comparator<String>() {
+            public int compare(String string1, String string2) {
+                return string1.substring(3,5).compareTo(string2.substring(3,5));
+            }
+        });
+    	
+    	for (String entry : replicas){
+    		if (replicaStates.get(entry) == replicaState.running){
+    			System.out.println("current primary for replica " + replica + " is  " + entry);
+    			return entry;
+    		}
+    	}
+    	System.out.println("error in getHead");
+    	return null;
+		
+	}
+	
 	public void handleRecovery(){
 		System.out.println("got recovery");
 		String recoveryText = recoveryServerNumber.getText();
 		if (checkProcessorNumber(recoveryText) && replicaStates.containsKey(recoveryText)){
 			System.out.println("got recover from branch replica " + recoveryText);
 			String replica = recoveryText;
+			String headBeforeRecovery = getHead(replica);
 			replicaStates.put(replica, replicaState.running);
 			
 			try {
 				messaging.OracleConnectToReplica(replica);
 				Message m = new BackupOracle(replica);
+				//m.setPrimary(headBeforeRecovery);
 				messaging.OracleBroadcastMessage(m);
 		    	result1.setText("Recovery recorded for replica " + recoveryText);
 		    	result2.setText("");
