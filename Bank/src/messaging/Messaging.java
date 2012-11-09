@@ -458,12 +458,7 @@ public class Messaging {
                 } catch (MessagingException e) {
                     System.out.println("Failed sending to replica " + replica);
                     Thread.sleep(1000);
-                    try {
-						buildResolver("resolver.txt");
-					} catch (MessagingException e1) {
-						System.out.println("failed to build resolver");
-					}
-                    String[] res = this.resolver.get(replica);
+                    String[] res = this.resolver.get(this.branch+"."+replica);
                     Socket s = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
                     ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
                     oos.writeObject(new InitializeMessage(this.branch, this.replica));

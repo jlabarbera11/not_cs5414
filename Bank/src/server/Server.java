@@ -133,8 +133,10 @@ public class Server
         		System.out.println("my replicaID is " + replicaID + " and received recovering replicaId is " + bo.GetRecoveredReplicaID());
         		if((this.branchID + "." + this.replicaID).equals(bo.GetRecoveredReplicaID())) {
         			System.out.println("starting recovery");
-                    m.SendToReplica(bo.GetPrimary(), new RecoverReplicaRequest(this.replicaID));
-                }
+                                m.SendToReplica(bo.GetPrimary().substring(3,5), new RecoverReplicaRequest(this.replicaID));
+                        }
+                        else
+                            this.backups.add(bo.GetRecoveredReplicaID().substring(3,5));
                     
         		boolean headRecovered = isHead(bo.GetRecoveredReplicaID());
                         if (headRecovered){
