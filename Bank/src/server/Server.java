@@ -139,16 +139,6 @@ public class Server
         		BackupOracle bo = (BackupOracle)message;
         		System.out.println("got recovery from oracle for replica " + bo.GetRecoveredReplicaID());
         		
-<<<<<<< HEAD
-        		if (headRecovered){
-        			String branchNum = bo.recoveredReplicaID.substring(0,2);
-        			try {
-        				m.branchstreams.get(branchNum).close();
-        			} catch (Exception e) {
-        				//ignore
-        			}
-        			String[] resolverEntry = resolver.get(bo.recoveredReplicaID);
-=======
         		if(this.replicaID.equals(bo.GetRecoveredReplicaID())) {
                             m.SendToReplica(bo.GetPrimary(), new RecoverReplicaRequest(this.replicaID));
                         }
@@ -158,7 +148,6 @@ public class Server
         			String branchNum = bo.GetRecoveredReplicaID().substring(0,2);
         			m.branchstreams.get(branchNum).close();
         			String[] resolverEntry = resolver.get(bo.GetRecoveredReplicaID());
->>>>>>> 0a996711a43e5313e3b4cb2dcb6fc982a48ad5f7
         			Socket newSocket = new Socket(InetAddress.getByName(resolverEntry[0]), Integer.parseInt(resolverEntry[1]));
         			m.branchstreams.put(branchNum, new ObjectOutputStream(newSocket.getOutputStream()));
         		}
