@@ -298,23 +298,6 @@ public class Client extends JFrame implements ActionListener {
 		  }
 	  }
 	  
-	  private void display_snapshot_response(){
-		  JFrame newFrame = new JFrame();
-		  String[][] rows = new String[100][2];
-		  String[] column_names = {"Account Number", "Balance:"};
-		  for (int i=0; i<100; i++){
-			  rows[i][0]=""+i;
-			  rows[i][1]=""+100*i;
-		  }
-		  JTable table = new JTable(rows, column_names);
-	      JScrollPane scrollPane = new JScrollPane(table);
-	      newFrame.getContentPane().add(scrollPane, BorderLayout.CENTER);
-		  
-		  newFrame.pack();
-		  newFrame.setVisible(true);
-		  return;
-	  }
-	  
 	public void handleDeposit(){
 		//System.out.println("got deposit");
 		//System.out.println("account number is: " + depositAccount.getText());

@@ -106,12 +106,21 @@ public class Server
     	return null;
     }
     
+    private void removeFromBackups(String replicaID){
+    	if (replicaID.substring(0,2).equals(branchID)){
+    		backups.remove(replicaID.substring(3,5));
+    		System.out.println("removed " + replicaID + " from backups list");
+    	}
+    }
+    
     public void HandleOracleMessage(Message message){
         try {
         	if (message instanceof FailureOracle){
         		FailureOracle fo = (FailureOracle)message;
         		boolean headFailed = isHead(fo.failedReplicaID);
+        		System.out.println("got failure from oracle for replica " + fo.failedReplicaID);
         		replicaStates.put(fo.failedReplicaID, replicaState.failed);
+        		removeFromBackups(fo.failedReplicaID);
         		if (headFailed){
         			String branchNum = fo.failedReplicaID.substring(0,2);
         			m.branchstreams.get(branchNum).close();
@@ -124,6 +133,7 @@ public class Server
         	} else if (message instanceof BackupOracle){
         		replicaStates.put(((BackupOracle)message).recoveredReplicaID, replicaState.running);
         		BackupOracle bo = (BackupOracle)message;
+        		System.out.println("got recovery from oracle for replica " + bo.recoveredReplicaID);
         		boolean headRecovered = isHead(bo.recoveredReplicaID);
         		
         		if (headRecovered){
@@ -240,6 +250,10 @@ public class Server
     }
 
     public void startBackup(RequestClient rc) {
+        if (this.backups.size() == 0){
+        	m.SendToClient(recordTransaction(rc));
+        	return;
+        }
         waiting_records.put(rc.GetSerialNumber(), new HashSet<String>());
         waiting_clients.put(rc.GetSerialNumber(), rc);
         for(String i : this.backups) {
@@ -319,6 +333,7 @@ public class Server
             
             } else if (mr instanceof OracleMessage) { //TODO
                 OracleMessage m = (OracleMessage) mr;
+                HandleOracleMessage(m);
             }
             else
                 System.out.println("Received nothing");

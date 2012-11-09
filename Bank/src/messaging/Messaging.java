@@ -57,8 +57,8 @@ public class Messaging {
 
     //Oracle fields
     private Map<String, ObjectOutputStream> replicaOutputStreams;
-    private Map<String, ObjectInputStream> clientInputStreams;
-    private Map<String, ObjectOutputStream> clientOutputStreams;
+    private Map<String, ObjectInputStream> clientInputStreams = new HashMap<String, ObjectInputStream>();
+    private Map<String, ObjectOutputStream> clientOutputStreams = new HashMap<String, ObjectOutputStream>();
 
     private BlockingQueue<Message> messageBuffer = null;
 
@@ -323,9 +323,14 @@ public class Messaging {
             this.clientoos = new ObjectOutputStream(this.clientsocket.getOutputStream());
             this.clientoos.writeObject(new InitializeMessage(this.branch, null));
             this.clientois = new ObjectInputStream(this.clientsocket.getInputStream());
-
+            
+            System.out.println("about to connect to oracle");
             this.oraclesocket = new Socket(InetAddress.getByName(this.oracleAddress[0]), Integer.parseInt(this.oracleAddress[1]));
+            ObjectOutputStream oracleOutputStream = new ObjectOutputStream(oraclesocket.getOutputStream());
+            oracleOutputStream.writeObject(new InitializeMessage(this.branch, null));
+            System.out.println("created socket");
             new Thread(new ConnectionHandler(new ObjectInputStream(this.oraclesocket.getInputStream()), t)).start();
+            System.out.println("created connection handler");
         } catch (UnknownHostException e) {
             throw new MessagingException(MessagingException.Type.UNKNOWN_HOST);
         } catch(IOException e) {
@@ -460,9 +465,10 @@ public class Messaging {
                     InitializeMessage ir = (InitializeMessage)ois.readObject();
                     clientInputStreams.put(ir.GetBranch(), ois);
                     clientOutputStreams.put(ir.GetBranch(), new ObjectOutputStream(newsocket.getOutputStream()));
-
+                    System.out.println("got connection from client " + ir.GetBranch());
                 } catch(Exception e) {
                     System.out.println(e.toString() + " thrown from OracleAcceptor Thread");
+                    e.printStackTrace();
                 }
             }
         }
