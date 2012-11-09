@@ -30,30 +30,21 @@ public class Server
     private Map<Integer, HashSet<String>> waiting_records; //SerialID to returned backups
     private Map<Integer, RequestClient> waiting_clients = new HashMap<Integer, RequestClient>();
     
-    private ConcurrentHashMap<Integer, Set<Integer>> topology;
+    private ConcurrentHashMap<String, Set<String>> topology;
     private ConcurrentHashMap<String, String[]> resolver;
     private ConcurrentHashMap<String, Oracle.replicaState> replicaStates;
     //private ArrayList<String> branchReplicas;
     //sprivate String currentPrimary;
     
-    /**ResponseBackup response = (ResponseBackup)mr;
-    RequestClient rc = (RequestClient)response.GetMessage();
-    waiting_records.get(rc.GetSerialNumber()).add(response.GetReplica());
-    if(waiting_records.get(rc.GetSerialNumber()).equals(this.backups)) {
-        waiting_records.remove(rc.GetSerialNumber());
-        waiting_clients.remove(rc.GetSerialNumber());
-        m.SendToClient(recordTransaction(rc));
-    }*/
-    
     private void checkWaitingRecords(){
-    	for (Map.Entry<Integer, HashSet<String>> entry : waiting_records.entrySet()){
-    		if (entry.getValue().equals(this.backups)){
-    			RequestClient rc = waiting_clients.get(entry.getKey());
-    	        waiting_records.remove(rc.GetSerialNumber());
-    	        waiting_clients.remove(rc.GetSerialNumber());
-    	        m.SendToClient(recordTransaction(rc));
-    		}
-    	}
+        for (Map.Entry<Integer, HashSet<String>> entry : waiting_records.entrySet()){
+            if (entry.getValue().equals(this.backups)){
+                RequestClient rc = waiting_clients.get(entry.getKey());
+                waiting_records.remove(rc.GetSerialNumber());
+                waiting_clients.remove(rc.GetSerialNumber());
+                m.SendToClient(recordTransaction(rc));
+            }
+        }
     }
     
     private boolean isHead(String replicaID){
@@ -255,7 +246,7 @@ public class Server
     }
 
     public void startBackup(RequestClient rc) {
-        if (this.backups.size() == 0){
+        if (this.backups.size() == 0 && !(rc instanceof TransferBranch)){
         	m.SendToClient(recordTransaction(rc));
         	return;
         }
@@ -286,14 +277,9 @@ public class Server
             } else if (rc instanceof TransferRequest) {
                 System.out.println("Transfer Request received");
                 TransferRequest request = (TransferRequest) rc;
-                if (request.GetDestBranch().equals(branchID)) {
-                    deposit(request.GetDestAcnt(), request.GetAmt(), request.GetSerialNumber());
-                } else {
-                    withdraw(request.GetSrcAcnt(), request.GetAmt(), request.GetSerialNumber());
-                    System.out.println("Sending request to second account");
-                    m.SendToBranch(request.GetDestBranch(), new TransferBranch(request.GetDestAcnt(), request.GetAmt(), request.GetSerialNumber()));
-                }
-                System.out.println("Transfer Request recorded");
+                if (request.GetDestBranch().equals(branchID))
+                    transferDeposit(request.GetDestAcnt(), request.GetAmt(), request.GetSerialNumber());
+                return transferWithdraw(request.GetSrcAcnt(), request.GetAmt(), request.GetSerialNumber());
 
             } else if (rc instanceof TransferBranch) {
                 System.out.println("DepositFromTransfer Request received");
@@ -317,8 +303,6 @@ public class Server
                 startBackup((RequestClient)mr);
            
             } else if (mr instanceof BranchMessage) {
-                if(mr instanceof TransferBranch)
-                    startBackup((RequestClient)mr);
 
             } else if (mr instanceof RequestBackup) { //from primary
                 System.out.println("Received backup request");
@@ -333,7 +317,13 @@ public class Server
                 if(waiting_records.get(rc.GetSerialNumber()).equals(this.backups)) {
                     waiting_records.remove(rc.GetSerialNumber());
                     waiting_clients.remove(rc.GetSerialNumber());
-                    m.SendToClient(recordTransaction(rc));
+                    if(!(rc instanceof TransferBranch))
+                        m.SendToClient(recordTransaction(rc));
+                    if(rc instanceof TransferRequest) {
+                        TransferRequest request = (TransferRequest)rc;
+                        if(request.GetDestBranch() != this.branchID)
+                            m.SendToBranch(getHead(request.GetDestBranch()), new TransferBranch(request.GetDestAcnt(), request.GetAmt(), request.GetSerialNumber()));
+                    }
                 }
             
             } else if (mr instanceof OracleMessage) {

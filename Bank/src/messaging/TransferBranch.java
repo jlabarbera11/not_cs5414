@@ -1,15 +1,14 @@
 package messaging;
 
-public class TransferBranch extends BranchMessage {
+public class TransferBranch extends RequestClient {
     
     private Integer acnt = null;
     private Float amt = null;
-    private Integer ser_number = null;
 
-    public TransferBranch(Integer acnt, Float amt, Integer ser_number) {
+    public TransferBranch(Integer acnt, Float amt, Integer serial_number) {
         this.acnt = acnt;
         this.amt = amt;
-        this.ser_number = ser_number;
+        this.serial_number = serial_number;
     }
 
     public Integer GetAcnt() {
@@ -20,13 +19,9 @@ public class TransferBranch extends BranchMessage {
         return this.amt;
     }
 
-    public Integer GetSerialNumber() {
-        return this.ser_number;
-    }
-
     @Override
     public String toString()
     {
-        return String.format("DepositFromTransfer = Sender: %d, Account: %d, Amount: %.2f, Serial: %d", branch, acnt, amt, ser_number);
+        return String.format("DepositFromTransfer = Sender: %d, Account: %d, Amount: %.2f, Serial: %d", branch, acnt, amt, serial_number);
     }
 }

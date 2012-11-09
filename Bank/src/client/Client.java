@@ -45,7 +45,7 @@ public class Client extends JFrame implements ActionListener {
     boolean waitingForResponse;
     int number=0;
     
-    private ConcurrentHashMap<Integer, Set<Integer>> topology;
+    private ConcurrentHashMap<String, Set<String>> topology;
     private ConcurrentHashMap<String, String[]> resolver;
     private ConcurrentHashMap<String, Oracle.replicaState> replicaStates;
     private ArrayList<String> branchReplicas;
@@ -422,7 +422,8 @@ public class Client extends JFrame implements ActionListener {
 	    		System.out.println(new Float(amountFloat));
 	    		System.out.println(new Integer((serialNumber*100) + clientNumber));
 	        	response = messaging.Transfer(branchNumberFrom, new Integer(accountNumberFrom), branchNumberTo, new Integer(accountNumberTo), new Float(amountFloat), new Integer((serialNumber*100) + clientNumber));
-	        	if (response.GetSuccess()){
+	        	System.out.println("response is " + response);
+                        if (response.GetSuccess()){
 					result1.setText("Transfer successful");
 					result2.setText("Balance in source account: " + response.getBalance());
 	        	} else {

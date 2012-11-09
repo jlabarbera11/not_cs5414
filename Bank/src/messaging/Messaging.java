@@ -37,7 +37,7 @@ public class Messaging {
 
     private String branch = null;
     private String replica = null;
-    private Map<Integer, Set<Integer>> topology = null;
+    private Map<String, Set<String>> topology = null;
     private Map<String, String[]> resolver = null;
 
     private Callback tc;
@@ -171,27 +171,27 @@ public class Messaging {
     //We've extended whoNeighbors to return an array:
     //The first element contains all neighbors we can reach in one hop
     //The second element contains all neighbors that can reach us in one hop
-    public List<Set<Integer>> whoNeighbors() {
-        Set<Integer> first = this.topology.get(this.branch);
+    public List<Set<String>> whoNeighbors() {
+        Set<String> first = this.topology.get(this.branch);
 
-        Set<Integer> second = new HashSet<Integer>();
-        for(Integer i : this.topology.keySet()) {
+        Set<String> second = new HashSet<String>();
+        for(String i : this.topology.keySet()) {
             if(this.topology.get(i).contains(this.branch))
                 second.add(i);
         }
 
-        List<Set<Integer>> r = new ArrayList<Set<Integer>>();
+        List<Set<String>> r = new ArrayList<Set<String>>();
         r.add(first);
         r.add(second);
         return r;
     }
 
-    private void _checkTopopolgy(Set<Integer> checked, Integer current) {
+    private void _checkTopopolgy(Set<String> checked, String current) {
         checked.add(current);
         if(!this.topology.containsKey(current))
             return;
 
-        for(Integer val : this.topology.get(current)) {
+        for(String val : this.topology.get(current)) {
             if(checked.contains(val))
                 continue;
             else
@@ -200,10 +200,10 @@ public class Messaging {
     }
 
     public boolean checkTopology() throws MessagingException {
-        for(Integer key : this.topology.keySet()) {
-            Set<Integer> checked = new HashSet<Integer>();
+        for(String key : this.topology.keySet()) {
+            Set<String> checked = new HashSet<String>();
             checked.add(key);
-            for(Integer val : this.topology.get(key)) {
+            for(String val : this.topology.get(key)) {
                 if(checked.contains(val))
                     continue;
                 else
@@ -215,22 +215,22 @@ public class Messaging {
         return true;
     }
 
-    public static ConcurrentHashMap<Integer, Set<Integer>> buildTopologyHelper(String topologyfile) throws MessagingException {
-        ConcurrentHashMap<Integer, Set<Integer>> map = new ConcurrentHashMap<Integer, Set<Integer>>();
+    public static ConcurrentHashMap<String, Set<String>> buildTopologyHelper(String topologyfile) throws MessagingException {
+        ConcurrentHashMap<String, Set<String>> map = new ConcurrentHashMap<String, Set<String>>();
         try {
             Scanner scanner = new Scanner(new File(topologyfile));
             while (scanner.hasNextLine()) {
 
                 String[] a = scanner.nextLine().split(" ");
-                Integer key = Integer.parseInt(a[0]);
-                Integer val = Integer.parseInt(a[1]);
+                String key = a[0];
+                String val = a[1];
 
                 if (map.containsKey(key)) {
                     map.get(key).add(val);
                 }
 
                 else {
-                    Set<Integer> s = new HashSet<Integer>();
+                    Set<String> s = new HashSet<String>();
                     s.add(val);
                     map.put(key, s);
                 }
@@ -299,13 +299,9 @@ public class Messaging {
             } catch (Exception e){
             	//ignore
             }
-            System.out.println("1");
 	        this.clientsocket = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
-	        System.out.println("2");
 	        this.clientoos = new ObjectOutputStream(this.clientsocket.getOutputStream());
-	        System.out.println("3");
 	        this.clientoos.writeObject(new InitializeMessage(this.branch, null));
-	        System.out.println("4");
 	        this.clientois = new ObjectInputStream(this.clientsocket.getInputStream());
 	        System.out.println("client done updating primary");
         } catch (UnknownHostException e) {
@@ -392,10 +388,15 @@ public class Messaging {
     }
 
     public TransferResponse Transfer(String src_branch, Integer src_acnt, String dest_branch, Integer dest_acnt, Float amt, Integer ser_number) throws MessagingException {
+        System.out.println("src_branch is " + topology);
+        System.out.println("dest_branch is " + topology);
+        System.out.println("topology is " + topology);
+        System.out.println("topology at src_branch is " + topology.get(src_branch));
         if (!src_branch.equals(this.branch))
             return new TransferResponse("Cannot transfer money from this branch");
-        if (src_branch.compareTo(dest_branch) != 0 && !topology.get(src_branch).contains(dest_branch))
+        if (src_branch.compareTo(dest_branch) != 0 && !topology.get(src_branch).contains(dest_branch)) {
             return new TransferResponse("Cannot transfer money to this branch");
+        }
         return (TransferResponse)sendRequest(new TransferRequest(dest_branch, src_acnt, dest_acnt, amt, ser_number));
     }
     //End Client Methods
@@ -415,10 +416,33 @@ public class Messaging {
     }
 
     public void SendToBranch(String branch, Message M) {
-        try {
-            this.sendMessage(this.branchstreams.get(branch), M);
-            return;
-        } catch(Exception e) {System.out.println("fixme");}
+        String branchnum = branch.substring(0,2);
+        for(int i=0; i<5; i++) {
+            try {
+                try {
+                    if(this.branchstreams.get(branchnum) == null)
+                        throw new MessagingException(MessagingException.Type.UNKNOWN_HOST);
+                    System.out.println("sending to branch " + branch);
+                    this.sendMessage(this.branchstreams.get(branchnum), M);
+                    System.out.println("sent to branch " + branch);
+                    return;
+                } catch(Exception e) {
+                    System.out.println("Failed sending to branch " + branch);
+                    Thread.sleep(1000);
+                    String[] res = this.resolver.get(branch);
+                    Socket s = new Socket(InetAddress.getByName(res[0]), Integer.parseInt(res[1]));
+                    ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
+                    oos.writeObject(new InitializeMessage(this.branch, this.replica));
+                    this.branchstreams.put(branchnum, oos);
+                    ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
+                    new Thread(new ConnectionHandler(ois)).start();
+                }
+            } catch (IOException e) {
+                continue;
+            } catch (InterruptedException e) {
+                System.out.println("Unexpected InterruptedException occurred");
+            }
+        }
     }
 
     public void SendToReplica(String replica, Message M) {

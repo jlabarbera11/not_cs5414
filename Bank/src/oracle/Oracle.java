@@ -28,7 +28,7 @@ public class Oracle extends JFrame implements ActionListener {
     private JTextField recoveryServerNumber = new JTextField(16);
     private JLabel result1 = new JLabel(" ");
     private JLabel result2 = new JLabel(" ");
-    private ConcurrentHashMap<Integer, Set<Integer>> topology;
+    private ConcurrentHashMap<String, Set<String>> topology;
     private ConcurrentHashMap<String, String[]> resolver;
     private ConcurrentHashMap<String, replicaState> replicaStates;
     Messaging messaging;
