@@ -67,9 +67,10 @@ public class NewMessaging {
     }
     
     //assumes replica is up
-	private void sendToAddressNoResponse(int port, String hostname, Message message) throws MessagingException{
+	public void sendToReplicaNoResponse(ReplicaID replicaID, Message message) throws MessagingException{
+		ReplicaInfo replicaInfo = allReplicaInfo.get(replicaID);
 		try {
-			Socket socket = new Socket(hostname, port);
+			Socket socket = new Socket(replicaInfo.host, replicaInfo.port);
 			socket.setSoTimeout(5 * 1000);
             
             ObjectOutputStream o = new ObjectOutputStream(socket.getOutputStream());
@@ -92,14 +93,14 @@ public class NewMessaging {
 	public void sendToPrimaryNoResponse(int branchID, Message message) throws MessagingException{
 		//look up address, call above
 		ReplicaID headID = getHead(branchID);
-		ReplicaInfo headInfo = allReplicaInfo.get(headID);
-		sendToAddressNoResponse(headInfo.port, headInfo.host, message);
+		sendToReplicaNoResponse(headID, message);
 	}
     
     //assumes replica is up
-	private Message sendToAddressAndReturnResponse(int port, String hostname, Message message) throws MessagingException{
+	public Message sendToReplicaAndReturnResponse(ReplicaID replicaID, Message message) throws MessagingException{
+		ReplicaInfo replicaInfo = allReplicaInfo.get(replicaID);
 		try {
-			Socket socket = new Socket(hostname, port);
+			Socket socket = new Socket(replicaInfo.host, replicaInfo.port);
 			socket.setSoTimeout(5 * 1000);
             
             ObjectOutputStream o = new ObjectOutputStream(socket.getOutputStream());
@@ -125,8 +126,7 @@ public class NewMessaging {
 	public Message sendToPrimaryAndReturnResponse(int branchID, Message message) throws MessagingException{
 		//look up address, call above
 		ReplicaID headID = getHead(branchID);
-		ReplicaInfo headInfo = allReplicaInfo.get(headID);
-		return sendToAddressAndReturnResponse(headInfo.port, headInfo.host, message);
+		return sendToReplicaAndReturnResponse(headID, message);
 	}
 	
 	//Do ALL initializing here
