@@ -19,6 +19,7 @@ public class MessagingException extends Exception {
         UNKNOWN_ERROR,
         FAILED_CONNECTION_TO_REPLICA,
         REPLICA_NOT_FOUND,
+        SEND_ERROR,
     }
 
     public Type type;
