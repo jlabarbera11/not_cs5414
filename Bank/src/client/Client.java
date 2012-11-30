@@ -3,9 +3,11 @@ package client;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -40,72 +42,19 @@ public class Client extends JFrame implements ActionListener {
     public JLabel result1 = new JLabel(" ");
     public JLabel result2 = new JLabel(" ");
     //int serialNumber = 0;
-    String clientNumber;
-    public Messaging messaging;
+    int clientNumber;
+    public NewMessaging newMessaging;
     boolean waitingForResponse;
     int number=0;
-    
-    private ConcurrentHashMap<String, Set<String>> topology;
-    private ConcurrentHashMap<String, String[]> resolver;
-    private ConcurrentHashMap<String, Oracle.replicaState> replicaStates;
-    private ArrayList<String> branchReplicas;
-    private String currentPrimary;
+
     private Map<Integer, String> serialsSeen;
     
     public String GetResult(){
     	return result1.getText();
     }
-    
-//    private String getClientNumString(){
-//    	if (Integer.parseInt(clientNumber) < 10){
-//    		return "0" + clientNumber;
-//    	} else {
-//    		return "" + clientNumber;
-//    	}
-//    }
-    
-    //must be called after resolver init
-    private ArrayList<String> buildBranchReplicas(){
-    	ArrayList<String> output = new ArrayList<String>();
-    	for (Map.Entry<String, String[]> entry : resolver.entrySet())
-    	{
-	    	System.out.println("resolver key is " + entry.getKey().substring(0,2) + " and client number is " + clientNumber);
-    	    if (entry.getKey().substring(0,2).equals(clientNumber)){
-    	    	//System.out.println("resolver key is " + entry.getKey().substring(0,2) + " and client number is " + getClientNumString());
-    	    	output.add(entry.getKey());
-    	    }
-    	}
-    	//a negative integer, zero, or a positive integer as the first argument is less than, equal to, or greater than the second.
-    	Collections.sort(output,new Comparator<String>() {
-            public int compare(String string1, String string2) {
-                return string1.substring(3,5).compareTo(string2.substring(3,5));
-            }
-        });
-    	
-    	return output;
-    }
-    
-    private void initializePrimary(){
-    	currentPrimary = branchReplicas.get(0);
-    }
-    
-    private void updatePrimary(){
-        for (String entry : branchReplicas){
-            if (replicaStates.get(entry) == Oracle.replicaState.running){
-                if (!entry.equals(currentPrimary)){
-                	System.out.println("updatePrimary is looking at entry " + entry + ", currentPrimary is " + currentPrimary);
-                    try {
-                        messaging.ClientUpdatePrimary(entry);
-                        currentPrimary = entry;
-                    } catch (MessagingException e) {
-                        System.out.println("updating primary failed");
-                    }
-                    return;
-                }
-            }
-        }
-    }
-
+  
+    //TODO: this probably can be deleted
+    /**
     private class OracleCallback implements Callback {
         public void Callback(Message message){
             try {
@@ -125,11 +74,43 @@ public class Client extends JFrame implements ActionListener {
                 e.printStackTrace();
             }
         }
+    }*/
+    
+    private ResponseClient sendRequest(RequestClient message, int branchNumber) throws MessagingException {
+    	ResponseClient result = null;
+    	for (int i=0; i<3; i++){
+    		try {
+    			result = (ResponseClient)newMessaging.sendToPrimaryAndReturnResponse(branchNumber, message);
+    			return result;
+    		} catch (MessagingException e){
+    			System.out.println("send " + i + " failed");
+    		}
+    	}
+    	System.out.println("send failed in sendRequest (3 timeouts)");
+    	throw new MessagingException(MessagingException.Type.FAILED_MESSAGE_SEND);
     }
     
-    //public String SetText
+	private DepositResponse sendDeposit(int branchNumber, int accountNumber, float amountFloat, int serialNum) throws MessagingException {
+		DepositRequest dr = new DepositRequest(accountNumber, amountFloat, serialNum);
+		return (DepositResponse)sendRequest(dr, branchNumber);
+	}
+	
+	private WithdrawResponse sendWithdrawal(int branchNumber, int accountNumber, float amountFloat, int serialNumber) throws MessagingException {
+		WithdrawRequest wr = new WithdrawRequest(accountNumber, amountFloat, serialNumber);
+		return (WithdrawResponse)sendRequest(wr, branchNumber);
+	}
+	
+	private TransferResponse sendTransfer(int branchNumberFrom, int accountNumberFrom, int branchNumberTo, int accountNumberTo, float amountFloat, int serialNum) throws MessagingException {
+		TransferRequest tr = new TransferRequest(branchNumberTo, accountNumberFrom, accountNumberTo, amountFloat, serialNum);
+		return (TransferResponse)sendRequest(tr, branchNumberFrom);
+	}
+	
+	private QueryResponse sendQuery(int branchNumber, int accountNumber, int serialNumber) throws MessagingException {
+		QueryRequest qr = new QueryRequest(accountNumber, serialNumber);
+		return (QueryResponse)sendRequest(qr, branchNumber);
+	}
     
-	  public Client(String clientNum) {
+	  public Client(int clientNum) {
 	    super("Bank GUI for Branch " + clientNum);
 	    this.clientNumber = clientNum;
 	    setSize(400, 700);
@@ -322,14 +303,15 @@ public class Client extends JFrame implements ActionListener {
 			result2.setText("");
 		} else {
 			//result1.setText("valid account number and amount");
-			String branchNumber = account.substring(0, 2);
+			int branchNumber = Integer.parseInt(account.substring(0, 2));
 			int accountNumber = Integer.parseInt(account.substring(3, account.length()));
 			float amountFloat = Float.parseFloat(amount);
 			int serialNumber = Integer.parseInt(serial);
 			DepositResponse response;
 			try {
 				System.out.println("passing in serial " + serialNumber);
-				response = messaging.Deposit(branchNumber, new Integer(accountNumber), new Float(amountFloat), new Integer((serialNumber*100) + clientNumber));
+				response = sendDeposit(branchNumber, accountNumber, amountFloat, serialNumber*100 + clientNumber);
+				//response = messaging.Deposit(branchNumber, new Integer(accountNumber), new Float(amountFloat), new Integer((serialNumber*100) + clientNumber));
 				if (response.GetSuccess()){
 					result1.setText("Deposit successful");
 					result2.setText("Balance: " + response.getBalance());
@@ -338,13 +320,13 @@ public class Client extends JFrame implements ActionListener {
 					result2.setText("");
 				}
 			} catch (MessagingException e1) {
-				result1.setText("A network error occurred");
+				result1.setText("An error occurred");
 				result2.setText("");
 			}
 			
 		}
 	}
-	
+
 	public void handleWithdrawal(){
 		//System.out.println("got withdrawal");
 	    //System.out.println("account number is: " + withdrawalAccount.getText());
@@ -364,13 +346,14 @@ public class Client extends JFrame implements ActionListener {
 	    	result2.setText("");
 	    } else {
 	    	//result1.setText("valid account number and amount");
-	    	String branchNumber = account.substring(0, 2);
+	    	int branchNumber = Integer.parseInt(account.substring(0, 2));
 	    	int accountNumber = Integer.parseInt(account.substring(3, account.length()));
 	    	float amountFloat = Float.parseFloat(amount);
 	    	int serialNumber = Integer.parseInt(serial);
 	    	WithdrawResponse response;
 	    	try {
-	        	response = messaging.Withdraw(branchNumber, new Integer(accountNumber), new Float(amountFloat), new Integer((serialNumber*100) + clientNumber));
+	    		response = sendWithdrawal(branchNumber, accountNumber, amountFloat, serialNumber*100+clientNumber);
+	        	//response = messaging.Withdraw(branchNumber, new Integer(accountNumber), new Float(amountFloat), new Integer((serialNumber*100) + clientNumber));
 	        	if (response.GetSuccess()){
 					result1.setText("Withdrawal successful");
 					result2.setText("Balance: " + response.getBalance());
@@ -379,12 +362,12 @@ public class Client extends JFrame implements ActionListener {
 					result2.setText("");
 	        	}
 	    	} catch (MessagingException e2){
-				result1.setText("A network error occurred");
+				result1.setText("An error occurred");
 				result2.setText("");
 	    	}
 	    }
 	}
-	
+
 	public void handleTransfer(){
 	    System.out.println("got transfer");
 	    System.out.println("from account number is: " + transferFromAccount.getText());
@@ -409,21 +392,16 @@ public class Client extends JFrame implements ActionListener {
 	    	result2.setText("");
 	    } else {
 	    	//result1.setText("valid account number and amount");
-	    	String branchNumberTo = accountTo.substring(0, 2);
+	    	int branchNumberTo = Integer.parseInt(accountTo.substring(0, 2));
 	    	int accountNumberTo = Integer.parseInt(accountTo.substring(3, accountTo.length()));
-	    	String branchNumberFrom = accountFrom.substring(0, 2);
+	    	int branchNumberFrom = Integer.parseInt(accountFrom.substring(0, 2));
 	    	int accountNumberFrom = Integer.parseInt(accountFrom.substring(3, accountFrom.length()));
 	    	float amountFloat = Float.parseFloat(amount);
 	    	int serialNumber = Integer.parseInt(serial);
 	    	TransferResponse response;
 	    	try {
-	    		System.out.println(branchNumberFrom);
-	    		System.out.println(new Integer(accountNumberFrom));
-	    		System.out.println(branchNumberTo);
-	    		System.out.println(new Integer(accountNumberTo));
-	    		System.out.println(new Float(amountFloat));
-	    		System.out.println(new Integer((serialNumber*100) + clientNumber));
-	        	response = messaging.Transfer(branchNumberFrom, new Integer(accountNumberFrom), branchNumberTo, new Integer(accountNumberTo), new Float(amountFloat), new Integer((serialNumber*100) + clientNumber));
+	        	response = sendTransfer(branchNumberFrom, accountNumberFrom, branchNumberTo, accountNumberTo, amountFloat, serialNumber*100 + clientNumber);
+	    		//response = messaging.Transfer(branchNumberFrom, new Integer(accountNumberFrom), branchNumberTo, new Integer(accountNumberTo), new Float(amountFloat), new Integer((serialNumber*100) + clientNumber));
 	        	System.out.println("response is " + response);
                         if (response.GetSuccess()){
 					result1.setText("Transfer successful");
@@ -433,12 +411,12 @@ public class Client extends JFrame implements ActionListener {
 					result2.setText("");
 	        	}
 	    	} catch (MessagingException e2){
-				result1.setText("A network error occurred");
+				result1.setText("An error occurred");
 				result2.setText("");
 	    	}
 	    }
 	}
-	
+
 	public void handleQuery(){
 	    //System.out.println("got query");
 	    //System.out.println("account number is: " + queryAccount.getText());
@@ -453,12 +431,13 @@ public class Client extends JFrame implements ActionListener {
 	    	result2.setText("");
 	    } else {
 	    	//result1.setText("valid account number and amount");
-	    	String branchNumber = account.substring(0, 2);
+	    	int branchNumber = Integer.parseInt(account.substring(0, 2));
 	    	int accountNumber = Integer.parseInt(account.substring(3, account.length()));
 	    	int serialNumber = Integer.parseInt(serial);
 	    	QueryResponse response;
 	    	try {
-	        	response = messaging.Query(branchNumber, new Integer(accountNumber), Integer.parseInt((serialNumber*100) + clientNumber));
+	    		response = sendQuery(branchNumber, accountNumber, serialNumber+100 + clientNumber);
+	        	//response = messaging.Query(branchNumber, new Integer(accountNumber), Integer.parseInt((serialNumber*100) + clientNumber));
 	        	if (response.GetSuccess()){
 					result1.setText("Query successful.");
 					result2.setText("Balance: " + response.getBalance());
@@ -467,12 +446,12 @@ public class Client extends JFrame implements ActionListener {
 					result2.setText("");
 	        	}
 	    	} catch (MessagingException e2){
-				result1.setText("A network error occurred");
+				result1.setText("An error occurred");
 				result2.setText("");
 	    	}
 	    }
 	}
-	
+
 	private void lockGUI(){
 		System.out.println("locking");
 		waitingForResponse=true;
@@ -519,29 +498,9 @@ public class Client extends JFrame implements ActionListener {
 			System.exit(0);
 		}
 		
-		Client client = new Client(clientNum);
+		Client client = new Client(Integer.parseInt(clientNum));
+		client.newMessaging = new NewMessaging();
 		
-		try {
-			client.messaging = new Messaging(clientNum, null);
-			client.messaging.connectToServer(client.new OracleCallback());
-			client.messaging.initializeOracleAddress();
-		} catch (MessagingException e) {
-			System.out.println("Could not create socket");
-		}
-		
-	    try {
-			client.topology = Messaging.buildTopologyHelper("topology.txt");
-			client.resolver = Messaging.buildResolverHelper("resolver.txt");
-			client.replicaStates = Oracle.buildReplicaStates(client.resolver);
-			client.branchReplicas = client.buildBranchReplicas();
-			client.initializePrimary();
-		} catch (MessagingException e) {
-			System.out.println("reading files failed in client");
-			e.printStackTrace();
-			return;
-		}
-		
-		//client.messaging.branch = clientNum;
 	}
 
 }

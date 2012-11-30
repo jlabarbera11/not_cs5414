@@ -24,18 +24,43 @@ import oracle.Oracle.replicaState;
  *  - include methods to update these data structures as nodes fail or recover
  *  - include methods to get head, maybe to return the data structure itself
  *  - provide methods to open a socket, send a packet, and close the socket
- * 
- *
  */
-
 
 public class NewMessaging {
 	public static String topologyFilename = "topology.txt";
 	public static String resolverFilename = "resolver.txt";
 	public static String oracleFilename = "oracle.txt"; //TODO: remove for phase 4
+	public static String clientResolverFilename = "clientResolver.txt";
 	
     private HashMap<ReplicaID, ReplicaInfo> allReplicaInfo = new HashMap<ReplicaID, ReplicaInfo>();
-    private HashMap<Integer, Set<Integer>> topology = new HashMap<Integer, Set<Integer>>();
+    
+    //maps branch number to list of reachable branch numbers
+    private HashMap<Integer, Set<Integer>> topology = new HashMap<Integer, Set<Integer>>(); 
+    
+    //maps client number to address
+    private HashMap<Integer, ReplicaInfo> clientInfo = new HashMap<Integer, ReplicaInfo>();
+    
+    public void sendToClientNoResponse(Integer clientNum, Message message) throws MessagingException{
+		ReplicaInfo replicaInfo = clientInfo.get(clientNum);
+		try {
+			Socket socket = new Socket(replicaInfo.host, replicaInfo.port);
+			socket.setSoTimeout(5 * 1000);
+            
+            ObjectOutputStream o = new ObjectOutputStream(socket.getOutputStream());
+            ObjectInputStream i = new ObjectInputStream(socket.getInputStream());
+
+            o.writeObject(message);
+
+            i.close();
+            o.close();
+            socket.close();
+            
+		} catch (Exception e){
+			System.out.println("failure in sendToAddressAndReturnResult");
+			e.printStackTrace();
+			throw new MessagingException(MessagingException.Type.SEND_ERROR);
+		}
+    }
     
     public void setState(ReplicaID replicaID, Oracle.replicaState newState){
     	ReplicaInfo replicaInfo = allReplicaInfo.get(replicaID);
@@ -101,7 +126,7 @@ public class NewMessaging {
 		ReplicaInfo replicaInfo = allReplicaInfo.get(replicaID);
 		try {
 			Socket socket = new Socket(replicaInfo.host, replicaInfo.port);
-			socket.setSoTimeout(5 * 1000);
+			socket.setSoTimeout(1000);
             
             ObjectOutputStream o = new ObjectOutputStream(socket.getOutputStream());
             ObjectInputStream i = new ObjectInputStream(socket.getInputStream());
@@ -134,6 +159,28 @@ public class NewMessaging {
 		System.out.println("intitializing NewMessaging");
 		readResolver();
 		readTopology();
+		readClientResolver();
+	}
+	
+	public void readClientResolver(){
+		System.out.println("reading client resolver");
+        try {
+            Scanner scanner = new Scanner(new File(clientResolverFilename));
+            while (scanner.hasNextLine()) {
+                String[] line = scanner.nextLine().split(" ");
+                Integer branchNum = Integer.parseInt(line[0]);
+                
+                Integer port = Integer.parseInt(line[2]);
+                String hostname = line[1];
+                ReplicaInfo replicaInfo = new ReplicaInfo(port, hostname);
+                clientInfo.put(branchNum, replicaInfo);
+            }
+            scanner.close();
+        } catch (Exception e) {
+        	System.out.println("reading client resolver failed");
+        	e.printStackTrace();
+        	return;
+        } 
 	}
 	
 	//resolver.txt format: 01.01 localhost 4441
@@ -150,6 +197,7 @@ public class NewMessaging {
                 Integer port = Integer.parseInt(line[2]);
                 String hostname = line[1];
                 ReplicaInfo replicaInfo = new ReplicaInfo(port, hostname);
+                allReplicaInfo.put(replicaID, replicaInfo);
             }
             scanner.close();
         } catch (Exception e) {
