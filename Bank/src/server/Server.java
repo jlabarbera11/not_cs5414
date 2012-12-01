@@ -119,8 +119,8 @@ public class Server
         this.replicaID = replicaID;
         accounts = new ConcurrentHashMap<AccountNumber, BankAccount>();
         this.waiting_records = new HashMap<Integer, HashSet<Integer>>();
-
         newMessaging = new NewMessaging();
+        this.backups = newMessaging.initBackups(branchID, replicaID);
     }
 
     public DepositResponse deposit(int accountID, float amount, int serialNumber)
@@ -235,10 +235,16 @@ public class Server
     public Message receiveMessage() throws IOException, ClassNotFoundException{
     	ReplicaInfo myInfo = newMessaging.getReplicaInfo(new ReplicaID(branchID, replicaID));
     	ServerSocket serversocket = new ServerSocket(myInfo.port);
+    	serversocket.setReuseAddress(true);
+    	System.out.println("server listening on port " + myInfo.port);
         Socket clientSocket = serversocket.accept();
+        System.out.println("server accepted connection");
         ObjectInputStream ois = new ObjectInputStream(clientSocket.getInputStream());
+        System.out.println("got ois");
         Message message = (Message)ois.readObject();
+        System.out.println("read object");
         serversocket.close();
+        clientSocket.close();
         return message;
     }
 
@@ -304,7 +310,7 @@ public class Server
 	            } else {
 	                System.out.println("Don't know how to handle message");
 	            }
-        	} catch (NullPointerException e){
+        	//} catch (NullPointerException e){
         		//do nothing
         	} catch (Exception e){
         		System.out.println("error in server main loop");

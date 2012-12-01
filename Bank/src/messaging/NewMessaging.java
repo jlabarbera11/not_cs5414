@@ -45,19 +45,18 @@ public class NewMessaging {
 		ReplicaInfo replicaInfo = clientInfo.get(clientNum);
 		try {
 			Socket socket = new Socket(replicaInfo.host, replicaInfo.port);
+			
 			socket.setSoTimeout(5 * 1000);
             
             ObjectOutputStream o = new ObjectOutputStream(socket.getOutputStream());
-            ObjectInputStream i = new ObjectInputStream(socket.getInputStream());
 
             o.writeObject(message);
 
-            i.close();
             o.close();
             socket.close();
             
 		} catch (Exception e){
-			System.out.println("failure in sendToAddressAndReturnResult");
+			System.out.println("failure in send to sendToClientNoResponse");
 			e.printStackTrace();
 			throw new MessagingException(MessagingException.Type.SEND_ERROR);
 		}
@@ -97,14 +96,13 @@ public class NewMessaging {
 		ReplicaInfo replicaInfo = allReplicaInfo.get(replicaID);
 		try {
 			Socket socket = new Socket(replicaInfo.host, replicaInfo.port);
+			System.out.println("sending to port " + replicaInfo.port + " on " + replicaInfo.host);
 			socket.setSoTimeout(5 * 1000);
             
             ObjectOutputStream o = new ObjectOutputStream(socket.getOutputStream());
-            ObjectInputStream i = new ObjectInputStream(socket.getInputStream());
 
             o.writeObject(message);
-
-            i.close();
+            System.out.println("written message to stream");
             o.close();
             socket.close();
             
@@ -127,12 +125,14 @@ public class NewMessaging {
 		ReplicaInfo replicaInfo = allReplicaInfo.get(replicaID);
 		try {
 			Socket socket = new Socket(replicaInfo.host, replicaInfo.port);
+			System.out.println("sending to port " + replicaInfo.port + " and host " + replicaInfo.host);
 			socket.setSoTimeout(1000);
             
             ObjectOutputStream o = new ObjectOutputStream(socket.getOutputStream());
             ObjectInputStream i = new ObjectInputStream(socket.getInputStream());
 
             o.writeObject(message);
+            System.out.println("written message");
             Message response = (Message)i.readObject();
 
             i.close();
@@ -239,6 +239,21 @@ public class NewMessaging {
 
 	public ReplicaInfo getReplicaInfo(ReplicaID replicaID) {
 		return allReplicaInfo.get(replicaID);
+	}
+
+	public ReplicaInfo getClientInfo(int clientNumber) {
+		return clientInfo.get(clientNumber);
+	}
+
+	public Set<Integer> initBackups(int branchID, int replicaID) {
+		Set<Integer> output = new HashSet<Integer>();
+    	for (Map.Entry<ReplicaID, ReplicaInfo> entry : allReplicaInfo.entrySet())
+    	{
+    	    if (entry.getKey().branchNum == branchID && entry.getKey().replicaNum > replicaID){
+    	    	output.add(entry.getKey().replicaNum);
+    	    }
+    	}
+    	return output;
 	}
 	
 	

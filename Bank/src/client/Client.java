@@ -6,6 +6,7 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
@@ -74,15 +75,32 @@ public class Client extends JFrame implements ActionListener {
                 e.printStackTrace();
             }
         }
-    }*/
+    }
+     */
+    
+    private Message receiveMessage() throws IOException, ClassNotFoundException{
+    	ReplicaInfo myInfo = newMessaging.getClientInfo(clientNumber);
+    	ServerSocket serversocket = new ServerSocket(myInfo.port);
+    	serversocket.setReuseAddress(true);
+    	System.out.println("client listening on port " + myInfo.port);
+        Socket clientSocket = serversocket.accept();
+        System.out.println("client accepted connection");
+        ObjectInputStream ois = new ObjectInputStream(clientSocket.getInputStream());
+        Message message = (Message)ois.readObject();
+        System.out.println("read object");
+        serversocket.close();
+        return message;
+
+    }
     
     private ResponseClient sendRequest(RequestClient message, int branchNumber) throws MessagingException {
     	ResponseClient result = null;
     	for (int i=0; i<3; i++){
     		try {
-    			result = (ResponseClient)newMessaging.sendToPrimaryAndReturnResponse(branchNumber, message);
+    			newMessaging.sendToPrimaryNoResponse(branchNumber, message);
+    			result = (ResponseClient)receiveMessage();
     			return result;
-    		} catch (MessagingException e){
+    		} catch (Exception e){
     			System.out.println("send " + i + " failed");
     		}
     	}
