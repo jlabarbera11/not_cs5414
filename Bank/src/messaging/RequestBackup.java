@@ -3,8 +3,9 @@ package messaging;
 public class RequestBackup extends BackupMessage {
     Message message;
 
-    public RequestBackup(int r, Message m) {
-        this.replica = r;
+    public RequestBackup(int branch, int replica, Message m) {
+        this.replica = replica;
+        this.branch = branch;
         this.message = m;
     }
 

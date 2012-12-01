@@ -33,5 +33,10 @@ public class ReplicaID {
     public int hashCode() {
         return this.branchNum.hashCode() + this.replicaNum.hashCode();
     }
+    
+    @Override
+    public String toString(){
+    	return this.branchNum + "." + this.replicaNum;
+    }
 	
 }

@@ -93,10 +93,12 @@ public class NewMessaging {
     
     //assumes replica is up
 	public void sendToReplicaNoResponse(ReplicaID replicaID, Message message) throws MessagingException{
+		System.out.println("getting replica info for replicaID " + replicaID.toString());
 		ReplicaInfo replicaInfo = allReplicaInfo.get(replicaID);
 		try {
-			Socket socket = new Socket(replicaInfo.host, replicaInfo.port);
 			System.out.println("sending to port " + replicaInfo.port + " on " + replicaInfo.host);
+			Socket socket = new Socket(replicaInfo.host, replicaInfo.port);
+			
 			socket.setSoTimeout(5 * 1000);
             
             ObjectOutputStream o = new ObjectOutputStream(socket.getOutputStream());
@@ -107,7 +109,7 @@ public class NewMessaging {
             socket.close();
             
 		} catch (Exception e){
-			System.out.println("failure in sendToAddressAndReturnResult");
+			System.out.println("failure in sendToReplicaNoResponse");
 			e.printStackTrace();
 			throw new MessagingException(MessagingException.Type.SEND_ERROR);
 		}
