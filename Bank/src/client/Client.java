@@ -125,16 +125,12 @@ public class Client extends JFrame implements ActionListener {
 	    createQueryBox(mainPanel);
 	    createSnapshotBox(mainPanel);
 	    createResultBox(mainPanel);
-	    //layout.putConstraint(SpringLayout.SOUTH, depositBox, 5, SpringLayout.NORTH, withdrawalBox);
-	    
-	    //mainPanel.add(depositBox);
-	    //mainPanel.add(withdrawalBox);
-	    //mainPanel.add(transferBox);
-	    //mainPanel.add(queryBox);
 	    getContentPane().add(mainPanel);
 	    setDefaultCloseOperation(EXIT_ON_CLOSE);
 	    setVisible(true);
 	    waitingForResponse=false;
+	    
+	    newMessaging = new NewMessaging();
 	  }
 	  
 	  private void createDepositBox(JPanel panel){
@@ -499,7 +495,7 @@ public class Client extends JFrame implements ActionListener {
 		}
 		
 		Client client = new Client(Integer.parseInt(clientNum));
-		client.newMessaging = new NewMessaging();
+		
 		
 	}
 
