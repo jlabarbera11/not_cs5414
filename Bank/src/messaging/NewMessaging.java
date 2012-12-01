@@ -192,7 +192,7 @@ public class NewMessaging {
             while (scanner.hasNextLine()) {
                 String[] line = scanner.nextLine().split(" ");
                 Integer branchNum = Integer.parseInt(line[0].substring(0,2));
-                Integer replicaNum = Integer.parseInt(line[0].substring(2,4));
+                Integer replicaNum = Integer.parseInt(line[0].substring(3,5));
                 ReplicaID replicaID = new ReplicaID(branchNum, replicaNum);
                 
                 Integer port = Integer.parseInt(line[2]);

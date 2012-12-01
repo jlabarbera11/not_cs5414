@@ -247,7 +247,7 @@ public class Server
         System.out.println("Server starting up!");
         while (true) {
         	try {
-	        	Message mr = receiveMessage();
+        		Message mr = receiveMessage();
 	            System.out.println("Got message");
 	
 	            if (mr instanceof RequestClient) { //from client
@@ -304,6 +304,8 @@ public class Server
 	            } else {
 	                System.out.println("Don't know how to handle message");
 	            }
+        	} catch (NullPointerException e){
+        		//do nothing
         	} catch (Exception e){
         		System.out.println("error in server main loop");
         		e.printStackTrace();
