@@ -16,6 +16,9 @@ oracle:
 
 messaging:
 	javac -Xlint:unchecked -sourcepath src/ -d bin/ src/messaging/*.java
+	
+jvm:
+	javac -Xlint:unchecked -sourcepath src/ -d bin/ src/jvm/*.java
 
 messaging-test:
 	javac -Xlint:unchecked -sourcepath src/ -cp lib/junit-4.10.jar -d bin src/messaging/test/MessagingTest.java
@@ -29,6 +32,9 @@ server-jar: server messaging
 
 oracle-jar: server messaging
 	jar cfe oracle.jar oracle.Oracle -C bin .
+	
+jvm-jar: client server messaging
+	jar cfe jvm.jar jvm.JVM -C bin .
 
 
 clean:

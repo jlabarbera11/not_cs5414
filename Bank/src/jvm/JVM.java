@@ -1,4 +1,4 @@
-package server;
+package jvm;
 
 import java.io.File;
 import java.util.HashMap;
@@ -6,6 +6,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
+
+import server.Server;
 
 import messaging.ReplicaID;
 import messaging.ReplicaInfo;
@@ -17,11 +19,7 @@ public class JVM {
 	Map<Integer, Set<ReplicaID>> jvmInfo = new HashMap<Integer, Set<ReplicaID>>();
 	public static String jvmfile = "jvmInfo.txt";
 	int jvmID;
-	
-	//used fields:
-	Set<ReplicaID> myReplicas = new HashSet<ReplicaID>();
-	
-	//TODO: this is probably unnecessary and should be removed
+
 	private void readjvmInfo(){
 		System.out.println("reading jvmInfo...");
         try {
@@ -45,24 +43,23 @@ public class JVM {
         } 
 	}
 	
-	public JVM(String[] args){
-		//this.jvmID = id;
-		//readjvmInfo();
-		for (String entry : args){
-			myReplicas.add(new ReplicaID(Integer.parseInt(entry.substring(0,2)), Integer.parseInt(entry.substring(3,5))));
-		}
+	public JVM(int id){
+		this.jvmID = id;
+		readjvmInfo();
 	}
 	
 	public void run(){
+		Set<ReplicaID> myReplicas = jvmInfo.get(this.jvmID);
+		
 		for (ReplicaID entry : myReplicas){
 			Server server = new Server(entry.branchNum, entry.replicaNum);
-			server.run();
+			server.start();
 			System.out.println("started server " + entry.toString());
 		}
 	}
 	
     public static void main(String args[]) {
-        JVM jvm = new JVM(args);
+        JVM jvm = new JVM(Integer.parseInt(args[0]));
         jvm.run();
     }
 	
