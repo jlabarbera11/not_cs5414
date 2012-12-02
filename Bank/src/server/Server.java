@@ -28,7 +28,7 @@ public class Server
     private int replicaID;
     private Map<AccountNumber, BankAccount> accounts;
     private NewMessaging newMessaging;
-    private Set<Integer> backups; //Set of all replicas excluding self. needs to be init
+    private Set<Integer> backups; //Set of all replicas with greater replica IDs
     private Map<Integer, HashSet<Integer>> waiting_records; //SerialID to returned backups
     private Map<Integer, RequestClient> waiting_clients = new HashMap<Integer, RequestClient>();
     ServerSocket serversocket;
@@ -49,14 +49,7 @@ public class Server
         }
     }
     
-    private void removeFromBackups(String replicaID){
-    	if (replicaID.substring(0,2).equals(branchID)){
-    		backups.remove(replicaID.substring(3,5));
-    		System.out.println("removed " + replicaID + " from backups list");
-    	}
-    }
-    
-    //TODO: fix this oracle shit!
+    //TODO: remove this oracle shit!
     
     public void HandleOracleMessage(Message message){
         /**try {
@@ -188,6 +181,18 @@ public class Server
     }
 
     public void startBackup(RequestClient rc) {
+    	//update backups
+        for(Integer replicaNum : this.backups) {
+        	//check replica status
+        	Oracle.replicaState status = newMessaging.checkReplicaStatus(new ReplicaID(branchID, replicaNum));
+        	if (status == Oracle.replicaState.running){
+        		System.out.println("state of replica " + replicaNum + " is *running*");
+        	} else {
+        		System.out.println("replica " + replicaNum + " is not running, removing from backups");
+        		backups.remove(replicaNum);
+        	}
+        }
+    	
         if (this.backups.size() == 0){ 
         	//m.SendToClient(recordTransaction(rc));
         	try {
@@ -206,11 +211,11 @@ public class Server
         }
         waiting_records.put(rc.GetSerialNumber(), new HashSet<Integer>());
         waiting_clients.put(rc.GetSerialNumber(), rc);
-        for(Integer i : this.backups) {
+        for(Integer replicaNum : this.backups) {
             //m.SendToReplica(i, new RequestBackup(this.replicaID, rc));
             try {
-            	//in a RequestBackup, the branchID and replicaID are of the sender
-				newMessaging.sendToReplicaNoResponse(new ReplicaID(branchID, i), new RequestBackup(branchID, replicaID, rc));
+	    		//in a RequestBackup, the branchID and replicaID are of the sender
+	    		newMessaging.sendToReplicaNoResponse(new ReplicaID(branchID, replicaNum), new RequestBackup(branchID, replicaID, rc));
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}

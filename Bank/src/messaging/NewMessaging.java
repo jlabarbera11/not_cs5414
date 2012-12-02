@@ -93,7 +93,6 @@ public class NewMessaging {
     
     //assumes replica is up
 	public void sendToReplicaNoResponse(ReplicaID replicaID, Message message) throws MessagingException{
-		System.out.println("getting replica info for replicaID " + replicaID.toString());
 		ReplicaInfo replicaInfo = allReplicaInfo.get(replicaID);
 		try {
 			System.out.println("sending to port " + replicaInfo.port + " on " + replicaInfo.host);
@@ -104,7 +103,6 @@ public class NewMessaging {
             ObjectOutputStream o = new ObjectOutputStream(socket.getOutputStream());
 
             o.writeObject(message);
-            System.out.println("written message to stream");
             o.close();
             socket.close();
             
@@ -118,11 +116,37 @@ public class NewMessaging {
 	
 	public void sendToPrimaryNoResponse(int branchID, Message message) throws MessagingException{
 		//look up address, call above
-		ReplicaID headID = getHead(branchID);
+		ReplicaID headID = null;
+		while(true){
+			headID = getHead(branchID);
+			Oracle.replicaState status = checkReplicaStatus(headID);
+			if (status != Oracle.replicaState.running){
+				System.out.println("old head FAILURE detected");
+				setState(headID, status);
+			} else {
+				break;
+			}
+		}
 		sendToReplicaNoResponse(headID, message);
 	}
     
-    //assumes replica is up
+    public replicaState checkReplicaStatus(ReplicaID replicaID) {
+    	try {
+			StatusQuery sq = new StatusQuery(replicaID);
+			ReplicaInfo oracleInfo = getOracleInfo();
+			Socket socket = new Socket(oracleInfo.host, oracleInfo.port);
+			ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+			oos.writeObject(sq);
+			ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+			StatusQueryResponse response = (StatusQueryResponse) ois.readObject();
+			return response.status;
+    	} catch (Exception e){
+    		e.printStackTrace();
+    	}
+    	return null;
+	}
+
+	//assumes replica is up
 	public Message sendToReplicaAndReturnResponse(ReplicaID replicaID, Message message) throws MessagingException{
 		ReplicaInfo replicaInfo = allReplicaInfo.get(replicaID);
 		try {
@@ -153,7 +177,17 @@ public class NewMessaging {
 	
 	public Message sendToPrimaryAndReturnResponse(int branchID, Message message) throws MessagingException{
 		//look up address, call above
-		ReplicaID headID = getHead(branchID);
+		ReplicaID headID = null;
+		while(true){
+			headID = getHead(branchID);
+			Oracle.replicaState status = checkReplicaStatus(headID);
+			if (status != Oracle.replicaState.running){
+				System.out.println("old head FAILURE detected");
+				setState(headID, status);
+			} else {
+				break;
+			}
+		}
 		return sendToReplicaAndReturnResponse(headID, message);
 	}
 	
@@ -256,6 +290,25 @@ public class NewMessaging {
     	    }
     	}
     	return output;
+	}
+
+	public ReplicaInfo getOracleInfo() {
+		//read oracle file
+		String[] a = null;
+		try {
+	        Scanner scanner = new Scanner(new File("oracle.txt"));
+	        a = scanner.nextLine().split(" ");
+	        scanner.close();
+		} catch (Exception e){
+			e.printStackTrace();
+		}
+		return new ReplicaInfo(Integer.parseInt(a[1]), a[0]);
+		
+	}
+
+	//will be deprecated as of project 4
+	public replicaState getStatus(ReplicaID replicaOfInterest) {
+		return allReplicaInfo.get(replicaOfInterest).state;
 	}
 	
 	
