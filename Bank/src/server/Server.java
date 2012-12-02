@@ -22,7 +22,7 @@ import java.util.HashSet;
 import oracle.Oracle;
 import oracle.Oracle.replicaState;
 
-public class Server
+public class Server extends Thread
 {
     private int branchID;
     private int replicaID;
@@ -52,6 +52,7 @@ public class Server
     //TODO: remove this oracle shit!
     
     public void HandleOracleMessage(Message message){
+    	System.out.println("ORACLE MESSAGE: this is wrong...");
         /**try {
         	if (message instanceof FailureOracle){
         		FailureOracle fo = (FailureOracle)message;
