@@ -113,6 +113,20 @@ public class Messaging {
     	}
     }
 
+    public void recordPreviousPrimaryFailures(int branchID, int replicaID){
+    	//TODO
+		Set<Integer> notBackups = new HashSet<Integer>();
+    	for (Map.Entry<ReplicaID, ReplicaInfo> entry : allReplicaInfo.entrySet())
+    	{
+    	    if (entry.getKey().branchNum == branchID && entry.getKey().replicaNum < replicaID){
+    	    	notBackups.add(entry.getKey().replicaNum);
+    	    }
+    	}
+    	for (Integer entry : notBackups){
+    		recordJvmFailure(new ReplicaID(branchID, entry));
+    	}
+    }
+
     public ReplicaID getHead(int branchNum){
     	ArrayList<ReplicaID> replicas = new ArrayList<ReplicaID>();
     	for (Map.Entry<ReplicaID, ReplicaInfo> entry : allReplicaInfo.entrySet())
