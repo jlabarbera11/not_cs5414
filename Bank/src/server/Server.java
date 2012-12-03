@@ -34,6 +34,8 @@ public class Server extends Thread
     private Map<Integer, RequestClient> waiting_clients = new ConcurrentHashMap<Integer, RequestClient>();
     ServerSocket serversocket;
 
+    boolean isPrimary = false;
+
     private void checkWaitingRecords(){
         for (Map.Entry<Integer, HashSet<Integer>> entry : waiting_records.entrySet()){
             if (entry.getValue().equals(this.backups)){
@@ -294,6 +296,7 @@ public class Server extends Thread
         return message;
     }
 
+    //TODO: working here
     public void run()
     {
         System.out.println("Server starting up!");
@@ -303,7 +306,11 @@ public class Server extends Thread
 	            System.out.println("Got message");
 
 	            if (mr instanceof RequestClient) { //from client
-	                //System.out.println("Received message from client");
+	                if (!isPrimary){
+	                	isPrimary = true;
+	                	System.out.println("I am now the head, recording failures of previous primaries");
+	                	newMessaging.recordPreviousPrimaryFailures(branchID);
+	                }
 	                startBackup((RequestClient)mr);
 
 	            } else if (mr instanceof BranchMessage) {
