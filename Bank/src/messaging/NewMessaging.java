@@ -30,7 +30,7 @@ import messaging.MessagingException.Type;
 
 public class NewMessaging {
 	public static String topologyFilename = "topology.txt";
-	public static String resolverFilename = "resolver.txt";
+	public static String resolverFilename = "replicaResolver.txt";
 	public static String oracleFilename = "oracle.txt"; //TODO: remove for phase 4
 	public static String clientResolverFilename = "clientResolver.txt";
 	public static String fdsResolverFilename = "fdsResolver.txt";
@@ -38,17 +38,17 @@ public class NewMessaging {
 	public enum replicaState {running, failed}
 	
     private HashMap<ReplicaID, ReplicaInfo> allReplicaInfo = new HashMap<ReplicaID, ReplicaInfo>();
-    
+
     //maps branch number to list of reachable branch numbers
-    private HashMap<Integer, Set<Integer>> topology = new HashMap<Integer, Set<Integer>>(); 
-    
+    private HashMap<Integer, Set<Integer>> topology = new HashMap<Integer, Set<Integer>>();
+
     //maps client number to address
     private HashMap<Integer, ReplicaInfo> clientInfo = new HashMap<Integer, ReplicaInfo>();
-    
+
     private HashMap<Integer, ReplicaInfo> fdsInfo = new HashMap<Integer, ReplicaInfo>();
-    
+
     Map<Integer, Set<ReplicaID>> jvmInfo = new HashMap<Integer, Set<ReplicaID>>();
-    
+
     private void readFDSResolver(){
 		System.out.println("reading FDS resolver");
         try {
@@ -65,45 +65,45 @@ public class NewMessaging {
         	System.out.println("reading FDS resolver failed");
         	e.printStackTrace();
         	return;
-        } 
+        }
     }
-    
+
     public HashMap<Integer, ReplicaInfo> getFdsInfo(){
     	return fdsInfo;
     }
-    
+
     public ReplicaInfo getFdsPort(int fdsID){
     	return fdsInfo.get(fdsID);
     }
-    
-    
-    
+
+
+
     public void sendToClientNoResponse(Integer clientNum, Message message) throws MessagingException{
 		ReplicaInfo replicaInfo = clientInfo.get(clientNum);
 		try {
 			Socket socket = new Socket(replicaInfo.host, replicaInfo.port);
-			
+
 			socket.setSoTimeout(5 * 1000);
-            
+
             ObjectOutputStream o = new ObjectOutputStream(socket.getOutputStream());
 
             o.writeObject(message);
 
             o.close();
             socket.close();
-            
+
 		} catch (Exception e){
 			System.out.println("failure in send to sendToClientNoResponse");
 			e.printStackTrace();
 			throw new MessagingException(MessagingException.Type.SEND_ERROR);
 		}
     }
-    
+
     private void setState(ReplicaID replicaID, replicaState newState){
     	ReplicaInfo replicaInfo = allReplicaInfo.get(replicaID);
     	replicaInfo.state = newState;
     }
-    
+
     public void recordJvmFailure(ReplicaID replicaID){
     	int jvmID = getJvmID(replicaID);
     	fdsInfo.remove(jvmID); //record failure of associated failure detection service
@@ -112,7 +112,7 @@ public class NewMessaging {
     		setState(currentID, replicaState.failed);
     	}
     }
-    
+
     public ReplicaID getHead(int branchNum){
     	ArrayList<ReplicaID> replicas = new ArrayList<ReplicaID>();
     	for (Map.Entry<ReplicaID, ReplicaInfo> entry : allReplicaInfo.entrySet())
@@ -121,13 +121,13 @@ public class NewMessaging {
     	    	replicas.add(entry.getKey());
     	    }
     	}
-    	
+
     	Collections.sort(replicas, new Comparator<ReplicaID>() {
             public int compare(ReplicaID replicaID1, ReplicaID replicaID2) {
                 return replicaID1.replicaNum.compareTo(replicaID2.replicaNum);
             }
         });
-    	
+
     	for (ReplicaID entry : replicas){
     		if (allReplicaInfo.get(entry).state == replicaState.running){
     			return entry;
@@ -136,30 +136,30 @@ public class NewMessaging {
     	System.out.println("error in getHead");
     	return null;
     }
-    
+
     //assumes replica is up
 	public void sendToReplicaNoResponse(ReplicaID replicaID, Message message) throws MessagingException{
 		ReplicaInfo replicaInfo = allReplicaInfo.get(replicaID);
 		try {
 			System.out.println("sending to port " + replicaInfo.port + " on " + replicaInfo.host);
 			Socket socket = new Socket(replicaInfo.host, replicaInfo.port);
-			
+
 			socket.setSoTimeout(5 * 1000);
-            
+
             ObjectOutputStream o = new ObjectOutputStream(socket.getOutputStream());
 
             o.writeObject(message);
             o.close();
             socket.close();
-            
+
 		} catch (Exception e){
 			System.out.println("failure in sendToReplicaNoResponse");
 			e.printStackTrace();
 			throw new MessagingException(MessagingException.Type.SEND_ERROR);
 		}
-		
+
 	}
-	
+
 	public void sendToPrimaryNoResponse(int branchID, Message message) throws MessagingException{
 		//look up address, call above
 		ReplicaID headID = null;
@@ -176,16 +176,16 @@ public class NewMessaging {
 		}
 		sendToReplicaNoResponse(headID, message);
 	}
-	
+
 	private class CheckStatusThread extends Thread {
 		ConcurrentHashMap<replicaState, Integer> responses;
 		Socket socket;
-		
+
 		public CheckStatusThread(ConcurrentHashMap<replicaState, Integer> responses, Socket socket){
 			this.responses = responses;
 			this.socket = socket;
 		}
-		
+
 		public void run(){
 			try {
 				ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
@@ -201,9 +201,9 @@ public class NewMessaging {
 				e.printStackTrace();
 			}
 		}
-		
+
 	}
-	
+
 	//return the jvm id associated with a given replicaID
 	public int getJvmID(ReplicaID replicaID){
 		for (Map.Entry<Integer, Set<ReplicaID>> entry : jvmInfo.entrySet()){
@@ -216,7 +216,7 @@ public class NewMessaging {
 		System.out.println("ERROR: replicaID not found during getJvmID");
 		return -1;
 	}
-	
+
 	public void broadcastToAllFDS(Message message){
     	for (Map.Entry<Integer, ReplicaInfo> entry: fdsInfo.entrySet()){
     		try {
@@ -230,11 +230,11 @@ public class NewMessaging {
     		}
     	}
 	}
-    
+
 	/**
 	 * 1) send a Status query to all FDSs
 	 * 2) make decision based on majority
-	 * @throws MessagingException 
+	 * @throws MessagingException
 	*/
     public replicaState checkReplicaStatus(ReplicaID replicaID) throws MessagingException {
     	ConcurrentHashMap<replicaState, Integer> responses = new ConcurrentHashMap<Oracle.replicaState, Integer>();
@@ -254,7 +254,7 @@ public class NewMessaging {
     			//e.printStackTrace();
     		}
     	}
-    	
+
     	//check responses in a loop. timeout at 5 seconds
     	for (int i=0; i<5; i++){
 			int numFailure = responses.get(replicaState.failed);
@@ -285,7 +285,7 @@ public class NewMessaging {
 			Socket socket = new Socket(replicaInfo.host, replicaInfo.port);
 			System.out.println("sending to port " + replicaInfo.port + " and host " + replicaInfo.host);
 			socket.setSoTimeout(1000);
-            
+
             ObjectOutputStream o = new ObjectOutputStream(socket.getOutputStream());
             ObjectInputStream i = new ObjectInputStream(socket.getInputStream());
 
@@ -298,15 +298,15 @@ public class NewMessaging {
             socket.close();
 
             return response;
-            
+
 		} catch (Exception e){
 			System.out.println("failure in sendToAddressAndReturnResult");
 			e.printStackTrace();
 			throw new MessagingException(MessagingException.Type.SEND_ERROR);
 		}
-		
+
 	}
-	
+
 	public Message sendToPrimaryAndReturnResponse(int branchID, Message message) throws MessagingException{
 		//look up address, call above
 		ReplicaID headID = null;
@@ -322,7 +322,7 @@ public class NewMessaging {
 		}
 		return sendToReplicaAndReturnResponse(headID, message);
 	}
-	
+
 	//Do ALL initializing here
 	public NewMessaging(){
 		System.out.println("intitializing NewMessaging");
@@ -332,7 +332,7 @@ public class NewMessaging {
 		readFDSResolver();
 		this.jvmInfo = JVM.readjvmInfo();
 	}
-	
+
 	public void readClientResolver(){
 		System.out.println("reading client resolver");
         try {
@@ -340,7 +340,7 @@ public class NewMessaging {
             while (scanner.hasNextLine()) {
                 String[] line = scanner.nextLine().split(" ");
                 Integer branchNum = Integer.parseInt(line[0]);
-                
+
                 Integer port = Integer.parseInt(line[2]);
                 String hostname = line[1];
                 ReplicaInfo replicaInfo = new ReplicaInfo(port, hostname);
@@ -351,10 +351,10 @@ public class NewMessaging {
         	System.out.println("reading client resolver failed");
         	e.printStackTrace();
         	return;
-        } 
+        }
 	}
-	
-	//resolver.txt format: 01.01 localhost 4441
+
+	//replicaResolver.txt format: 01.01 localhost 4441
 	public void readResolver(){
 		System.out.println("reading resolver");
         try {
@@ -364,7 +364,7 @@ public class NewMessaging {
                 Integer branchNum = Integer.parseInt(line[0].substring(0,2));
                 Integer replicaNum = Integer.parseInt(line[0].substring(3,5));
                 ReplicaID replicaID = new ReplicaID(branchNum, replicaNum);
-                
+
                 Integer port = Integer.parseInt(line[2]);
                 String hostname = line[1];
                 ReplicaInfo replicaInfo = new ReplicaInfo(port, hostname);
@@ -375,9 +375,9 @@ public class NewMessaging {
         	System.out.println("reading resolver failed");
         	e.printStackTrace();
         	return;
-        } 
+        }
 	}
-	
+
 	//TODO
 	public void readTopology(){
 		System.out.println("reading topology");
@@ -404,7 +404,7 @@ public class NewMessaging {
             System.out.println("reading topology failed");
             e.printStackTrace();
         }
-		
+
 	}
 
 	public ReplicaInfo getReplicaInfo(ReplicaID replicaID) {
@@ -437,16 +437,16 @@ public class NewMessaging {
 			e.printStackTrace();
 		}
 		return new ReplicaInfo(Integer.parseInt(a[1]), a[0]);
-		
+
 	}
 
 	//will be deprecated as of project 4
 	public replicaState getStatus(ReplicaID replicaOfInterest) {
 		return allReplicaInfo.get(replicaOfInterest).state;
 	}
-	
-	
-	
-	
+
+
+
+
 
 }

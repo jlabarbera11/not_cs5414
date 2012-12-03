@@ -366,7 +366,11 @@ public class Server extends Thread
 	            System.out.println("Got message");
 	
 	            if (mr instanceof RequestClient) { //from client
-	                //System.out.println("Received message from client");
+	                if (!isPrimary){
+	                	isPrimary = true;
+	                	System.out.println("I am now the head, recording failures of previous primaries");
+	                	newMessaging.recordPreviousPrimaryFailures(branchID);
+	                }
 	                startBackup((RequestClient)mr);
 	           
 	            } else if (mr instanceof BranchMessage) {
