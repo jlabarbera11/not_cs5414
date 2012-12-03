@@ -28,7 +28,6 @@ public class Pinger extends Thread {
   public void run() {
     while(true) {
       try {
-        System.out.println("Pinger " + id + " now pinging everywhere");
         nm.broadcastToAllFDS(new Ping(jid, id));
         Thread.sleep(1000);
       } catch(Exception e) {}
