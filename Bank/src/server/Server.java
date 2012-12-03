@@ -217,9 +217,10 @@ public class Server extends Thread
     				}
     	        	if (status != Oracle.replicaState.running){
     	        		backups.remove(replicaNum);
-    	        		//TODO
+    	        		System.out.println("replica " + replicaNum.toString() + " has failed, removing from backups");
 
     	                if(waiting_records.get(rc.GetSerialNumber()).equals(this.backups)) {
+    	                	System.out.println("CheckBackupStatusThread found that all backups have responded, sending response");
     	                    waiting_records.remove(rc.GetSerialNumber());
     	                    waiting_clients.remove(rc.GetSerialNumber());
     	                    ResponseClient responseClient = recordTransaction(rc);
@@ -228,7 +229,6 @@ public class Server extends Thread
     	                    	try {
 									newMessaging.sendToClientNoResponse(branchID, responseClient);
 								} catch (MessagingException e) {
-									// TODO Auto-generated catch block
 									e.printStackTrace();
 								}
     	                    }
@@ -240,7 +240,6 @@ public class Server extends Thread
     	                            try {
 										newMessaging.sendToPrimaryNoResponse(request.GetDestBranch(), new TransferDepositToRemoteBranch(request.GetDestAcnt(), request.GetAmt(), request.GetSerialNumber()));
 									} catch (MessagingException e) {
-										// TODO Auto-generated catch block
 										e.printStackTrace();
 									}
     	                        }
