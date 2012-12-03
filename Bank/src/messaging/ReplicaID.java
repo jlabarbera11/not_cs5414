@@ -18,10 +18,6 @@ public class ReplicaID implements Serializable {
 		this.replicaNum = replicaID;
 	}
 
-	public boolean equals(ReplicaID replica){
-		return ((this.branchNum == replica.branchNum) && (this.replicaNum == replica.replicaNum));
-	}
-
     @Override
     public boolean equals(Object replica) {
         if (replica instanceof ReplicaID) {
