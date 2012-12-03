@@ -30,10 +30,10 @@ client-jar: client messaging
 server-jar: server messaging
 	jar cfe server.jar server.Server -C bin .
 
-oracle-jar: server messaging
+oracle-jar: oracle messaging
 	jar cfe oracle.jar oracle.Oracle -C bin .
 	
-jvm-jar: client server messaging
+jvm-jar: jvm messaging
 	jar cfe jvm.jar jvm.JVM -C bin .
 
 

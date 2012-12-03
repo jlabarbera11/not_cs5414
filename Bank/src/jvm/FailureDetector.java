@@ -26,6 +26,7 @@ public class FailureDetector extends Thread {
   /*<FDSID, Timestamp>>*/
   Map<Integer, Long> fts = null;
 
+  Integer portnum = null;
   Integer fid = null;
   ServerSocket ss = null;
 
@@ -33,6 +34,7 @@ public class FailureDetector extends Thread {
     this.fid = fid;
     this.rts = new HashMap<Integer, Map<ReplicaID, Long>>();
     this.fts = new HashMap<Integer, Long>();
+    this.portnum = port;
 
     for(Map.Entry<Integer, Set<ReplicaID>> entry : JVM.readjvmInfo().entrySet()) {
       Map<ReplicaID, Long> lm = new HashMap<ReplicaID, Long>();
@@ -53,6 +55,7 @@ public class FailureDetector extends Thread {
   public void run() {
     Pinger pinger = new Pinger(fid, fid);
     pinger.start();
+    System.out.println("Starting FDS " + fid + " on " + this.portnum);
 
     while(true) {
       try {
@@ -63,11 +66,14 @@ public class FailureDetector extends Thread {
           this._stillAlive((Ping)o);
         else if(o instanceof StatusQuery)
           this._isAlive(s, (StatusQuery)o);
-      } catch(Exception e) {System.out.println("ERROR: Could not accept message");}
+      } catch(Exception e) {System.out.println("ERROR: " + e.toString()); e.printStackTrace();}
     }
   }
 
   private void _stillAlive(Ping o) {
+    if(!this.rts.containsKey(o.jid)) /* Old pings from machines we've already considered failed */
+      return;
+    System.out.println("Got a ping from " + (o.rid != null ? "replica  " + (o.rid) : "FDS " + (o.fid)) + " on " + o.jid + " at " + System.currentTimeMillis());
     if(o.rid != null) /*Replica has told us it's alive*/
       this.rts.get(o.jid).put(o.rid, new Long(System.currentTimeMillis()));
     else if(o.fid != null) /*FDS has told us it's alive*/
@@ -82,15 +88,17 @@ public class FailureDetector extends Thread {
     if(!this.rts.containsKey(o.jvmOfInterest)) {
       System.out.println("No record of jvm " + o.jvmOfInterest + " in map");
       failed = true;
-    } for(Long ts : this.rts.get(o.jvmOfInterest).values())
-      if( ts + 2*1000 < System.currentTimeMillis()) {
-        System.out.println("replica on " + o.jvmOfInterest + " is too slow");
-        failed = true;
-      }
+    } else {
+      for(Map.Entry<ReplicaID, Long> entry : this.rts.get(o.jvmOfInterest).entrySet())
+        if( entry.getValue() + 5*1000 < System.currentTimeMillis()) {
+          System.out.println("replica " + entry.getKey() +  "on " + o.jvmOfInterest + " is too slow; last timestamp is " + entry.getValue() + ", now is " + System.currentTimeMillis());
+          failed = true;
+        }
+    }
     if(!this.fts.containsKey(o.jvmOfInterest)) {
       System.out.println("No record of FDS " + o.jvmOfInterest + " in map");
       failed = true;
-    } if(this.fts.get(o.jvmOfInterest)+ 2*1000 < System.currentTimeMillis()) {
+    } else if(this.fts.get(o.jvmOfInterest)+ 5*1000 < System.currentTimeMillis()) {
       System.out.println("FDS on " +  o.jvmOfInterest + " is too slow");
       failed = true;
     }
