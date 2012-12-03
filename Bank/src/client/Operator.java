@@ -1,7 +1,7 @@
-// Removed my oracle and ghetto messaging. Thought the GUI looked nice so I left the barebones
+//Thought the GUI looked nice so I left the barebones
 package client;
 
-public class Operator extends javax.swing.JFrame 
+public class Operator extends javax.swing.JFrame
 {
 
     private javax.swing.JLabel branchLabel;
@@ -11,13 +11,13 @@ public class Operator extends javax.swing.JFrame
     private javax.swing.JTextField output;
     private javax.swing.JButton recovery;
 
-    public Operator() 
+    public Operator()
     {
         initComponents();
     }
 
     @SuppressWarnings("unchecked")
-    private void initComponents() 
+    private void initComponents()
     {
 
         jPanel = new javax.swing.JPanel();
@@ -114,12 +114,12 @@ public class Operator extends javax.swing.JFrame
         pack();
     }
 
-    private void branchTextActionPerformed(java.awt.event.ActionEvent evt) 
+    private void branchTextActionPerformed(java.awt.event.ActionEvent evt)
     {
         branchText.setText("");
     }
 
-    private boolean outputReply(String event) 
+    private boolean outputReply(String event)
     {
         try {
             Integer branch = Integer.parseInt(branchText.getText());
@@ -131,19 +131,17 @@ public class Operator extends javax.swing.JFrame
         }
     }
 
-    private void failureActionPerformed(java.awt.event.ActionEvent evt) 
+    private void failureActionPerformed(java.awt.event.ActionEvent evt)
     {
         outputReply("failure");
-        // Add Messaging response to Oracle
     }
 
-    private void recoveryActionPerformed(java.awt.event.ActionEvent evt) 
+    private void recoveryActionPerformed(java.awt.event.ActionEvent evt)
     {
         outputReply("recovery");
-        // Add Messaging response to Oracle
     }
 
-    public static void main(String args[]) 
+    public static void main(String args[])
     {
         // TODO: Add Messaging
         java.awt.EventQueue.invokeLater(new Runnable() {

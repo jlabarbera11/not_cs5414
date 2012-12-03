@@ -19,8 +19,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.swing.*;
 
-import oracle.Oracle;
-import oracle.Oracle.replicaState;
 import messaging.*;
 
 //TODO: server must return error if it gets duplicate serial!
@@ -44,42 +42,18 @@ public class Client extends JFrame implements ActionListener {
     public JLabel result2 = new JLabel(" ");
     //int serialNumber = 0;
     int clientNumber;
-    public NewMessaging newMessaging;
+    public Messaging messaging;
     boolean waitingForResponse;
     int number=0;
 
     private Map<Integer, String> serialsSeen;
-    
+
     public String GetResult(){
     	return result1.getText();
     }
-  
-    //TODO: this probably can be deleted
-    /**
-    private class OracleCallback implements Callback {
-        public void Callback(Message message){
-            try {
-                if (message instanceof FailureOracle){
-                	System.out.println("client got failure from oracle");
-                    replicaStates.put(((FailureOracle)message).failedReplicaID, replicaState.failed);
-                    updatePrimary();
-                } else if (message instanceof BackupOracle){
-                	System.out.println("client got recovery from oracle");
-                    replicaStates.put(((BackupOracle)message).GetRecoveredReplicaID(), replicaState.running);
-                    updatePrimary();
-                } else {
-                    System.out.println("invalid message type received by client from oracle");
-                }
-            } catch(Exception e) {
-                System.out.println(e.toString() + " thrown from HandleOracleMessages Thread");
-                e.printStackTrace();
-            }
-        }
-    }
-     */
-    
+
     private Message receiveMessage() throws IOException, ClassNotFoundException{
-    	ReplicaInfo myInfo = newMessaging.getClientInfo(clientNumber);
+    	ReplicaInfo myInfo = messaging.getClientInfo(clientNumber);
     	ServerSocket serversocket = new ServerSocket(myInfo.port);
     	serversocket.setReuseAddress(true);
     	System.out.println("client listening on port " + myInfo.port);
@@ -92,13 +66,13 @@ public class Client extends JFrame implements ActionListener {
         return message;
 
     }
-    
+
     private ResponseClient sendRequest(RequestClient message, int branchNumber) throws MessagingException {
     	ResponseClient result = null;
     	for (int i=0; i<3; i++){
     		try {
     			//System.out.println("client is sending to primary, branch number is " + branchNumber);
-    			newMessaging.sendToPrimaryNoResponse(branchNumber, message);
+    			messaging.sendToPrimaryNoResponse(branchNumber, message);
     			result = (ResponseClient)receiveMessage();
     			return result;
     		} catch (Exception e){
@@ -108,27 +82,27 @@ public class Client extends JFrame implements ActionListener {
     	System.out.println("send failed in sendRequest (3 timeouts)");
     	throw new MessagingException(MessagingException.Type.FAILED_MESSAGE_SEND);
     }
-    
+
 	private DepositResponse sendDeposit(int branchNumber, int accountNumber, float amountFloat, int serialNum) throws MessagingException {
 		DepositRequest dr = new DepositRequest(accountNumber, amountFloat, serialNum);
 		return (DepositResponse)sendRequest(dr, branchNumber);
 	}
-	
+
 	private WithdrawResponse sendWithdrawal(int branchNumber, int accountNumber, float amountFloat, int serialNumber) throws MessagingException {
 		WithdrawRequest wr = new WithdrawRequest(accountNumber, amountFloat, serialNumber);
 		return (WithdrawResponse)sendRequest(wr, branchNumber);
 	}
-	
+
 	private TransferResponse sendTransfer(int branchNumberFrom, int accountNumberFrom, int branchNumberTo, int accountNumberTo, float amountFloat, int serialNum) throws MessagingException {
 		TransferRequest tr = new TransferRequest(branchNumberTo, accountNumberFrom, accountNumberTo, amountFloat, serialNum);
 		return (TransferResponse)sendRequest(tr, branchNumberFrom);
 	}
-	
+
 	private QueryResponse sendQuery(int branchNumber, int accountNumber, int serialNumber) throws MessagingException {
 		QueryRequest qr = new QueryRequest(accountNumber, serialNumber);
 		return (QueryResponse)sendRequest(qr, branchNumber);
 	}
-    
+
 	  public Client(int clientNum) {
 	    super("Bank GUI for Branch " + clientNum);
 	    this.clientNumber = clientNum;
@@ -148,10 +122,10 @@ public class Client extends JFrame implements ActionListener {
 	    setDefaultCloseOperation(EXIT_ON_CLOSE);
 	    setVisible(true);
 	    waitingForResponse=false;
-	    
-	    newMessaging = new NewMessaging();
+
+	    messaging = new NewMessaging();
 	  }
-	  
+
 	  private void createDepositBox(JPanel panel){
 	      //JPanel panel = new JPanel();
 	      //panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
@@ -168,7 +142,7 @@ public class Client extends JFrame implements ActionListener {
 	      leftAlign(panel, button);
 	      panel.add(new JLabel(" "));
 	  }
-	  
+
 	  private void createWithdrawalBox(JPanel panel){
 	      //JPanel panel = new JPanel();
 	     // panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
@@ -182,7 +156,7 @@ public class Client extends JFrame implements ActionListener {
 	      leftAlign(panel, button);
 	      panel.add(new JLabel(" "));
 	  }
-	  
+
 	  private void createTransferBox(JPanel panel){
 	      //JPanel panel = new JPanel();
 	      //panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
@@ -197,7 +171,7 @@ public class Client extends JFrame implements ActionListener {
 	      leftAlign(panel, button);
 	      panel.add(new JLabel(" "));
 	  }
-	  
+
 	  private void createSnapshotBox(JPanel panel){
 		  leftAlign(panel, new JLabel("Create snapsot: "));
 		  JButton button = new JButton("Snapshot");
@@ -206,7 +180,7 @@ public class Client extends JFrame implements ActionListener {
 		  leftAlign(panel, button);
 		  panel.add(new JLabel(" "));
 	  }
-	  
+
 	  private void createQueryBox(JPanel panel){
 	      //JPanel panel = new JPanel();
 	      //panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
@@ -219,7 +193,7 @@ public class Client extends JFrame implements ActionListener {
 	      leftAlign(panel, button);
 	      panel.add(new JLabel(" "));
 	  }
-	  
+
 	  private void createResultBox(JPanel panel){
 		  leftAlign(panel, new JLabel("Result of last operation: "));
 		  result1.setFont(new Font("Serif", Font.PLAIN, 14));
@@ -240,7 +214,7 @@ public class Client extends JFrame implements ActionListener {
 		  panel.add(new JLabel(" "));
 		  panel.add(new JLabel(" "));
 	  }
-	
+
 	  private JPanel createRow(String title, JTextField field){
 	    JPanel topRowPanel = new JPanel();
 	    topRowPanel.setLayout(new BoxLayout(topRowPanel, BoxLayout.X_AXIS));
@@ -248,15 +222,15 @@ public class Client extends JFrame implements ActionListener {
 	    topRowPanel.add(field);
 	    return topRowPanel;
 	  }
-	  
+
 	  private void leftAlign(JPanel panel, JComponent component){
 		  JPanel newPanel = new JPanel(new BorderLayout());
 		  component.setAlignmentX(Component.LEFT_ALIGNMENT);
 		  newPanel.add(component);
 		  panel.add(newPanel);
-		  
+
 	  }
-	  
+
 	  private boolean checkAccountNumber(String input){
 		  if (input.length() != 8) { return false; }
 		  if (input.charAt(2) != '.') {return false; }
@@ -268,7 +242,7 @@ public class Client extends JFrame implements ActionListener {
 			  return false;
 		  }
 	  }
-	  
+
 	  private boolean checkAmount(String input){
 		  try {
 			  Float amount = Float.parseFloat(input);
@@ -281,7 +255,7 @@ public class Client extends JFrame implements ActionListener {
 			  return false;
 		  }
 	  }
-	  
+
 	  private boolean checkSerial(String input){
 		  try {
 			  int serial = Integer.parseInt(input);
@@ -298,7 +272,7 @@ public class Client extends JFrame implements ActionListener {
 			  return false;
 		  }
 	  }
-	  
+
 	public void handleDeposit(){
 		//System.out.println("got deposit");
 		//System.out.println("account number is: " + depositAccount.getText());
@@ -338,7 +312,7 @@ public class Client extends JFrame implements ActionListener {
 				result1.setText("An error occurred");
 				result2.setText("");
 			}
-			
+
 		}
 	}
 
@@ -473,7 +447,7 @@ public class Client extends JFrame implements ActionListener {
 		result1.setText("Waiting for response.");
 		result2.setText("Additional requests will not be processed.");
 	}
-	  
+
 	@Override
 	public void actionPerformed(ActionEvent e) {
 	    String action = e.getActionCommand();
@@ -495,11 +469,11 @@ public class Client extends JFrame implements ActionListener {
 	    }
 	    waitingForResponse=false;
 	}
-	
-	
+
+
 	public static void main(String[] args){
                 String clientNum = null;
-		
+
 		try {
                         clientNum = args[0];
                         Integer.parseInt(clientNum);
@@ -507,15 +481,15 @@ public class Client extends JFrame implements ActionListener {
 			System.out.println("Please run the program with the client number as the first argument.");
 			System.exit(0);
 		}
-		
+
 		if ((Integer.parseInt(clientNum) < 0 || Integer.parseInt(clientNum) > 99)){
 			System.out.println("Please enter a client number between 0 and 99.");
 			System.exit(0);
 		}
-		
+
 		Client client = new Client(Integer.parseInt(clientNum));
-		
-		
+
+
 	}
 
 }
