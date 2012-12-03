@@ -1,4 +1,4 @@
-all: client server oracle messaging
+all: client server oracle messaging jvm
 jar: client-jar server-jar oracle-jar jvm-jar
 
 client:
