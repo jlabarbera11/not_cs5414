@@ -51,7 +51,8 @@ public class FailureDetector extends Thread {
   }
 
   public void run() {
-    new Thread(new Pinger(fid)).start();
+    Pinger pinger = new Pinger(fid, fid);
+    pinger.start();
 
     while(true) {
       try {
@@ -68,7 +69,7 @@ public class FailureDetector extends Thread {
 
   private void _stillAlive(Ping o) {
     if(o.rid != null) /*Replica has told us it's alive*/
-      this.rts.get(o.rid.branchNum).put(o.rid, new Long(System.currentTimeMillis()));
+      this.rts.get(o.jid).put(o.rid, new Long(System.currentTimeMillis()));
     else if(o.fid != null) /*FDS has told us it's alive*/
       this.fts.put(o.fid, new Long(System.currentTimeMillis()));
   }
@@ -78,15 +79,23 @@ public class FailureDetector extends Thread {
     boolean failed = false;
 
     /*check if everything in jvm is alive*/
-    if(!this.rts.containsKey(o.jvmOfInterest))
+    if(!this.rts.containsKey(o.jvmOfInterest)) {
+      System.out.println("No record of jvm " + o.jvmOfInterest + " in map");
       failed = true;
-    for(Long ts : this.rts.get(o.jvmOfInterest).values())
-      if( ts + 2*1000 > System.currentTimeMillis())
+    } for(Long ts : this.rts.get(o.jvmOfInterest).values())
+      if( ts + 2*1000 < System.currentTimeMillis()) {
+        System.out.println("replica on " + o.jvmOfInterest + " is too slow");
         failed = true;
-    if(!this.fts.containsKey(o.jvmOfInterest))
+      }
+    if(!this.fts.containsKey(o.jvmOfInterest)) {
+      System.out.println("No record of FDS " + o.jvmOfInterest + " in map");
       failed = true;
-    if(this.fts.get(o.jvmOfInterest)+ 2*1000 > System.currentTimeMillis())
+    } if(this.fts.get(o.jvmOfInterest)+ 2*1000 < System.currentTimeMillis()) {
+      System.out.println("FDS on " +  o.jvmOfInterest + " is too slow");
       failed = true;
+    }
+
+    System.out.println("FDS " + this.fid + " says " + o.jvmOfInterest +  " is " + (failed ? "failed" : "running"));
 
     if(!failed)
       new ObjectOutputStream(s.getOutputStream()).writeObject(new StatusQueryResponse(Oracle.replicaState.running, o.jvmOfInterest));
