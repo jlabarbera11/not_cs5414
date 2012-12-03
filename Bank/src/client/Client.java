@@ -97,6 +97,7 @@ public class Client extends JFrame implements ActionListener {
     	ResponseClient result = null;
     	for (int i=0; i<3; i++){
     		try {
+    			//System.out.println("client is sending to primary, branch number is " + branchNumber);
     			newMessaging.sendToPrimaryNoResponse(branchNumber, message);
     			result = (ResponseClient)receiveMessage();
     			return result;

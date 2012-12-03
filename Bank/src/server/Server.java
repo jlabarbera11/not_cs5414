@@ -31,7 +31,7 @@ public class Server extends Thread
     private Map<AccountNumber, BankAccount> accounts;
     private NewMessaging newMessaging;
     private Set<Integer> backups; //Set of all replicas with greater replica IDs
-    private Map<Integer, HashSet<Integer>> waiting_records; //SerialID to returned backups
+    private Map<Integer, HashSet<Integer>> waiting_records = new ConcurrentHashMap<Integer, HashSet<Integer>>();; //SerialID to returned backups
     private Map<Integer, RequestClient> waiting_clients = new ConcurrentHashMap<Integer, RequestClient>();
     ServerSocket serversocket;
     
@@ -115,7 +115,6 @@ public class Server extends Thread
         this.branchID = branchID;
         this.replicaID = replicaID;
         accounts = new ConcurrentHashMap<AccountNumber, BankAccount>();
-        this.waiting_records = new ConcurrentHashMap<Integer, HashSet<Integer>>();
         newMessaging = new NewMessaging();
         this.backups = newMessaging.initBackups(branchID, replicaID);
         

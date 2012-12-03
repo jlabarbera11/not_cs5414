@@ -73,7 +73,7 @@ public class FailureDetector extends Thread {
   private void _stillAlive(Ping o) {
     if(!this.rts.containsKey(o.jid)) /* Old pings from machines we've already considered failed */
       return;
-    System.out.println("Got a ping from " + (o.rid != null ? "replica  " + (o.rid) : "FDS " + (o.fid)) + " on " + o.jid + " at " + System.currentTimeMillis());
+    //System.out.println("Got a ping from " + (o.rid != null ? "replica  " + (o.rid) : "FDS " + (o.fid)) + " on " + o.jid + " at " + System.currentTimeMillis());
     if(o.rid != null) /*Replica has told us it's alive*/
       this.rts.get(o.jid).put(o.rid, new Long(System.currentTimeMillis()));
     else if(o.fid != null) /*FDS has told us it's alive*/

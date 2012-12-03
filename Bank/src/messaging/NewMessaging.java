@@ -164,6 +164,7 @@ public class NewMessaging {
 	public void sendToPrimaryNoResponse(int branchID, Message message) throws MessagingException{
 		//look up address, call above
 		ReplicaID headID = null;
+		//System.out.println("sendToPrimary got branchID " + branchID);
 		while(true){
 			headID = getHead(branchID);
 			Oracle.replicaState status = checkReplicaStatus(headID);
