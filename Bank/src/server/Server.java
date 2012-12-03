@@ -129,7 +129,8 @@ public class Server extends Thread
 		}
 		
 		//start pinger
-		Pinger pinger = new Pinger(new ReplicaID(branchID, replicaID));
+		ReplicaID myReplicaID = new ReplicaID(branchID, replicaID);
+		Pinger pinger = new Pinger(newMessaging.getJvmID(myReplicaID), myReplicaID);
 		pinger.start();
 		
     	System.out.println("server listening on port " + myInfo.port);
@@ -193,18 +194,70 @@ public class Server extends Thread
     	private Set<Integer> backups;
         private Map<Integer, HashSet<Integer>> waiting_records;
         private Map<Integer, RequestClient> waiting_clients;
+        private RequestClient rc;
+        private int branchID;
     	
-    	public CheckBackupStatusThread(Set<Integer> backups,  Map<Integer, HashSet<Integer>> waiting_records, Map<Integer, RequestClient> waiting_clients){
+    	public CheckBackupStatusThread(Set<Integer> backups,  Map<Integer, HashSet<Integer>> waiting_records, Map<Integer, RequestClient> waiting_clients, RequestClient rc, int branchID){
     		this.backups = backups;
     		this.waiting_records = waiting_records;
     		this.waiting_clients = waiting_clients;
+    		this.rc = rc;
+    		this.branchID = branchID;
     	}
     	
     	public void run(){
     		for (int i =0; i<5; i++){
     			
+    	        for(Integer replicaNum : this.backups) {
+    	        	Oracle.replicaState status = null;
+    				try {
+    					status = newMessaging.checkReplicaStatus(new ReplicaID(branchID, replicaNum));
+    				} catch (MessagingException e) {
+    					e.printStackTrace();
+    				}
+    	        	if (status != Oracle.replicaState.running){
+    	        		backups.remove(replicaNum);
+    	        		//TODO
+
+    	                if(waiting_records.get(rc.GetSerialNumber()).equals(this.backups)) {
+    	                    waiting_records.remove(rc.GetSerialNumber());
+    	                    waiting_clients.remove(rc.GetSerialNumber());
+    	                    ResponseClient responseClient = recordTransaction(rc);
+    	                    if(!(rc instanceof TransferDepositToRemoteBranch)){
+    	                        //m.SendToClient(recordTransaction(rc));
+    	                    	try {
+									newMessaging.sendToClientNoResponse(branchID, responseClient);
+								} catch (MessagingException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+    	                    }
+    	                    if(rc instanceof TransferRequest) {
+    	                        TransferRequest request = (TransferRequest)rc;
+    	                        if(request.GetDestBranch() != this.branchID){
+    	                            //m.SendToBranch(getHead(request.GetDestBranch()), 
+    	                        	System.out.println("about to send to transfer recipient branch");
+    	                            try {
+										newMessaging.sendToPrimaryNoResponse(request.GetDestBranch(), new TransferDepositToRemoteBranch(request.GetDestAcnt(), request.GetAmt(), request.GetSerialNumber()));
+									} catch (MessagingException e) {
+										// TODO Auto-generated catch block
+										e.printStackTrace();
+									}
+    	                        }
+    	                    }
+    	                    
+    	                }
+    	        		
+    	        		
+    	        	}
+    	        }
+    	    	
     			
-    			//Thread.sleep(500);
+    			try {
+					Thread.sleep(500);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
     		}
     	}
     }

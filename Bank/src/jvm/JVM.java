@@ -43,6 +43,7 @@ public class JVM {
         	System.out.println("reading jvmInfo failed");
         	e.printStackTrace();
         } 
+        System.out.println(" complete");
         return jvmInfo;
 	}
 	

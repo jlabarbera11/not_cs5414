@@ -205,7 +205,7 @@ public class NewMessaging {
 	}
 	
 	//return the jvm id associated with a given replicaID
-	private int getJvmID(ReplicaID replicaID){
+	public int getJvmID(ReplicaID replicaID){
 		for (Map.Entry<Integer, Set<ReplicaID>> entry : jvmInfo.entrySet()){
 			for (ReplicaID currentID : entry.getValue()){
 				if (replicaID.equals(currentID)){
@@ -240,6 +240,7 @@ public class NewMessaging {
     	ConcurrentHashMap<replicaState, Integer> responses = new ConcurrentHashMap<Oracle.replicaState, Integer>();
     	responses.put(replicaState.failed, 0);
     	responses.put(replicaState.running, 0);
+    	System.out.println("checking status of replica " + replicaID.toString());
     	for (Map.Entry<Integer, ReplicaInfo> entry: fdsInfo.entrySet()){
     		try {
     			Socket socket = new Socket(entry.getValue().host, entry.getValue().port);
