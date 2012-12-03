@@ -9,6 +9,7 @@ import oracle.Oracle;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Set;
 
 import java.net.Socket;
 import java.net.ServerSocket;
@@ -31,12 +32,12 @@ public class FailureDetector extends Thread {
   public FailureDetector(Integer fid, Integer port) {
     this.fid = fid;
 
-    for(Integer i: readjvmInfo.keySet()) {
-      Map<ReplicaID, long> lm = new HashMap<ReplicaID, long>();
-      for(ReplicaID rid : rids)
-        lm.put(rid, 0);
-      rts.put(i, lm);
-      fts.put(i, 0);
+    for(Map.Entry<Integer, Set<ReplicaID>> entry : JVM.readjvmInfo().entrySet()) {
+      Map<ReplicaID, Long> lm = new HashMap<ReplicaID, Long>();
+      for(ReplicaID rid : entry.getValue())
+        lm.put(rid, new Long(0));
+      rts.put(entry.getKey(), lm);
+      fts.put(entry.getKey(), new Long(0));
     }
 
     this.rts = new HashMap<Integer, Map<ReplicaID, Long>>();
