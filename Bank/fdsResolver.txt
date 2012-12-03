@@ -1,2 +1,2 @@
-01 7771
-02 7772
+01 7771 localhost
+02 7772 localhost
