@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import jvm.Pinger;
+
 import oracle.Oracle;
 import oracle.Oracle.replicaState;
 
@@ -125,6 +127,11 @@ public class Server extends Thread
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
+		//start pinger
+		Pinger pinger = new Pinger(new ReplicaID(branchID, replicaID));
+		pinger.start();
+		
     	System.out.println("server listening on port " + myInfo.port);
         
     }

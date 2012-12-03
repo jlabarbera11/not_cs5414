@@ -9,6 +9,7 @@ import java.util.Set;
 
 import server.Server;
 
+import messaging.NewMessaging;
 import messaging.ReplicaID;
 import messaging.ReplicaInfo;
 
@@ -19,6 +20,7 @@ public class JVM {
 	Map<Integer, Set<ReplicaID>> jvmInfo = new HashMap<Integer, Set<ReplicaID>>();
 	public static String jvmfile = "jvmInfo.txt";
 	int jvmID;
+	private NewMessaging newMessaging;
 
 	public static Map<Integer, Set<ReplicaID>> readjvmInfo(){
 		System.out.println("reading jvmInfo...");
@@ -47,6 +49,7 @@ public class JVM {
 	public JVM(int id){
 		this.jvmID = id;
 		this.jvmInfo = readjvmInfo();
+		this.newMessaging = new NewMessaging();
 	}
 	
 	public void run(){
@@ -57,6 +60,10 @@ public class JVM {
 			server.start();
 			System.out.println("started server " + entry.toString());
 		}
+		
+		FailureDetector fds = new FailureDetector(jvmID, newMessaging.getFdsPort(jvmID).port); //jvmID = fdsID
+		fds.start();
+		
 	}
 	
     public static void main(String args[]) {

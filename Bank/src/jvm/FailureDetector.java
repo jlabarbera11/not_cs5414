@@ -1,4 +1,4 @@
-package server;
+package jvm;
 
 import messaging.ReplicaID;
 import messaging.StillAlive;
@@ -16,7 +16,7 @@ import java.net.SocketException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-public class FailureDetector implements Runnable {
+public class FailureDetector extends Thread {
 
   /*<JVM, <ReplicaID, Timestamp>>*/
   Map<Integer, Map<ReplicaID, Long>> rts = null;

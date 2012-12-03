@@ -1,4 +1,4 @@
-package server;
+package jvm;
 
 import messaging.ReplicaID;
 import messaging.NewMessaging;
@@ -7,7 +7,7 @@ import messaging.StillAlive;
 import java.net.Socket;
 
 //Periodically sends a Still Alive packet to all failure detectors
-public class Pinger implements Runnable {
+public class Pinger extends Thread {
 
   Object id;
   NewMessaging nm;
