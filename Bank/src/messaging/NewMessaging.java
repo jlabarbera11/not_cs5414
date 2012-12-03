@@ -16,6 +16,10 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import jvm.JVM;
+
+import messaging.MessagingException.Type;
+
 import oracle.Oracle;
 import oracle.Oracle.replicaState;
 
@@ -43,6 +47,8 @@ public class NewMessaging {
     private HashMap<Integer, ReplicaInfo> clientInfo = new HashMap<Integer, ReplicaInfo>();
     
     private HashMap<Integer, ReplicaInfo> fdsInfo = new HashMap<Integer, ReplicaInfo>();
+    
+    Map<Integer, Set<ReplicaID>> jvmInfo = new HashMap<Integer, Set<ReplicaID>>();
     
     private void readFDSResolver(){
 		System.out.println("reading FDS resolver");
@@ -94,9 +100,19 @@ public class NewMessaging {
 		}
     }
     
-    public void setState(ReplicaID replicaID, Oracle.replicaState newState){
+    private void setState(ReplicaID replicaID, replicaState newState){
     	ReplicaInfo replicaInfo = allReplicaInfo.get(replicaID);
     	replicaInfo.state = newState;
+    }
+    
+    public void recordJvmFailure(ReplicaID replicaID){
+    	int jvmID = getJvmID(replicaID);
+    	fdsInfo.remove(jvmID); //record failure of associated failure detection service
+    	//Map<Integer, Set<ReplicaID>> jvmInfo
+    	Set<ReplicaID> replicasToFail = jvmInfo.get(jvmID);
+    	for (ReplicaID currentID : replicasToFail){
+    		//WORKING HERE
+    	}
     }
     
     public ReplicaID getHead(int branchNum){
@@ -154,38 +170,92 @@ public class NewMessaging {
 			Oracle.replicaState status = checkReplicaStatus(headID);
 			if (status != Oracle.replicaState.running){
 				System.out.println("old head FAILURE detected");
-				setState(headID, status);
+				recordJvmFailure(headID, status);
 			} else {
 				break;
 			}
 		}
 		sendToReplicaNoResponse(headID, message);
 	}
+	
+	private class CheckStatusThread extends Thread {
+		ConcurrentHashMap<replicaState, Integer> responses;
+		Socket socket;
+		
+		public CheckStatusThread(ConcurrentHashMap<replicaState, Integer> responses, Socket socket){
+			this.responses = responses;
+			this.socket = socket;
+		}
+		
+		public void run(){
+			try {
+			ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+			StatusQueryResponse response = (StatusQueryResponse) ois.readObject();
+			synchronized(responses){
+				int currentCount = responses.get(response.status);
+				responses.put(response.status, currentCount+1);
+				System.out.println("check status thread recorded status " + response.status);
+			}
+			} catch (Exception e){
+				System.out.println("error while waiting for response from FDS");
+				e.printStackTrace();
+			}
+		}
+		
+	}
+	
+	//return the jvm id associated with a given replicaID
+	private int getJvmID(ReplicaID replicaID){
+		for (Map.Entry<Integer, Set<ReplicaID>> entry : jvmInfo.entrySet()){
+			for (ReplicaID currentID : entry.getValue()){
+				if (replicaID.equals(currentID)){
+					return entry.getKey();
+				}
+			}
+		}
+		System.out.println("ERROR: replicaID not found during getJvmID");
+		return -1;
+	}
     
 	/**
 	 * 1) send a Status query to all FDSs
 	 * 2) make decision based on majority
+	 * @throws MessagingException 
 	*/
-    public replicaState checkReplicaStatus(ReplicaID replicaID) {
-    	
+    public replicaState checkReplicaStatus(ReplicaID replicaID) throws MessagingException {
+    	ConcurrentHashMap<replicaState, Integer> responses = new ConcurrentHashMap<Oracle.replicaState, Integer>();
+    	responses.put(replicaState.failed, 0);
+    	responses.put(replicaState.running, 0);
     	for (Map.Entry<Integer, ReplicaInfo> entry: fdsInfo.entrySet()){
-    		
+    		try {
+    			Socket socket = new Socket(entry.getValue().host, entry.getValue().port);
+    			ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+    			StatusQuery sq = new StatusQuery(getJvmID(replicaID));
+    			oos.writeObject(sq);
+    			CheckStatusThread thread = new CheckStatusThread(responses, socket);
+    			thread.run();
+    		} catch (Exception e){
+    			System.out.println("error sending to fds " + entry.getKey());
+    			e.printStackTrace();
+    		}
     	}
     	
-    	
-    	try {
-			//StatusQuery sq = new StatusQuery(replicaID);
-			ReplicaInfo oracleInfo = getOracleInfo();
-			Socket socket = new Socket(oracleInfo.host, oracleInfo.port);
-			ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-			//oos.writeObject(sq);
-			ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
-			StatusQueryResponse response = (StatusQueryResponse) ois.readObject();
-			return response.status;
-    	} catch (Exception e){
-    		e.printStackTrace();
+    	//check responses in a loop. timeout at 5 seconds
+    	for (int i=0; i<5; i++){
+			int numFailure = responses.get(replicaState.failed);
+			int numRunning = responses.get(replicaState.running);
+			if (numRunning > fdsInfo.size()){
+				return replicaState.running;
+			} else if (numFailure > fdsInfo.size()){
+				return replicaState.failed;
+			}
+    		try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
     	}
-    	return null;
+    	throw new MessagingException(Type.SEND_ERROR);
 	}
 
 	//assumes replica is up
@@ -225,7 +295,7 @@ public class NewMessaging {
 			Oracle.replicaState status = checkReplicaStatus(headID);
 			if (status != Oracle.replicaState.running){
 				System.out.println("old head FAILURE detected");
-				setState(headID, status);
+				recordJvmFailure(headID, status);
 			} else {
 				break;
 			}
@@ -240,6 +310,7 @@ public class NewMessaging {
 		readTopology();
 		readClientResolver();
 		readFDSResolver();
+		this.jvmInfo = JVM.readjvmInfo();
 	}
 	
 	public void readClientResolver(){

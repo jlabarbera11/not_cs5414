@@ -20,7 +20,7 @@ public class JVM {
 	public static String jvmfile = "jvmInfo.txt";
 	int jvmID;
 
-	public Map<Integer, Set<ReplicaID>> readjvmInfo(){
+	public static Map<Integer, Set<ReplicaID>> readjvmInfo(){
 		System.out.println("reading jvmInfo...");
 		Map<Integer, Set<ReplicaID>> jvmInfo = new HashMap<Integer, Set<ReplicaID>>();
         try {

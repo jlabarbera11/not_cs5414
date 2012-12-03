@@ -185,7 +185,12 @@ public class Server extends Thread
     	//update backups
         for(Integer replicaNum : this.backups) {
         	//check replica status
-        	Oracle.replicaState status = newMessaging.checkReplicaStatus(new ReplicaID(branchID, replicaNum));
+        	Oracle.replicaState status = null;
+			try {
+				status = newMessaging.checkReplicaStatus(new ReplicaID(branchID, replicaNum));
+			} catch (MessagingException e) {
+				e.printStackTrace();
+			}
         	if (status == Oracle.replicaState.running){
         		System.out.println("state of replica " + replicaNum + " is *running*");
         	} else {
@@ -334,8 +339,6 @@ public class Server extends Thread
 	            } else {
 	                System.out.println("Don't know how to handle message");
 	            }
-        	//} catch (NullPointerException e){
-        		//do nothing
         	} catch (Exception e){
         		System.out.println("error in server main loop");
         		e.printStackTrace();

@@ -122,7 +122,7 @@ public class Oracle extends JFrame implements ActionListener {
 			String replica = failureText;
 			ReplicaID replicaID = new ReplicaID(Integer.parseInt(failureText.substring(0, 2)), Integer.parseInt(failureText.substring(3,5)));
 			//Message m = new FailureOracle(replica);
-			newMessaging.setState(replicaID, Oracle.replicaState.failed);
+			newMessaging.recordJvmFailure(replicaID, Oracle.replicaState.failed);
 			result1.setText("Failure recorded for replica " + failureText);
 			result2.setText("");
 
