@@ -26,7 +26,7 @@ public class Pinger extends Thread {
     while(true) {
       try {
         nm.broadcastToAllFDS(new Ping(id));
-        Thread.sleep(60);
+        Thread.sleep(1000);
       } catch(Exception e) {}
     }
   }

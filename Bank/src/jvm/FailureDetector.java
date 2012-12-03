@@ -30,6 +30,15 @@ public class FailureDetector extends Thread {
 
   public FailureDetector(Integer fid, Integer port) {
     this.fid = fid;
+
+    for(Integer i: readjvmInfo.keySet()) {
+      Map<ReplicaID, long> lm = new HashMap<ReplicaID, long>();
+      for(ReplicaID rid : rids)
+        lm.put(rid, 0);
+      rts.put(i, lm);
+      fts.put(i, 0);
+    }
+
     this.rts = new HashMap<Integer, Map<ReplicaID, Long>>();
     this.fts = new HashMap<Integer, Long>();
     try {
