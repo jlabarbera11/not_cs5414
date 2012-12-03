@@ -13,7 +13,7 @@ import messaging.StatusQueryResponse;
 
 public class OracleThread extends Thread {
 	NewMessaging newMessaging;
-	
+	/**
 	public OracleThread(NewMessaging nm){
 		this.newMessaging = nm;
 	}
@@ -46,5 +46,5 @@ public class OracleThread extends Thread {
     		}
     		
     	}
-    }
+    }*/
 }

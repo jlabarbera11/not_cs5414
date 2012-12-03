@@ -108,10 +108,9 @@ public class NewMessaging {
     public void recordJvmFailure(ReplicaID replicaID){
     	int jvmID = getJvmID(replicaID);
     	fdsInfo.remove(jvmID); //record failure of associated failure detection service
-    	//Map<Integer, Set<ReplicaID>> jvmInfo
     	Set<ReplicaID> replicasToFail = jvmInfo.get(jvmID);
     	for (ReplicaID currentID : replicasToFail){
-    		
+    		setState(currentID, replicaState.failed);
     	}
     }
     
@@ -170,7 +169,7 @@ public class NewMessaging {
 			Oracle.replicaState status = checkReplicaStatus(headID);
 			if (status != Oracle.replicaState.running){
 				System.out.println("old head FAILURE detected");
-				recordJvmFailure(headID, status);
+				recordJvmFailure(headID);
 			} else {
 				break;
 			}
@@ -310,7 +309,7 @@ public class NewMessaging {
 			Oracle.replicaState status = checkReplicaStatus(headID);
 			if (status != Oracle.replicaState.running){
 				System.out.println("old head FAILURE detected");
-				recordJvmFailure(headID, status);
+				recordJvmFailure(headID);
 			} else {
 				break;
 			}

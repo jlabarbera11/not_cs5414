@@ -22,8 +22,14 @@ import messaging.*;
 
 public class Oracle extends JFrame implements ActionListener {
 	
+	@Override
+	public void actionPerformed(ActionEvent arg0) {
+		// TODO Auto-generated method stub
+		
+	}
+	
 	public enum replicaState {running, failed}
-
+/**
     private JTextField failureServerNumber = new JTextField(16);
     private JTextField recoveryServerNumber = new JTextField(16);
     private JLabel result1 = new JLabel(" ");
@@ -152,5 +158,7 @@ public class Oracle extends JFrame implements ActionListener {
 		Oracle oracle = new Oracle();
 		//client.messaging.branch = clientNum;
 	}
+*/
+
 
 }
