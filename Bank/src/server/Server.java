@@ -369,7 +369,7 @@ public class Server extends Thread
 	                if (!isPrimary){
 	                	isPrimary = true;
 	                	System.out.println("I am now the head, recording failures of previous primaries");
-	                	newMessaging.recordPreviousPrimaryFailures(branchID);
+	                	newMessaging.recordPreviousPrimaryFailures(branchID, replicaID);
 	                }
 	                startBackup((RequestClient)mr);
 	           
