@@ -111,7 +111,7 @@ public class NewMessaging {
     	//Map<Integer, Set<ReplicaID>> jvmInfo
     	Set<ReplicaID> replicasToFail = jvmInfo.get(jvmID);
     	for (ReplicaID currentID : replicasToFail){
-    		//WORKING HERE
+    		
     	}
     }
     
@@ -189,13 +189,14 @@ public class NewMessaging {
 		
 		public void run(){
 			try {
-			ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
-			StatusQueryResponse response = (StatusQueryResponse) ois.readObject();
-			synchronized(responses){
-				int currentCount = responses.get(response.status);
-				responses.put(response.status, currentCount+1);
-				System.out.println("check status thread recorded status " + response.status);
-			}
+				ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+				StatusQueryResponse response = (StatusQueryResponse) ois.readObject();
+				socket.close();
+				synchronized(responses){
+					int currentCount = responses.get(response.status);
+					responses.put(response.status, currentCount+1);
+					System.out.println("check status thread recorded status " + response.status);
+				}
 			} catch (Exception e){
 				System.out.println("error while waiting for response from FDS");
 				e.printStackTrace();
@@ -215,6 +216,20 @@ public class NewMessaging {
 		}
 		System.out.println("ERROR: replicaID not found during getJvmID");
 		return -1;
+	}
+	
+	public void broadcastToAllFDS(Message message){
+    	for (Map.Entry<Integer, ReplicaInfo> entry: fdsInfo.entrySet()){
+    		try {
+    			Socket socket = new Socket(entry.getValue().host, entry.getValue().port);
+    			ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+    			oos.writeObject(message);
+    			socket.close();
+    		} catch (Exception e){
+    			System.out.println("error sending to fds " + entry.getKey());
+    			e.printStackTrace();
+    		}
+    	}
 	}
     
 	/**
