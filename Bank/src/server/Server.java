@@ -34,6 +34,7 @@ public class Server extends Thread
     private Map<Integer, HashSet<Integer>> waiting_records = new ConcurrentHashMap<Integer, HashSet<Integer>>();; //SerialID to returned backups
     private Map<Integer, RequestClient> waiting_clients = new ConcurrentHashMap<Integer, RequestClient>();
     ServerSocket serversocket;
+    boolean isPrimary = false;
     
     private void checkWaitingRecords(){
         for (Map.Entry<Integer, HashSet<Integer>> entry : waiting_records.entrySet()){
@@ -355,6 +356,7 @@ public class Server extends Thread
         return message;
     }
 
+    //TODO: working here
     public void run()
     {
         System.out.println("Server starting up!");

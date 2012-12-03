@@ -20,9 +20,6 @@ import jvm.JVM;
 
 import messaging.MessagingException.Type;
 
-import oracle.Oracle;
-import oracle.Oracle.replicaState;
-
 /**
  * Things that new messaging will do:
  *  - read in topology and resolver, building data structures
@@ -37,6 +34,8 @@ public class NewMessaging {
 	public static String oracleFilename = "oracle.txt"; //TODO: remove for phase 4
 	public static String clientResolverFilename = "clientResolver.txt";
 	public static String fdsResolverFilename = "fdsResolver.txt";
+	
+	public enum replicaState {running, failed}
 	
     private HashMap<ReplicaID, ReplicaInfo> allReplicaInfo = new HashMap<ReplicaID, ReplicaInfo>();
     
