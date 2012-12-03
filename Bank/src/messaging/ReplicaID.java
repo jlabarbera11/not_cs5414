@@ -21,7 +21,7 @@ public class ReplicaID implements Serializable {
     @Override
     public boolean equals(Object replica) {
         if (replica instanceof ReplicaID) {
-        	return ((this.branchNum == ((ReplicaID)replica).branchNum) && (this.replicaNum == ((ReplicaID)replica).replicaNum));
+        	return ((this.branchNum.equals(((ReplicaID)replica).branchNum)) && (this.replicaNum.equals(((ReplicaID)replica).replicaNum)));
         }
         return false;
     }
