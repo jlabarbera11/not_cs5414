@@ -1,5 +1,8 @@
-all: client server oracle messaging jvm
-jar: client-jar server-jar oracle-jar jvm-jar
+all: jvm client server messaging
+jar: jvm-jar client-jar server-jar
+
+jvm:
+	javac -Xlint:unchecked -sourcepath src/ -d bin/ src/jvm/*.java
 
 client:
 	javac -Xlint:unchecked -sourcepath src/ -d bin/ src/client/*.java
@@ -11,31 +14,21 @@ client-test:
 server:
 	javac -Xlint:unchecked -sourcepath src/ -d bin/ src/server/*.java
 
-oracle:
-	javac -Xlint:unchecked -sourcepath src/ -d bin/ src/oracle/*.java
-
 messaging:
 	javac -Xlint:unchecked -sourcepath src/ -d bin/ src/messaging/*.java
 	
-jvm:
-	javac -Xlint:unchecked -sourcepath src/ -d bin/ src/jvm/*.java
-
 messaging-test:
 	javac -Xlint:unchecked -sourcepath src/ -cp lib/junit-4.10.jar -d bin src/messaging/test/MessagingTest.java
 	java -cp lib/junit-4.10.jar:bin/ org.junit.runner.JUnitCore messaging.test.MessagingTest
 
+jvm-jar: jvm messaging
+	jar cfe bin/jvm.jar jvm.JVM -C bin .
+
 client-jar: client messaging
-	jar cfe client.jar client.Client -C bin .
+	jar cfe bin/client.jar client.Client -C bin .
 
 server-jar: server messaging
-	jar cfe server.jar server.Server -C bin .
-
-oracle-jar: oracle messaging
-	jar cfe oracle.jar oracle.Oracle -C bin .
-	
-jvm-jar: jvm messaging
-	jar cfe jvm.jar jvm.JVM -C bin .
-
+	jar cfe bin/server.jar server.Server -C bin .
 
 clean:
 	rm -rf bin/*

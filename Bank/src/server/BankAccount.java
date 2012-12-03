@@ -1,12 +1,10 @@
 package server;
 
-import messaging.Messaging;
 import messaging.ResponseClient;
 import messaging.DepositResponse;
 import messaging.WithdrawResponse;
 import messaging.QueryResponse;
 import messaging.TransferResponse;
-import messaging.MessagingException;
 
 import java.io.Serializable;
 import java.util.HashSet;
@@ -65,7 +63,7 @@ public class BankAccount implements Comparable<BankAccount>, Serializable {
         transaction(Transaction.TRANSFER_DEPOSIT, amount, serialNumber);
     }
 
-    private ResponseClient transaction(Transaction t, Float amount, int serialNumber) 
+    private ResponseClient transaction(Transaction t, Float amount, int serialNumber)
     {
         boolean valid = !(serials.contains(serialNumber));
 
@@ -98,7 +96,7 @@ public class BankAccount implements Comparable<BankAccount>, Serializable {
                 return (valid ? new TransferResponse(balance) : new TransferResponse("Invalid Serial Number"));
             case TRANSFER_DEPOSIT:
                 break;
-        } 
+        }
         return (valid ? new ResponseClient() : new ResponseClient()); //TODO: This is strange.
     }
 

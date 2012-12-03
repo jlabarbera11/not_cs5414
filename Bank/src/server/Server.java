@@ -21,21 +21,21 @@ import java.util.HashSet;
 
 import jvm.Pinger;
 
-import oracle.Oracle;
-import oracle.Oracle.replicaState;
+import oracle.Messaging.replicaState;
 
 public class Server extends Thread
 {
     private int branchID;
     private int replicaID;
     private Map<AccountNumber, BankAccount> accounts;
-    private NewMessaging newMessaging;
+    private Messaging Messaging;
     private Set<Integer> backups; //Set of all replicas with greater replica IDs
     private Map<Integer, HashSet<Integer>> waiting_records = new ConcurrentHashMap<Integer, HashSet<Integer>>();; //SerialID to returned backups
     private Map<Integer, RequestClient> waiting_clients = new ConcurrentHashMap<Integer, RequestClient>();
     ServerSocket serversocket;
+
     boolean isPrimary = false;
-    
+
     private void checkWaitingRecords(){
         for (Map.Entry<Integer, HashSet<Integer>> entry : waiting_records.entrySet()){
             if (entry.getValue().equals(this.backups)){
@@ -44,97 +44,38 @@ public class Server extends Thread
                 waiting_clients.remove(rc.GetSerialNumber());
                 //m.SendToClient(recordTransaction(rc));
                 try {
-					newMessaging.sendToClientNoResponse(branchID, recordTransaction(rc));
+					Messaging.sendToClientNoResponse(branchID, recordTransaction(rc));
 				} catch (MessagingException e) {
 					e.printStackTrace();
 				}
             }
         }
     }
-    
-    //TODO: remove this oracle shit!
-    
-    public void HandleOracleMessage(Message message){
-    	System.out.println("ORACLE MESSAGE: this is wrong...");
-        /**try {
-        	if (message instanceof FailureOracle){
-        		FailureOracle fo = (FailureOracle)message;
-        		boolean headFailed = isHead(fo.failedReplicaID);
-        		System.out.println("got failure from oracle for replica " + fo.failedReplicaID);
-        		replicaStates.put(fo.failedReplicaID, replicaState.failed);
-        		removeFromBackups(fo.failedReplicaID);
-        		if (headFailed){
-        			String branchNum = fo.failedReplicaID.substring(0,2);
-        			try {
-        				m.branchstreams.get(branchNum).close();
-        			} catch (Exception e){
-        				//ignore
-        			}
-        			String[] resolverEntry = resolver.get(getHead(fo.failedReplicaID.substring(0,2)));
-        			Socket newSocket = new Socket(InetAddress.getByName(resolverEntry[0]), Integer.parseInt(resolverEntry[1]));
-        			m.branchstreams.put(branchNum, new ObjectOutputStream(newSocket.getOutputStream()));
-        		}
-        		backups.remove(fo.failedReplicaID.substring(3,5));
-        		checkWaitingRecords();
-        	} else if (message instanceof BackupOracle){
-        		replicaStates.put(((BackupOracle)message).GetRecoveredReplicaID(), replicaState.running);
-        		BackupOracle bo = (BackupOracle)message;
-        		System.out.println("got recovery from oracle for replica " + bo.GetRecoveredReplicaID());
-        		System.out.println("old primary is " + bo.GetPrimary());
-        		System.out.println("my replicaID is " + replicaID + " and received recovering replicaId is " + bo.GetRecoveredReplicaID());
-        		if((this.branchID + "." + this.replicaID).equals(bo.GetRecoveredReplicaID())) {
-        			System.out.println("starting recovery");
-                                m.SendToReplica(bo.GetPrimary().substring(3,5), new RecoverReplicaRequest(this.replicaID));
-                        }
-                        else
-                            this.backups.add(bo.GetRecoveredReplicaID().substring(3,5));
-                    
-        		boolean headRecovered = isHead(bo.GetRecoveredReplicaID());
-                        if (headRecovered){
-        			String branchNum = bo.GetRecoveredReplicaID().substring(0,2);
-        			try {
-        				m.branchstreams.get(branchNum).close();
-        			} catch (Exception e ){
-        				//ignore
-        			}
-        			String[] resolverEntry = resolver.get(bo.GetRecoveredReplicaID());
-        			Socket newSocket = new Socket(InetAddress.getByName(resolverEntry[0]), Integer.parseInt(resolverEntry[1]));
-        			m.branchstreams.put(branchNum, new ObjectOutputStream(newSocket.getOutputStream()));
-        		}
-        	} else {
-        		System.out.println("invalid message type received by client from oracle");
-        	}
-        } catch(Exception e) {
-            System.out.println(e.toString() + " thrown from HandleOracleMessages Thread");
-            e.printStackTrace();
-        }*/
-    }
-    
 
     public Server(int branchID, int replicaID)
     {
         this.branchID = branchID;
         this.replicaID = replicaID;
         accounts = new ConcurrentHashMap<AccountNumber, BankAccount>();
-        newMessaging = new NewMessaging();
-        this.backups = newMessaging.initBackups(branchID, replicaID);
-        
+        Messaging = new Messaging();
+        this.backups = Messaging.initBackups(branchID, replicaID);
+
         //init serversocket
-    	ReplicaInfo myInfo = newMessaging.getReplicaInfo(new ReplicaID(branchID, replicaID));
+    	ReplicaInfo myInfo = Messaging.getReplicaInfo(new ReplicaID(branchID, replicaID));
 		try {
 			serversocket = new ServerSocket(myInfo.port);
 			serversocket.setReuseAddress(true);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
+
 		//start pinger
 		ReplicaID myReplicaID = new ReplicaID(branchID, replicaID);
-		Pinger pinger = new Pinger(newMessaging.getJvmID(myReplicaID), myReplicaID);
+		Pinger pinger = new Pinger(Messaging.getJvmID(myReplicaID), myReplicaID);
 		pinger.start();
-		
+
     	System.out.println("server listening on port " + myInfo.port);
-        
+
     }
 
     public DepositResponse deposit(int accountID, float amount, int serialNumber)
@@ -188,15 +129,15 @@ public class Server extends Thread
         System.out.println("Size of set " + branchState.size());
         return branchState;
     }
-    
+
     private class CheckBackupStatusThread extends Thread {
-    	
+
     	private Set<Integer> backups;
         private Map<Integer, HashSet<Integer>> waiting_records;
         private Map<Integer, RequestClient> waiting_clients;
         private RequestClient rc;
         private int branchID;
-    	
+
     	public CheckBackupStatusThread(Set<Integer> backups,  Map<Integer, HashSet<Integer>> waiting_records, Map<Integer, RequestClient> waiting_clients, RequestClient rc, int branchID){
     		this.backups = backups;
     		this.waiting_records = waiting_records;
@@ -204,18 +145,17 @@ public class Server extends Thread
     		this.rc = rc;
     		this.branchID = branchID;
     	}
-    	
+
     	public void run(){
     		for (int i =0; i<5; i++){
-    			
+
     	        for(Integer replicaNum : this.backups) {
-    	        	Oracle.replicaState status = null;
     				try {
-    					status = newMessaging.checkReplicaStatus(new ReplicaID(branchID, replicaNum));
+    					status = Messaging.checkReplicaStatus(new ReplicaID(branchID, replicaNum));
     				} catch (MessagingException e) {
     					e.printStackTrace();
     				}
-    	        	if (status != Oracle.replicaState.running){
+    	        	if (status != Messaging.replicaState.running){
     	        		backups.remove(replicaNum);
     	        		System.out.println("replica " + replicaNum.toString() + " has failed, removing from backups");
 
@@ -227,7 +167,7 @@ public class Server extends Thread
     	                    if(!(rc instanceof TransferDepositToRemoteBranch)){
     	                        //m.SendToClient(recordTransaction(rc));
     	                    	try {
-									newMessaging.sendToClientNoResponse(branchID, responseClient);
+									Messaging.sendToClientNoResponse(branchID, responseClient);
 								} catch (MessagingException e) {
 									e.printStackTrace();
 								}
@@ -235,23 +175,23 @@ public class Server extends Thread
     	                    if(rc instanceof TransferRequest) {
     	                        TransferRequest request = (TransferRequest)rc;
     	                        if(request.GetDestBranch() != this.branchID){
-    	                            //m.SendToBranch(getHead(request.GetDestBranch()), 
+    	                            //m.SendToBranch(getHead(request.GetDestBranch()),
     	                        	System.out.println("about to send to transfer recipient branch");
     	                            try {
-										newMessaging.sendToPrimaryNoResponse(request.GetDestBranch(), new TransferDepositToRemoteBranch(request.GetDestAcnt(), request.GetAmt(), request.GetSerialNumber()));
+										Messaging.sendToPrimaryNoResponse(request.GetDestBranch(), new TransferDepositToRemoteBranch(request.GetDestAcnt(), request.GetAmt(), request.GetSerialNumber()));
 									} catch (MessagingException e) {
 										e.printStackTrace();
 									}
     	                        }
     	                    }
-    	                    
+
     	                }
-    	        		
-    	        		
+
+
     	        	}
     	        }
-    	    	
-    			
+
+
     			try {
 					Thread.sleep(500);
 				} catch (InterruptedException e) {
@@ -265,30 +205,30 @@ public class Server extends Thread
     	//update backups
         for(Integer replicaNum : this.backups) {
         	//check replica status
-        	Oracle.replicaState status = null;
+        	Messaging.replicaState status = null;
 			try {
-				status = newMessaging.checkReplicaStatus(new ReplicaID(branchID, replicaNum));
+				status = Messaging.checkReplicaStatus(new ReplicaID(branchID, replicaNum));
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
-        	if (status == Oracle.replicaState.running){
+        	if (status == Messaging.replicaState.running){
         		System.out.println("state of replica " + replicaNum + " is *running*");
         	} else {
         		System.out.println("replica " + replicaNum + " is not running, removing from backups");
         		backups.remove(replicaNum);
         	}
         }
-    	
-        if (this.backups.size() == 0){ 
+
+        if (this.backups.size() == 0){
         	//m.SendToClient(recordTransaction(rc));
         	try {
         		ResponseClient response = recordTransaction(rc);
 				if (!(rc instanceof TransferDepositToRemoteBranch)){
-					newMessaging.sendToClientNoResponse(branchID, response);
+					Messaging.sendToClientNoResponse(branchID, response);
 				}
 				if (rc instanceof TransferRequest){
 					TransferRequest request = (TransferRequest)rc;
-					newMessaging.sendToPrimaryNoResponse(request.GetDestBranch(), new TransferDepositToRemoteBranch(request.GetDestAcnt(), request.GetAmt(), request.GetSerialNumber()));
+					Messaging.sendToPrimaryNoResponse(request.GetDestBranch(), new TransferDepositToRemoteBranch(request.GetDestAcnt(), request.GetAmt(), request.GetSerialNumber()));
 				}
 			} catch (MessagingException e) {
 				e.printStackTrace();
@@ -301,7 +241,7 @@ public class Server extends Thread
             //m.SendToReplica(i, new RequestBackup(this.replicaID, rc));
             try {
 	    		//in a RequestBackup, the branchID and replicaID are of the sender
-	    		newMessaging.sendToReplicaNoResponse(new ReplicaID(branchID, replicaNum), new RequestBackup(branchID, replicaID, rc));
+	    		Messaging.sendToReplicaNoResponse(new ReplicaID(branchID, replicaNum), new RequestBackup(branchID, replicaID, rc));
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}
@@ -343,7 +283,7 @@ public class Server extends Thread
 
         return null;
     }
-    
+
     //assumes that everything is a message
     public Message receiveMessage() throws IOException, ClassNotFoundException{
         Socket clientSocket = serversocket.accept();
@@ -364,7 +304,7 @@ public class Server extends Thread
         	try {
         		Message mr = receiveMessage();
 	            System.out.println("Got message");
-	
+
 	            if (mr instanceof RequestClient) { //from client
 	                if (!isPrimary){
 	                	isPrimary = true;
@@ -372,15 +312,15 @@ public class Server extends Thread
 	                	newMessaging.recordPreviousPrimaryFailures(branchID, replicaID);
 	                }
 	                startBackup((RequestClient)mr);
-	           
+
 	            } else if (mr instanceof BranchMessage) {
-	
+
 	            } else if (mr instanceof RequestBackup) { //from primary
 	                System.out.println("MESSAGE: Received backup request");
 	                recordTransaction(((RequestBackup)mr).GetMessage());
 	                //m.SendToReplica(mr.GetReplica(), new ResponseBackup(this.replicaID, ((RequestBackup)mr).GetMessage()));
-	                newMessaging.sendToReplicaNoResponse(new ReplicaID(mr.GetBranch(), mr.GetReplica()), new ResponseBackup(this.replicaID, ((RequestBackup)mr).GetMessage()));
-	           
+	                Messaging.sendToReplicaNoResponse(new ReplicaID(mr.GetBranch(), mr.GetReplica()), new ResponseBackup(this.replicaID, ((RequestBackup)mr).GetMessage()));
+
 	            } else if (mr instanceof ResponseBackup) { //from backup
 	                System.out.println("MESSAGE: Received backup response");
 	                ResponseBackup response = (ResponseBackup)mr;
@@ -392,26 +332,21 @@ public class Server extends Thread
 	                    ResponseClient responseClient = recordTransaction(rc);
 	                    if(!(rc instanceof TransferDepositToRemoteBranch)){
 	                        //m.SendToClient(recordTransaction(rc));
-	                    	newMessaging.sendToClientNoResponse(branchID, responseClient);
+	                    	Messaging.sendToClientNoResponse(branchID, responseClient);
 	                    }
 	                    if(rc instanceof TransferRequest) {
 	                        TransferRequest request = (TransferRequest)rc;
 	                        if(request.GetDestBranch() != this.branchID){
-	                            //m.SendToBranch(getHead(request.GetDestBranch()), 
+	                            //m.SendToBranch(getHead(request.GetDestBranch()),
 	                        	System.out.println("about to send to transfer recipient branch");
-	                            newMessaging.sendToPrimaryNoResponse(request.GetDestBranch(), new TransferDepositToRemoteBranch(request.GetDestAcnt(), request.GetAmt(), request.GetSerialNumber()));
+	                            Messaging.sendToPrimaryNoResponse(request.GetDestBranch(), new TransferDepositToRemoteBranch(request.GetDestAcnt(), request.GetAmt(), request.GetSerialNumber()));
 	                        }
 	                    }
 	                }
-	            
-	            } else if (mr instanceof OracleMessage) {
-	                OracleMessage m = (OracleMessage) mr;
-	                HandleOracleMessage(m);
-	            
 	            } else if (mr instanceof RecoverReplicaRequest) {
 	                RecoverReplicaRequest r = (RecoverReplicaRequest)mr;
 	                //m.SendToReplica(mr.GetReplica(), new RecoverReplicaResponse(this.backups, this.accounts, this.waiting_clients));
-	                newMessaging.sendToReplicaNoResponse(new ReplicaID(mr.GetBranch(), mr.GetReplica()), new RecoverReplicaResponse(this.backups, this.accounts, this.waiting_clients));
+	                Messaging.sendToReplicaNoResponse(new ReplicaID(mr.GetBranch(), mr.GetReplica()), new RecoverReplicaResponse(this.backups, this.accounts, this.waiting_clients));
 	            } else if (mr instanceof RecoverReplicaResponse) {
 	                RecoverReplicaResponse r = (RecoverReplicaResponse)mr;
 	                this.backups = r.GetBackups();
@@ -419,9 +354,9 @@ public class Server extends Thread
 	                for(RequestClient rc : r.GetWaitingClients().values()) {
 	                    recordTransaction(rc);
 	                    //m.SendToReplica(r.GetReplica(), new ResponseBackup(this.replicaID, rc));
-	                    newMessaging.sendToReplicaNoResponse(new ReplicaID(r.GetBranch(), r.GetReplica()),new ResponseBackup(this.replicaID, rc));
+	                    Messaging.sendToReplicaNoResponse(new ReplicaID(r.GetBranch(), r.GetReplica()),new ResponseBackup(this.replicaID, rc));
 	                }
-	
+
 	            } else {
 	                System.out.println("Don't know how to handle message");
 	            }
