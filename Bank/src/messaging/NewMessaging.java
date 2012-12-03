@@ -226,7 +226,7 @@ public class NewMessaging {
     			socket.close();
     		} catch (Exception e){
     			System.out.println("error sending to fds " + entry.getKey());
-    			e.printStackTrace();
+    			//e.printStackTrace();
     		}
     	}
 	}
@@ -250,7 +250,7 @@ public class NewMessaging {
     			thread.run();
     		} catch (Exception e){
     			System.out.println("error sending to fds " + entry.getKey());
-    			e.printStackTrace();
+    			//e.printStackTrace();
     		}
     	}
     	
@@ -258,10 +258,15 @@ public class NewMessaging {
     	for (int i=0; i<5; i++){
 			int numFailure = responses.get(replicaState.failed);
 			int numRunning = responses.get(replicaState.running);
-			if (numRunning > fdsInfo.size()){
+			if (numRunning > fdsInfo.size()/2){
+				System.out.println("check status is concluding that state is running");
 				return replicaState.running;
-			} else if (numFailure > fdsInfo.size()){
+			} else if (numFailure > fdsInfo.size()/2){
+				System.out.println("check status is concluding that state is failed");
 				return replicaState.failed;
+			} else {
+				System.out.println("check status has not received enough responses. numfailed is " + numFailure + " and numRunning is " + numRunning);
+				System.out.println("num fds is " + fdsInfo.size());
 			}
     		try {
 				Thread.sleep(1000);

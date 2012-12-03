@@ -32,7 +32,7 @@ public class Server extends Thread
     private NewMessaging newMessaging;
     private Set<Integer> backups; //Set of all replicas with greater replica IDs
     private Map<Integer, HashSet<Integer>> waiting_records; //SerialID to returned backups
-    private Map<Integer, RequestClient> waiting_clients = new HashMap<Integer, RequestClient>();
+    private Map<Integer, RequestClient> waiting_clients = new ConcurrentHashMap<Integer, RequestClient>();
     ServerSocket serversocket;
     
     private void checkWaitingRecords(){
@@ -115,7 +115,7 @@ public class Server extends Thread
         this.branchID = branchID;
         this.replicaID = replicaID;
         accounts = new ConcurrentHashMap<AccountNumber, BankAccount>();
-        this.waiting_records = new HashMap<Integer, HashSet<Integer>>();
+        this.waiting_records = new ConcurrentHashMap<Integer, HashSet<Integer>>();
         newMessaging = new NewMessaging();
         this.backups = newMessaging.initBackups(branchID, replicaID);
         
@@ -187,6 +187,23 @@ public class Server extends Thread
         System.out.println("Size of set " + branchState.size());
         return branchState;
     }
+    
+    private class CheckBackupStatusThread extends Thread {
+    	
+    	private Set<Integer> backups;
+        private Map<Integer, HashSet<Integer>> waiting_records;
+        private Map<Integer, RequestClient> waiting_clients;
+    	
+    	public CheckBackupStatusThread(Set<Integer> backups,  Map<Integer, HashSet<Integer>> waiting_records, Map<Integer, RequestClient> waiting_clients){
+    		this.backups = backups;
+    		this.waiting_records = waiting_records;
+    		this.waiting_clients = waiting_clients;
+    	}
+    	
+    	public void run(){
+    		
+    	}
+    }
 
     public void startBackup(RequestClient rc) {
     	//update backups
@@ -233,6 +250,7 @@ public class Server extends Thread
 				e.printStackTrace();
 			}
         }
+        //TODO: start checkStatusThread
     }
 
     //Add to our hashtable of completed transactions
