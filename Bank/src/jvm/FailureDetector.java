@@ -38,7 +38,7 @@ public class FailureDetector extends Thread {
       Map<ReplicaID, Long> lm = new HashMap<ReplicaID, Long>();
       for(ReplicaID rid : entry.getValue())
         lm.put(rid, new Long(0));
-      
+
       rts.put(entry.getKey(), lm);
       fts.put(entry.getKey(), new Long(0));
 
@@ -81,11 +81,11 @@ public class FailureDetector extends Thread {
     if(!this.rts.containsKey(o.jvmOfInterest))
       failed = true;
     for(Long ts : this.rts.get(o.jvmOfInterest).values())
-      if( ts + 2*60*1000 > System.currentTimeMillis())
+      if( ts + 2*1000 > System.currentTimeMillis())
         failed = true;
     if(!this.fts.containsKey(o.jvmOfInterest))
       failed = true;
-    if(this.fts.get(o.jvmOfInterest)+ 2*60*1000 > System.currentTimeMillis())
+    if(this.fts.get(o.jvmOfInterest)+ 2*1000 > System.currentTimeMillis())
       failed = true;
 
     if(!failed)
