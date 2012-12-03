@@ -34,6 +34,7 @@ public class FailureDetector extends Thread {
     this.fts = new HashMap<Integer, Long>();
     try {
       this.ss = new ServerSocket(port);
+      ss.setReuseAddress(true);
     } catch(Exception e) {System.out.println("ERROR: Could not create Failure Detector");}
   }
 
