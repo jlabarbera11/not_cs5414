@@ -124,7 +124,7 @@ public class Client extends JFrame implements ActionListener {
 	    setVisible(true);
 	    waitingForResponse=false;
 
-	    messaging = new NewMessaging();
+	    messaging = new Messaging();
 	  }
 
 	  private void createDepositBox(JPanel panel){

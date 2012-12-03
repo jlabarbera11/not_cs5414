@@ -35,6 +35,8 @@ public class Messaging {
 	public static String clientResolverFilename = "clientResolver.txt";
 	public static String fdsResolverFilename = "fdsResolver.txt";
 
+  public enum replicaState {running, failed}
+
     private HashMap<ReplicaID, ReplicaInfo> allReplicaInfo = new HashMap<ReplicaID, ReplicaInfo>();
 
     //maps branch number to list of reachable branch numbers
@@ -164,8 +166,8 @@ public class Messaging {
 		//System.out.println("sendToPrimary got branchID " + branchID);
 		while(true){
 			headID = getHead(branchID);
-			Oracle.replicaState status = checkReplicaStatus(headID);
-			if (status != Oracle.replicaState.running){
+			replicaState status = checkReplicaStatus(headID);
+			if (status != replicaState.running){
 				System.out.println("old head FAILURE detected");
 				recordJvmFailure(headID);
 			} else {
@@ -235,7 +237,7 @@ public class Messaging {
 	 * @throws MessagingException
 	*/
     public replicaState checkReplicaStatus(ReplicaID replicaID) throws MessagingException {
-    	ConcurrentHashMap<replicaState, Integer> responses = new ConcurrentHashMap<Oracle.replicaState, Integer>();
+    	ConcurrentHashMap<replicaState, Integer> responses = new ConcurrentHashMap<replicaState, Integer>();
     	responses.put(replicaState.failed, 0);
     	responses.put(replicaState.running, 0);
     	System.out.println("checking status of replica " + replicaID.toString());
@@ -310,8 +312,8 @@ public class Messaging {
 		ReplicaID headID = null;
 		while(true){
 			headID = getHead(branchID);
-			Oracle.replicaState status = checkReplicaStatus(headID);
-			if (status != Oracle.replicaState.running){
+			replicaState status = checkReplicaStatus(headID);
+			if (status != replicaState.running){
 				System.out.println("old head FAILURE detected");
 				recordJvmFailure(headID);
 			} else {

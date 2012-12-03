@@ -1,7 +1,7 @@
 package jvm;
 
 import messaging.ReplicaID;
-import messaging.NewMessaging;
+import messaging.Messaging;
 import messaging.Ping;
 
 import java.net.Socket;
@@ -11,16 +11,16 @@ public class Pinger extends Thread {
 
   Integer jid;
   Object id;
-  NewMessaging nm;
+  Messaging nm;
 
   public Pinger(Integer jid, ReplicaID rid) {
-    nm = new NewMessaging();
+    nm = new Messaging();
     this.jid = jid;
     this.id = rid;
   }
 
   public Pinger(Integer jid, Integer fid) {
-    nm = new NewMessaging();
+    nm = new Messaging();
     this.jid = jid;
     this.id = fid;
   }

@@ -1,5 +1,6 @@
 package jvm;
 
+import messaging.Messaging.replicaState;
 import messaging.ReplicaID;
 import messaging.Ping;
 import messaging.StatusQuery;
@@ -104,11 +105,11 @@ public class FailureDetector extends Thread {
     System.out.println("FDS " + this.fid + " says " + o.jvmOfInterest +  " is " + (failed ? "failed" : "running"));
 
     if(!failed)
-      new ObjectOutputStream(s.getOutputStream()).writeObject(new StatusQueryResponse(Messaging.replicaState.running, o.jvmOfInterest));
+      new ObjectOutputStream(s.getOutputStream()).writeObject(new StatusQueryResponse(replicaState.running, o.jvmOfInterest));
     else {
       this.rts.remove(o.jvmOfInterest);
       this.fts.remove(o.jvmOfInterest);
-      new ObjectOutputStream(s.getOutputStream()).writeObject(new StatusQueryResponse(Messaging.replicaState.failed, o.jvmOfInterest));
+      new ObjectOutputStream(s.getOutputStream()).writeObject(new StatusQueryResponse(replicaState.failed, o.jvmOfInterest));
     }
     s.close();
   }
