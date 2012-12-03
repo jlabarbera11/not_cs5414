@@ -2,7 +2,7 @@ package jvm;
 
 import messaging.ReplicaID;
 import messaging.NewMessaging;
-import messaging.StillAlive;
+import messaging.Ping;
 
 import java.net.Socket;
 
@@ -26,7 +26,7 @@ public class Pinger extends Thread {
     while(true) {
       try {
         Thread.sleep(60);
-        nm.broadcastToAllFDS(new StillAlive(id));
+        nm.broadcastToAllFDS(new Ping(id));
       } catch(Exception e) {}
     }
   }
