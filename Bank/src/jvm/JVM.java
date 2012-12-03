@@ -20,8 +20,9 @@ public class JVM {
 	public static String jvmfile = "jvmInfo.txt";
 	int jvmID;
 
-	private void readjvmInfo(){
+	public Map<Integer, Set<ReplicaID>> readjvmInfo(){
 		System.out.println("reading jvmInfo...");
+		Map<Integer, Set<ReplicaID>> jvmInfo = new HashMap<Integer, Set<ReplicaID>>();
         try {
             Scanner scanner = new Scanner(new File(jvmfile));
             while (scanner.hasNextLine()) {
@@ -39,13 +40,13 @@ public class JVM {
         } catch (Exception e) {
         	System.out.println("reading jvmInfo failed");
         	e.printStackTrace();
-        	return;
         } 
+        return jvmInfo;
 	}
 	
 	public JVM(int id){
 		this.jvmID = id;
-		readjvmInfo();
+		this.jvmInfo = readjvmInfo();
 	}
 	
 	public void run(){

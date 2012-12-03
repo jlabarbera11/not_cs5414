@@ -32,6 +32,7 @@ public class NewMessaging {
 	public static String resolverFilename = "resolver.txt";
 	public static String oracleFilename = "oracle.txt"; //TODO: remove for phase 4
 	public static String clientResolverFilename = "clientResolver.txt";
+	public static String fdsResolverFilename = "fdsResolver.txt";
 	
     private HashMap<ReplicaID, ReplicaInfo> allReplicaInfo = new HashMap<ReplicaID, ReplicaInfo>();
     
@@ -40,6 +41,37 @@ public class NewMessaging {
     
     //maps client number to address
     private HashMap<Integer, ReplicaInfo> clientInfo = new HashMap<Integer, ReplicaInfo>();
+    
+    private HashMap<Integer, ReplicaInfo> fdsInfo = new HashMap<Integer, ReplicaInfo>();
+    
+    private void readFDSResolver(){
+		System.out.println("reading FDS resolver");
+        try {
+            Scanner scanner = new Scanner(new File(fdsResolverFilename));
+            while (scanner.hasNextLine()) {
+                String[] line = scanner.nextLine().split(" ");
+                int fdsID = Integer.parseInt(line[0]);
+                int port = Integer.parseInt(line[1]);
+                String host = line[2];
+                fdsInfo.put(fdsID, new ReplicaInfo(port, host));
+            }
+            scanner.close();
+        } catch (Exception e) {
+        	System.out.println("reading FDS resolver failed");
+        	e.printStackTrace();
+        	return;
+        } 
+    }
+    
+    public HashMap<Integer, ReplicaInfo> getFdsInfo(){
+    	return fdsInfo;
+    }
+    
+    public ReplicaInfo getFdsPort(int fdsID){
+    	return fdsInfo.get(fdsID);
+    }
+    
+    
     
     public void sendToClientNoResponse(Integer clientNum, Message message) throws MessagingException{
 		ReplicaInfo replicaInfo = clientInfo.get(clientNum);
@@ -130,13 +162,23 @@ public class NewMessaging {
 		sendToReplicaNoResponse(headID, message);
 	}
     
+	/**
+	 * 1) send a Status query to all FDSs
+	 * 2) make decision based on majority
+	*/
     public replicaState checkReplicaStatus(ReplicaID replicaID) {
+    	
+    	for (Map.Entry<Integer, ReplicaInfo> entry: fdsInfo.entrySet()){
+    		
+    	}
+    	
+    	
     	try {
-			StatusQuery sq = new StatusQuery(replicaID);
+			//StatusQuery sq = new StatusQuery(replicaID);
 			ReplicaInfo oracleInfo = getOracleInfo();
 			Socket socket = new Socket(oracleInfo.host, oracleInfo.port);
 			ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-			oos.writeObject(sq);
+			//oos.writeObject(sq);
 			ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 			StatusQueryResponse response = (StatusQueryResponse) ois.readObject();
 			return response.status;
@@ -197,6 +239,7 @@ public class NewMessaging {
 		readResolver();
 		readTopology();
 		readClientResolver();
+		readFDSResolver();
 	}
 	
 	public void readClientResolver(){
