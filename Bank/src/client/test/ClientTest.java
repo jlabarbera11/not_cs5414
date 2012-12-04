@@ -249,6 +249,11 @@ public class ClientTest {
 		assertEquals(client.result1.getText(), "Transfer successful");
 		assertEquals(client.result2.getText(), "Balance in source account: 25.0");
 		
+		jvm1.kill();
+		jvm2.kill();
+		jvm3.kill();
+		jvm4.kill();
+		jvm5.kill();
 	}
 	/**
 	 * This test creates a bunch of jvms, fails some of them, and makes sure
