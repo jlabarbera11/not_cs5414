@@ -10,5 +10,8 @@ jyl76
 Joe also worked on the server, oracle, client, and messaging packages. He was the main
 person working on the server. He spent about 20 hours.
 
+Joe worked on the protocol for Failure Detection, as well as the Failure Detectors. He 
+also contributed to the JVM and Server classes, spending about 20 hours in total.
+
 Kyle Hsu
 Kyle wrote a gui for the oracle, but due to a misunderstanding, this work had already been done.
