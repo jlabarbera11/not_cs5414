@@ -280,17 +280,23 @@ public class Messaging {
     	for (Map.Entry<Integer, ReplicaInfo> entry: fdsInfo.entrySet()){
     		try {
     			Socket socket = new Socket(entry.getValue().host, entry.getValue().port);
+    			System.out.println("opened socket to " + entry.getValue().port);
     			ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+    			System.out.println("1");
     			StatusQuery sq = new StatusQuery(getJvmID(replicaID));
+    			System.out.println("1");
     			oos.writeObject(sq);
+    			System.out.println("1");
     			CheckStatusThread thread = new CheckStatusThread(responses, socket);
-    			thread.run();
+    			System.out.println("1");
+    			thread.start();
+    			System.out.println("1");
     		} catch (Exception e){
     			System.out.println("error sending to fds " + entry.getKey());
     			//e.printStackTrace();
     		}
     	}
-    	System.out.println("HERE!!!\n\n\n");
+    	System.out.println("between check replica status for loops");
     	//check responses in a loop. timeout at 5 seconds
     	for (int i=0; i<5; i++){
 			int numFailure = responses.get(replicaState.failed);
