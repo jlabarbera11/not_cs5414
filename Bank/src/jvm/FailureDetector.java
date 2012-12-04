@@ -5,6 +5,7 @@ import messaging.ReplicaID;
 import messaging.Ping;
 import messaging.StatusQuery;
 import messaging.StatusQueryResponse;
+import messaging.ShutdownMessage;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -65,6 +66,8 @@ public class FailureDetector extends Thread {
           this._stillAlive((Ping)o);
         else if(o instanceof StatusQuery)
           this._isAlive(s, (StatusQuery)o);
+        else if(o instanceof ShutdownMessage)
+          System.exit(1); /* Dead things should be dead */
       } catch(Exception e) {System.out.println("ERROR: " + e.toString()); e.printStackTrace();}
     }
   }
