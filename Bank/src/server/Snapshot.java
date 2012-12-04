@@ -1,7 +1,9 @@
-package messaging;
+package server;
 
 import java.util.Map;
 import java.util.Set;
+
+import messaging.Message;
 
 import server.SSInfo;
 import server.Channel;

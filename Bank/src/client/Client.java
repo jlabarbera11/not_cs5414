@@ -275,9 +275,6 @@ public class Client extends JFrame implements ActionListener {
 	  }
 
 	public void handleDeposit(){
-		//System.out.println("got deposit");
-		//System.out.println("account number is: " + depositAccount.getText());
-		//System.out.println("deposit amount is: " + depositAmount.getText());
 		System.out.println("deposit serial is: " + depositSerial.getText());
 		String account = depositAccount.getText();
 		String amount = depositAmount.getText();
@@ -294,6 +291,12 @@ public class Client extends JFrame implements ActionListener {
 		} else {
 			//result1.setText("valid account number and amount");
 			int branchNumber = Integer.parseInt(account.substring(0, 2));
+			if (branchNumber != clientNumber){
+				System.out.println("got invalid client number");
+				result1.setText("Can only deposit to this branch.");
+				result2.setText("");
+				return;
+			}
 			int accountNumber = Integer.parseInt(account.substring(3, account.length()));
 			float amountFloat = Float.parseFloat(amount);
 			int serialNumber = Integer.parseInt(serial);
@@ -337,6 +340,11 @@ public class Client extends JFrame implements ActionListener {
 	    } else {
 	    	//result1.setText("valid account number and amount");
 	    	int branchNumber = Integer.parseInt(account.substring(0, 2));
+			if (branchNumber != clientNumber){
+				result1.setText("Can only withdraw from this branch.");
+				result2.setText("");
+				return;
+			}
 	    	int accountNumber = Integer.parseInt(account.substring(3, account.length()));
 	    	float amountFloat = Float.parseFloat(amount);
 	    	int serialNumber = Integer.parseInt(serial);
@@ -385,6 +393,11 @@ public class Client extends JFrame implements ActionListener {
 	    	int branchNumberTo = Integer.parseInt(accountTo.substring(0, 2));
 	    	int accountNumberTo = Integer.parseInt(accountTo.substring(3, accountTo.length()));
 	    	int branchNumberFrom = Integer.parseInt(accountFrom.substring(0, 2));
+			if (branchNumberTo != clientNumber){
+				result1.setText("Can only transfer from this branch.");
+				result2.setText("");
+				return;
+			}
 	    	int accountNumberFrom = Integer.parseInt(accountFrom.substring(3, accountFrom.length()));
 	    	float amountFloat = Float.parseFloat(amount);
 	    	int serialNumber = Integer.parseInt(serial);
@@ -422,6 +435,11 @@ public class Client extends JFrame implements ActionListener {
 	    } else {
 	    	//result1.setText("valid account number and amount");
 	    	int branchNumber = Integer.parseInt(account.substring(0, 2));
+			if (branchNumber != clientNumber){
+				result1.setText("Can only query accounts in this branch.");
+				result2.setText("");
+				return;
+			}
 	    	int accountNumber = Integer.parseInt(account.substring(3, account.length()));
 	    	int serialNumber = Integer.parseInt(serial);
 	    	QueryResponse response;

@@ -128,7 +128,13 @@ public class Server extends Thread
         System.out.println("Size of set " + branchState.size());
         return branchState;
     }
-
+    /**
+     * This class is used to handle the case where a primary checks the status of all backups, sends a transaction to them,
+     * and then a backup fails. Without this class, the transaction would not succeed at the primary, but would at some of
+     * the backups. This class wakes up periodically and, if the transaction has not terminated, checks all backup statuses.
+     * @author Ben
+     *
+     */
     private class CheckBackupStatusThread extends Thread {
 
     	private Set<Integer> backups;
@@ -147,6 +153,21 @@ public class Server extends Thread
 
       public void run(){
         for (int i =0; i<5; i++){
+        	
+          try {
+            Thread.sleep(500);
+          } catch (InterruptedException e) {
+            e.printStackTrace();
+          }
+          System.out.println("backupstatusthread woke up, checking replica status");
+          
+          Object waiting_record = waiting_records.get(rc.GetSerialNumber());
+          if (waiting_record == null){
+        	  //transaction has already terminated
+        	  System.out.println("transaction has already terminated");
+        	  return;
+          }
+          
           replicaState status = null;
           for(Integer replicaNum : this.backups) {
             try {
@@ -155,9 +176,12 @@ public class Server extends Thread
               e.printStackTrace();
             }
             if (status != replicaState.running){
+              //here, we remove the failed replica from the backups list to make sure the transaction backup terminates
+              //we don't record the jvm failure in NewMessaging - this is fine because the server will do a status check 
+              //before initiating the next backup
               backups.remove(replicaNum);
               System.out.println("replica " + replicaNum.toString() + " has failed, removing from backups");
-
+              
               if(waiting_records.get(rc.GetSerialNumber()).equals(this.backups)) {
                 System.out.println("CheckBackupStatusThread found that all backups have responded, sending response");
                 waiting_records.remove(rc.GetSerialNumber());
@@ -188,13 +212,6 @@ public class Server extends Thread
 
 
             }
-          }
-
-
-          try {
-            Thread.sleep(500);
-          } catch (InterruptedException e) {
-            e.printStackTrace();
           }
         }
       }
@@ -245,7 +262,8 @@ public class Server extends Thread
           e.printStackTrace();
         }
       }
-      //TODO: start checkStatusThread
+      CheckBackupStatusThread statusThread = new CheckBackupStatusThread(backups, waiting_records, waiting_clients, rc, branchID);
+      statusThread.start();
     }
 
     //Add to our hashtable of completed transactions

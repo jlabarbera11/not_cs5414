@@ -25,7 +25,7 @@ import messaging.MessagingException.Type;
  *  - read in topology and resolver, building data structures
  *  - include methods to update these data structures as nodes fail or recover
  *  - include methods to get head, maybe to return the data structure itself
- *  - provide methods to open a socket, send a packet, and close the socket
+ *  - provide methods to open a socket, send a message, and close the socket
  */
 
 public class Messaging {
@@ -190,7 +190,11 @@ public class Messaging {
 		}
 		sendToReplicaNoResponse(headID, message);
 	}
-
+	
+	/*
+	 * checkReplicaStatus opens a socket to each FDS and sends a status query.
+	 * This class is used to handle such a socket and record the response. 
+	 */
 	private class CheckStatusThread extends Thread {
 		ConcurrentHashMap<replicaState, Integer> responses;
 		Socket socket;
@@ -212,7 +216,7 @@ public class Messaging {
 				}
 			} catch (Exception e){
 				System.out.println("error while waiting for response from FDS");
-				e.printStackTrace();
+				//e.printStackTrace();
 			}
 		}
 
