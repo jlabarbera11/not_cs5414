@@ -2,6 +2,10 @@ package jvm;
 
 import java.awt.List;
 import java.io.File;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -13,6 +17,8 @@ import server.Server;
 import messaging.Messaging;
 import messaging.ReplicaID;
 import messaging.ReplicaInfo;
+import messaging.ShutdownMessage;
+import messaging.StatusQuery;
 
 //JVM is used to hold a bunch of executing branch replicas as well as a bunch of
 
@@ -20,9 +26,33 @@ public class JVM extends Thread {
 	//jvmInfo maps a jvmID to set of replicaIDs running on that jvm
 	Map<Integer, Set<ReplicaID>> jvmInfo = new HashMap<Integer, Set<ReplicaID>>();
 	public static String jvmfile = "resolvers/jvmInfo.txt";
+	public static String jvmResolverFile = "resolvers/jvmResolver.txt";
 	int jvmID;
 	private Messaging messaging;
 	Set<Server> servers = new HashSet<Server>();
+	private Map<Integer, ReplicaInfo> jvmResolver;
+	private volatile boolean running;
+	private FailureDetector fds;
+	
+	public static Map<Integer, ReplicaInfo> readJvmResolver(){
+		System.out.println("reading jvmResolver...");
+		Map<Integer, ReplicaInfo> output = new HashMap<Integer, ReplicaInfo>();
+        try {
+            Scanner scanner = new Scanner(new File(jvmResolverFile));
+            while (scanner.hasNextLine()) {
+                String[] line = scanner.nextLine().split(" ");
+                Integer currentjvmID = Integer.parseInt(line[0]);
+                Integer port = Integer.parseInt(line[2]);
+                output.put(currentjvmID, new ReplicaInfo(port, line[1]));
+            }
+            scanner.close();
+        } catch (Exception e) {
+        	System.out.println("reading jvmResolver failed");
+        	e.printStackTrace();
+        }
+        System.out.println(" complete");
+        return output;
+	}
 
 	public static Map<Integer, Set<ReplicaID>> readjvmInfo(){
 		System.out.println("reading jvmInfo...");
@@ -53,6 +83,7 @@ public class JVM extends Thread {
 		this.jvmID = id;
 		this.jvmInfo = readjvmInfo();
 		this.messaging = new Messaging();
+		this.jvmResolver = readJvmResolver();
 	}
 
 	public void run(){
@@ -65,8 +96,27 @@ public class JVM extends Thread {
 			System.out.println("started server " + entry.toString());
 		}
 
-		FailureDetector fds = new FailureDetector(jvmID, messaging.getFdsPort(jvmID).port); //jvmID = fdsID
+		fds = new FailureDetector(jvmID, messaging.getFdsPort(jvmID).port); //jvmID = fdsID
 		fds.start();
+		
+		ServerSocket serversocket = null;
+		try {
+			 serversocket = new ServerSocket(jvmResolver.get(jvmID).port);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		while(running){
+			try {
+				Socket socket = serversocket.accept();
+				ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+				ShutdownMessage sm = (ShutdownMessage)ois.readObject();
+				kill();
+				ois.close();
+				serversocket.close();
+			} catch (Exception e){
+				System.out.println("error in jvm loop");
+			}
+		}
 	}
 
     public static void main(String args[]) {
@@ -74,11 +124,13 @@ public class JVM extends Thread {
         jvm.run();
     }
     
-    //for testing purposes
 	public void kill(){
+		System.out.println("jvm is shutting down");
+		running = false;
     	for (Server server : servers){
     		server.kill();
     	}
+    	fds.kill();
     }
 
 }

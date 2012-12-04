@@ -103,11 +103,11 @@ public class Messaging {
     	replicaInfo.state = newState;
     }
     
-    public void sendShutdown(int fdsID){
-    	System.out.println("sending shutdown to fds " + fdsID);
-    	ReplicaInfo fdsMap = fdsInfo.get(fdsID);
+    public void sendShutdown(int jvmID){
+    	System.out.println("sending shutdown to fds " + jvmID);
+    	ReplicaInfo info = JVM.readJvmResolver().get(jvmID);
     	try {
-    		Socket socket = new Socket(fdsMap.host, fdsMap.port);
+    		Socket socket = new Socket(info.host, info.port);
     		ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
     		oos.writeObject(new ShutdownMessage());
     		oos.close();
@@ -290,7 +290,7 @@ public class Messaging {
     			//e.printStackTrace();
     		}
     	}
-
+    	System.out.println("HERE!!!\n\n\n");
     	//check responses in a loop. timeout at 5 seconds
     	for (int i=0; i<5; i++){
 			int numFailure = responses.get(replicaState.failed);
