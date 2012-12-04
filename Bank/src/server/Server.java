@@ -255,7 +255,7 @@ public class Server extends Thread
           e.printStackTrace();
         }
       }
-      CheckBackupStatusThread statusThread = new CheckBackupStatusThread(backups, waiting_records, waiting_clients, rc, branchID);
+      CheckBackupStatusThread statusThread = new CheckBackupStatusThread(rc);
       statusThread.start();
     }
 
