@@ -393,7 +393,7 @@ public class Client extends JFrame implements ActionListener {
 	    	int branchNumberTo = Integer.parseInt(accountTo.substring(0, 2));
 	    	int accountNumberTo = Integer.parseInt(accountTo.substring(3, accountTo.length()));
 	    	int branchNumberFrom = Integer.parseInt(accountFrom.substring(0, 2));
-			if (branchNumberTo != clientNumber){
+			if (branchNumberFrom != clientNumber){
 				result1.setText("Can only transfer from this branch.");
 				result2.setText("");
 				return;

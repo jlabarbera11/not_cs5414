@@ -24,6 +24,7 @@ import jvm.Pinger;
 
 public class Server extends Thread
 {
+	private volatile boolean running = true;
     private int branchID;
     private int replicaID;
     private Map<AccountNumber, BankAccount> accounts;
@@ -32,8 +33,20 @@ public class Server extends Thread
     private Map<Integer, HashSet<Integer>> waiting_records = new ConcurrentHashMap<Integer, HashSet<Integer>>();; //SerialID to returned backups
     private Map<Integer, RequestClient> waiting_clients = new ConcurrentHashMap<Integer, RequestClient>();
     ServerSocket serversocket;
+    Pinger pinger;
 
     boolean isPrimary = false;
+    
+    public void kill(){
+    	running = false;
+    	pinger.kill();
+    	System.out.println("server " + branchID + "." + replicaID + " is shutting down...");
+    	try {
+			serversocket.close();
+		} catch (IOException e) {
+			//do nothing
+		}
+    }
 
     private void checkWaitingRecords(){
         for (Map.Entry<Integer, HashSet<Integer>> entry : waiting_records.entrySet()){
@@ -70,7 +83,7 @@ public class Server extends Thread
 
 		//start pinger
 		ReplicaID myReplicaID = new ReplicaID(branchID, replicaID);
-		Pinger pinger = new Pinger(messaging.getJvmID(myReplicaID), myReplicaID);
+		pinger = new Pinger(messaging.getJvmID(myReplicaID), myReplicaID);
 		pinger.start();
 
     	System.out.println("server listening on port " + myInfo.port);
@@ -225,6 +238,7 @@ public class Server extends Thread
         } else {
           System.out.println("replica " + replicaNum + " is not running, removing from backups");
           backups.remove(replicaNum);
+          messaging.recordJvmFailure(new ReplicaID(branchID, replicaNum));
         }
       }
 
@@ -306,11 +320,10 @@ public class Server extends Thread
         return message;
     }
 
-    //TODO: working here
     public void run()
     {
         System.out.println("Server starting up!");
-        while (true) {
+        while (running) {
         	try {
         		Message mr = receiveMessage();
 	            System.out.println("Got message");
@@ -319,7 +332,7 @@ public class Server extends Thread
 	                if (!isPrimary){
 	                	isPrimary = true;
 	                	System.out.println("I am now the head, recording failures of previous primaries");
-                    messaging.recordPreviousPrimaryFailures(branchID, replicaID);
+	                	messaging.recordPreviousPrimaryFailures(branchID, replicaID);
 	                }
 	                startBackup((RequestClient)mr);
 
@@ -375,6 +388,7 @@ public class Server extends Thread
         		e.printStackTrace();
         	}
         }
+        System.out.println("Server has quit!");
     }
 
     public static void main(String args[])

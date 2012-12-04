@@ -93,7 +93,7 @@ public class Messaging {
 
 		} catch (Exception e){
 			System.out.println("failure in send to sendToClientNoResponse");
-			e.printStackTrace();
+			//e.printStackTrace();
 			throw new MessagingException(MessagingException.Type.SEND_ERROR);
 		}
     }
@@ -115,19 +115,20 @@ public class Messaging {
     		System.out.println("sent shutdown message");
     	} catch (Exception e){
     		System.out.println("error sending shutdown");
-    		e.printStackTrace();
+    		//e.printStackTrace();
     	}
     	
     }
 
     public void recordJvmFailure(ReplicaID replicaID){
     	int jvmID = getJvmID(replicaID);
+    	sendShutdown(jvmID);
     	fdsInfo.remove(jvmID); //record failure of associated failure detection service
     	Set<ReplicaID> replicasToFail = jvmInfo.get(jvmID);
     	for (ReplicaID currentID : replicasToFail){
     		setState(currentID, replicaState.failed);
     	}
-    	sendShutdown(jvmID);
+    	
     }
 
     public void recordPreviousPrimaryFailures(int branchID, int replicaID){
@@ -185,7 +186,7 @@ public class Messaging {
 
 		} catch (Exception e){
 			System.out.println("failure in sendToReplicaNoResponse");
-			e.printStackTrace();
+			//e.printStackTrace();
 			throw new MessagingException(MessagingException.Type.SEND_ERROR);
 		}
 
@@ -260,7 +261,7 @@ public class Messaging {
     			oos.writeObject(message);
     			socket.close();
     		} catch (Exception e){
-    			System.out.println("error sending to fds " + entry.getKey());
+    			//System.out.println("error sending to fds " + entry.getKey());
     			//e.printStackTrace();
     		}
     	}
@@ -336,7 +337,7 @@ public class Messaging {
 
 		} catch (Exception e){
 			System.out.println("failure in sendToAddressAndReturnResult");
-			e.printStackTrace();
+			//e.printStackTrace();
 			throw new MessagingException(MessagingException.Type.SEND_ERROR);
 		}
 

@@ -1,5 +1,6 @@
 package jvm;
 
+import java.awt.List;
 import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,6 +22,7 @@ public class JVM extends Thread {
 	public static String jvmfile = "resolvers/jvmInfo.txt";
 	int jvmID;
 	private Messaging messaging;
+	Set<Server> servers = new HashSet<Server>();
 
 	public static Map<Integer, Set<ReplicaID>> readjvmInfo(){
 		System.out.println("reading jvmInfo...");
@@ -59,17 +61,24 @@ public class JVM extends Thread {
 		for (ReplicaID entry : myReplicas){
 			Server server = new Server(entry.branchNum, entry.replicaNum);
 			server.start();
+			servers.add(server);
 			System.out.println("started server " + entry.toString());
 		}
 
 		FailureDetector fds = new FailureDetector(jvmID, messaging.getFdsPort(jvmID).port); //jvmID = fdsID
 		fds.start();
-
 	}
 
     public static void main(String args[]) {
         JVM jvm = new JVM(Integer.parseInt(args[0]));
         jvm.run();
+    }
+    
+    //for testing purposes
+	public void kill(){
+    	for (Server server : servers){
+    		server.kill();
+    	}
     }
 
 }

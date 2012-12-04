@@ -12,6 +12,7 @@ public class Pinger extends Thread {
   Integer jid;
   Object id;
   Messaging nm;
+  volatile boolean running = true;
 
   public Pinger(Integer jid, ReplicaID rid) {
     nm = new Messaging();
@@ -24,14 +25,20 @@ public class Pinger extends Thread {
     this.jid = jid;
     this.id = fid;
   }
+  
+  public void kill(){
+	  System.out.println("killing pinger");
+	  running = false;
+  }
 
   public void run() {
-    while(true) {
+    while(running) {
       try {
         nm.broadcastToAllFDS(new Ping(jid, id));
         Thread.sleep(1000);
       } catch(Exception e) {}
     }
+    System.out.println("pinger has quit!");
   }
 }
 
