@@ -360,8 +360,6 @@ public class ClientTest {
 		assertEquals(client.result1.getText(), "Deposit successful");
 		assertEquals(client.result2.getText(), "Balance: 300.0");
 		
-		/**
-		
 		//kill new primary
 		jvm3.kill();
 		wait(3);
@@ -387,7 +385,6 @@ public class ClientTest {
 		assertEquals(client.result1.getText(), "Deposit successful");
 		assertEquals(client.result2.getText(), "Balance: 400.0");
 		
-		*/
 	}
 	
 
