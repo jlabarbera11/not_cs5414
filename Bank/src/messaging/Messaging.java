@@ -29,11 +29,10 @@ import messaging.MessagingException.Type;
  */
 
 public class Messaging {
-	public static String topologyFilename = "topology.txt";
-	public static String resolverFilename = "replicaResolver.txt";
-	public static String oracleFilename = "oracle.txt"; //TODO: remove for phase 4
-	public static String clientResolverFilename = "clientResolver.txt";
-	public static String fdsResolverFilename = "fdsResolver.txt";
+	public static String topologyFilename = "resolvers/topology.txt";
+	public static String resolverFilename = "resolvers/replicaResolver.txt";
+	public static String clientResolverFilename = "resolvers/clientResolver.txt";
+	public static String fdsResolverFilename = "resolvers/fdsResolver.txt";
 
   public enum replicaState {running, failed}
 
@@ -190,10 +189,10 @@ public class Messaging {
 		}
 		sendToReplicaNoResponse(headID, message);
 	}
-	
+
 	/*
 	 * checkReplicaStatus opens a socket to each FDS and sends a status query.
-	 * This class is used to handle such a socket and record the response. 
+	 * This class is used to handle such a socket and record the response.
 	 */
 	private class CheckStatusThread extends Thread {
 		ConcurrentHashMap<replicaState, Integer> responses;
@@ -443,28 +442,5 @@ public class Messaging {
     	}
     	return output;
 	}
-
-	public ReplicaInfo getOracleInfo() {
-		//read oracle file
-		String[] a = null;
-		try {
-	        Scanner scanner = new Scanner(new File("oracle.txt"));
-	        a = scanner.nextLine().split(" ");
-	        scanner.close();
-		} catch (Exception e){
-			e.printStackTrace();
-		}
-		return new ReplicaInfo(Integer.parseInt(a[1]), a[0]);
-
-	}
-
-	//will be deprecated as of project 4
-	public replicaState getStatus(ReplicaID replicaOfInterest) {
-		return allReplicaInfo.get(replicaOfInterest).state;
-	}
-
-
-
-
 
 }

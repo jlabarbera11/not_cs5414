@@ -1,4 +1,4 @@
-all: client server messaging
+all: jvm client server messaging
 jar: jvm-jar client-jar server-jar
 
 jvm:
