@@ -18,7 +18,7 @@ import messaging.ReplicaInfo;
 public class JVM extends Thread {
 	//jvmInfo maps a jvmID to set of replicaIDs running on that jvm
 	Map<Integer, Set<ReplicaID>> jvmInfo = new HashMap<Integer, Set<ReplicaID>>();
-	public static String jvmfile = "jvmInfo.txt";
+	public static String jvmfile = "resolvers/jvmInfo.txt";
 	int jvmID;
 	private Messaging messaging;
 

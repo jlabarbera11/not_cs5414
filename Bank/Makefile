@@ -1,4 +1,4 @@
-all: client server messaging
+all: jvm client server messaging
 jar: jvm-jar client-jar server-jar
 
 jvm:
@@ -22,13 +22,14 @@ messaging-test:
 	java -cp lib/junit-4.10.jar:bin/ org.junit.runner.JUnitCore messaging.test.MessagingTest
 
 jvm-jar: client server messaging
-	jar cfe jvm.jar jvm.JVM -C bin .
+	jar cfe jars/jvm.jar jvm.JVM -C bin .
 
 client-jar: client messaging
-	jar cfe client.jar client.Client -C bin .
+	jar cfe jars/client.jar client.Client -C bin .
 
 server-jar: server messaging
-	jar cfe server.jar server.Server -C bin .
+	jar cfe jars/server.jar server.Server -C bin .
 
 clean:
 	rm -rf bin/*
+	rm -rf jars/*
