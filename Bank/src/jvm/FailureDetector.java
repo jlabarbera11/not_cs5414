@@ -29,6 +29,8 @@ public class FailureDetector extends Thread {
   Integer portnum = null;
   Integer fid = null;
   ServerSocket ss = null;
+  
+  public volatile boolean running = true;
 
   public FailureDetector(Integer fid, Integer port) {
     this.fid = fid;
@@ -52,12 +54,17 @@ public class FailureDetector extends Thread {
     } catch(Exception e) {System.out.println("ERROR: Could not create Failure Detector");}
   }
 
+  public void kill(){
+	  System.out.println("killing fds " + fid);
+	  running = false;
+  }
+  
   public void run() {
     Pinger pinger = new Pinger(fid, fid);
     pinger.start();
     System.out.println("Starting FDS " + fid + " on " + this.portnum);
 
-    while(true) {
+    while(running) {
       try {
         Socket s = this.ss.accept();
         Object o = new ObjectInputStream(s.getInputStream()).readObject();
@@ -66,10 +73,9 @@ public class FailureDetector extends Thread {
           this._stillAlive((Ping)o);
         else if(o instanceof StatusQuery)
           this._isAlive(s, (StatusQuery)o);
-        else if(o instanceof ShutdownMessage)
-          System.exit(1); /* Dead things should be dead */
       } catch(Exception e) {System.out.println("ERROR: " + e.toString()); e.printStackTrace();}
     }
+    System.out.println("fds is exiting");
   }
 
   private void _stillAlive(Ping o) {

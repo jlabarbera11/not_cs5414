@@ -309,52 +309,47 @@ public class ClientTest {
 		 * Calling kill will cause the servers to throw exceptions. This is normal.
 		 */
 		jvm1.kill();
-		wait(5);
+		wait(1);
 		boolean failed = false;
 		try {
 			messaging.sendToReplicaNoResponse(new ReplicaID(1,1), new Message());
-			wait(5);
+			wait(1);
 			messaging.sendToReplicaNoResponse(new ReplicaID(1,1), new Message());
-			wait(5);
+			wait(1);
 			messaging.sendToReplicaNoResponse(new ReplicaID(1,1), new Message());
 		} catch (MessagingException e){
 			failed = true;
 		}
 		assertEquals(true, failed);
 		
-		wait(5);
+		wait(1);
 		
 		//valid deposit with new primary
 		client.depositAccount.setText("01.55555");
 		client.depositAmount.setText("100");
 		client.depositSerial.setText(newSerial());
 		client.handleDeposit();
-		//Thread.sleep(1000);
+		wait(1);
 		assertEquals(client.result1.getText(), "Deposit successful");
 		assertEquals(client.result2.getText(), "Balance: 200.0");		
 		
 		//kill new primary
 		jvm2.kill();
-		//wait(3);
+		wait(1);
 		failed = false;
-		System.out.println("TEST: 1");
 		try {
 			messaging.sendToReplicaNoResponse(new ReplicaID(1,2), new Message());
-			System.out.println("TEST: 1.1");
-			wait(3);
-			System.out.println("TEST: 1.2");
+			wait(1);
 			messaging.sendToReplicaNoResponse(new ReplicaID(1,2), new Message());
-			wait(3);
+			wait(1);
 			messaging.sendToReplicaNoResponse(new ReplicaID(1,2), new Message());
 		} catch (MessagingException e){
 			failed = true;
 		}
-		System.out.println("TEST: 2");
 		assertEquals(true, failed);
-		System.out.println("TEST: 3");
 		
+		wait(10);
 		
-		/**
 		//valid deposit with new primary
 		client.depositAccount.setText("01.55555");
 		client.depositAmount.setText("100");
@@ -365,7 +360,7 @@ public class ClientTest {
 		assertEquals(client.result1.getText(), "Deposit successful");
 		assertEquals(client.result2.getText(), "Balance: 300.0");
 		
-		
+		/**
 		
 		//kill new primary
 		jvm3.kill();
