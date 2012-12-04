@@ -137,18 +137,10 @@ public class Server extends Thread
      */
     private class CheckBackupStatusThread extends Thread {
 
-    	private Set<Integer> backups;
-        private Map<Integer, HashSet<Integer>> waiting_records;
-        private Map<Integer, RequestClient> waiting_clients;
         private RequestClient rc;
-        private int branchID;
 
-    	public CheckBackupStatusThread(Set<Integer> backups,  Map<Integer, HashSet<Integer>> waiting_records, Map<Integer, RequestClient> waiting_clients, RequestClient rc, int branchID){
-    		this.backups = backups;
-    		this.waiting_records = waiting_records;
-    		this.waiting_clients = waiting_clients;
+    	public CheckBackupStatusThread(RequestClient rc){
     		this.rc = rc;
-    		this.branchID = branchID;
     	}
 
       public void run(){
@@ -169,20 +161,21 @@ public class Server extends Thread
           }
           
           replicaState status = null;
-          for(Integer replicaNum : this.backups) {
+          for(Integer replicaNum : backups) {
             try {
               status = messaging.checkReplicaStatus(new ReplicaID(branchID, replicaNum));
             } catch (MessagingException e) {
               e.printStackTrace();
             }
             if (status != replicaState.running){
-              //here, we remove the failed replica from the backups list to make sure the transaction backup terminates
-              //we don't record the jvm failure in NewMessaging - this is fine because the server will do a status check 
-              //before initiating the next backup
               backups.remove(replicaNum);
+              /**We can't record the JVM failure in messaging because messaging is not thread-safe
+               * This is fine because the server will check backup status before starting the next backup
+               */
+              //messaging.recordJvmFailure(new ReplicaID(branchID, replicaNum));
               System.out.println("replica " + replicaNum.toString() + " has failed, removing from backups");
               
-              if(waiting_records.get(rc.GetSerialNumber()).equals(this.backups)) {
+              if(waiting_records.get(rc.GetSerialNumber()).equals(backups)) {
                 System.out.println("CheckBackupStatusThread found that all backups have responded, sending response");
                 waiting_records.remove(rc.GetSerialNumber());
                 waiting_clients.remove(rc.GetSerialNumber());
@@ -197,7 +190,7 @@ public class Server extends Thread
                 }
                 if(rc instanceof TransferRequest) {
                   TransferRequest request = (TransferRequest)rc;
-                  if(request.GetDestBranch() != this.branchID){
+                  if(request.GetDestBranch() != branchID){
                     //m.SendToBranch(getHead(request.GetDestBranch()),
                     System.out.println("about to send to transfer recipient branch");
                     try {

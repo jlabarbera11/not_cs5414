@@ -491,11 +491,11 @@ public class Client extends JFrame implements ActionListener {
 
 
 	public static void main(String[] args){
-                String clientNum = null;
+        String clientNum = null;
 
 		try {
-                        clientNum = args[0];
-                        Integer.parseInt(clientNum);
+            clientNum = args[0];
+            Integer.parseInt(clientNum);
 		} catch (Exception e){
 			System.out.println("Please run the program with the client number as the first argument.");
 			System.exit(0);
@@ -507,7 +507,6 @@ public class Client extends JFrame implements ActionListener {
 		}
 
 		Client client = new Client(Integer.parseInt(clientNum));
-
 
 	}
 

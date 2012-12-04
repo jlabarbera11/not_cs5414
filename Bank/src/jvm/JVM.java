@@ -15,7 +15,7 @@ import messaging.ReplicaInfo;
 
 //JVM is used to hold a bunch of executing branch replicas as well as a bunch of
 
-public class JVM {
+public class JVM extends Thread {
 	//jvmInfo maps a jvmID to set of replicaIDs running on that jvm
 	Map<Integer, Set<ReplicaID>> jvmInfo = new HashMap<Integer, Set<ReplicaID>>();
 	public static String jvmfile = "jvmInfo.txt";

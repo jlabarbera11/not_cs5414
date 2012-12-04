@@ -103,6 +103,23 @@ public class Messaging {
     	ReplicaInfo replicaInfo = allReplicaInfo.get(replicaID);
     	replicaInfo.state = newState;
     }
+    
+    public void sendShutdown(int fdsID){
+    	System.out.println("sending shutdown to fds " + fdsID);
+    	ReplicaInfo fdsMap = fdsInfo.get(fdsID);
+    	try {
+    		Socket socket = new Socket(fdsMap.host, fdsMap.port);
+    		ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+    		oos.writeObject(new ShutdownMessage());
+    		oos.close();
+    		socket.close();
+    		System.out.println("sent shutdown message");
+    	} catch (Exception e){
+    		System.out.println("error sending shutdown");
+    		e.printStackTrace();
+    	}
+    	
+    }
 
     public void recordJvmFailure(ReplicaID replicaID){
     	int jvmID = getJvmID(replicaID);
@@ -111,6 +128,7 @@ public class Messaging {
     	for (ReplicaID currentID : replicasToFail){
     		setState(currentID, replicaState.failed);
     	}
+    	sendShutdown(jvmID);
     }
 
     public void recordPreviousPrimaryFailures(int branchID, int replicaID){
