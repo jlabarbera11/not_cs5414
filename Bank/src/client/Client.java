@@ -83,7 +83,6 @@ public class Client extends JFrame implements ActionListener {
     			return result;
     		} catch (Exception e){
     			printIfDebug("send " + i + " failed");
-    			e.printStackTrace();
     		}
     	}
     	printIfDebug("send failed in sendRequest (3 timeouts)");
