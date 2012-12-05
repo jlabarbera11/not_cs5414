@@ -1,7 +1,11 @@
 We used junit to test our implementation, which we have included in our
 submission.
 
-The client must interact with the server in performing its tests, so we feel
-that the client tests sufficiently test the server.
+ClientTest.java was used to test the basic funcationality of the system
+(deposit, withdraw, etc). TestBackupFailures was used to ensure that 
+the system remains functional when backups fail. TestPrimaryFailures was
+used to ensure that the system remains functional when the primary fails.
 
-The test cases can be found in client.test and messaging.test.
+The test cases can be found in client.test and messaging.test. Tests were
+run using Eclipse on a Windows 7 machine. The tests may not work properly
+in other settings (i.e. other operating systems).
