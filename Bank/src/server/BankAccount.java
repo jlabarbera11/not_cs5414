@@ -68,7 +68,6 @@ public class BankAccount implements Comparable<BankAccount>, Serializable {
         boolean valid = !(serials.contains(serialNumber));
 
         if (valid) {
-            System.out.println("new transaction number " + serialNumber);
             serials.add(serialNumber);
 
             switch (t) {

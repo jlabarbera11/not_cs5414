@@ -33,9 +33,15 @@ public class JVM extends Thread {
 	private Map<Integer, ReplicaInfo> jvmResolver;
 	private volatile boolean running = true;
 	private FailureDetector fds;
+    public boolean debug = false;
+    
+    public void printIfDebug(String s){
+    	if (debug){
+    		System.out.println(s);
+    	}
+    }
 	
 	public static Map<Integer, ReplicaInfo> readJvmResolver(){
-		System.out.println("reading jvmResolver...");
 		Map<Integer, ReplicaInfo> output = new HashMap<Integer, ReplicaInfo>();
         try {
             Scanner scanner = new Scanner(new File(jvmResolverFile));
@@ -48,14 +54,11 @@ public class JVM extends Thread {
             scanner.close();
         } catch (Exception e) {
         	System.out.println("reading jvmResolver failed");
-        	e.printStackTrace();
         }
-        System.out.println(" complete");
         return output;
 	}
 
 	public static Map<Integer, Set<ReplicaID>> readjvmInfo(){
-		System.out.println("reading jvmInfo...");
 		Map<Integer, Set<ReplicaID>> jvmInfo = new HashMap<Integer, Set<ReplicaID>>();
         try {
             Scanner scanner = new Scanner(new File(jvmfile));
@@ -73,9 +76,7 @@ public class JVM extends Thread {
             scanner.close();
         } catch (Exception e) {
         	System.out.println("reading jvmInfo failed");
-        	e.printStackTrace();
         }
-        System.out.println(" complete");
         return jvmInfo;
 	}
 
@@ -93,7 +94,7 @@ public class JVM extends Thread {
 			Server server = new Server(entry.branchNum, entry.replicaNum);
 			server.start();
 			servers.add(server);
-			System.out.println("started server " + entry.toString());
+			printIfDebug("started server " + entry.toString());
 		}
 
 		fds = new FailureDetector(jvmID, messaging.getFdsPort(jvmID).port); //jvmID = fdsID
@@ -102,25 +103,25 @@ public class JVM extends Thread {
 		ServerSocket serversocket = null;
 		try {
 			 serversocket = new ServerSocket(jvmResolver.get(jvmID).port);
-			 System.out.println("jvm " + jvmID + " listening on " + jvmResolver.get(jvmID).port);
+			 printIfDebug("jvm " + jvmID + " listening on " + jvmResolver.get(jvmID).port);
 		} catch (IOException e) {
-			System.out.println("error creating jvm serversocket");
+			printIfDebug("error creating jvm serversocket");
 			e.printStackTrace();
 		}
 		while(running){
 			try {
-				System.out.println("jvm " + jvmID + "about to accept connections");
+				printIfDebug("jvm " + jvmID + "about to accept connections");
 				Socket socket = serversocket.accept();
-				System.out.println("jvm accepted connection");
+				printIfDebug("jvm accepted connection");
 				ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
-				System.out.println("jvm got input stream");
+				printIfDebug("jvm got input stream");
 				ShutdownMessage sm = (ShutdownMessage)ois.readObject();
-				System.out.println("jvm got shutdown message");
+				printIfDebug("jvm got shutdown message");
 				kill();
 				ois.close();
 				serversocket.close();
 			} catch (Exception e){
-				System.out.println("error in jvm loop");
+				printIfDebug("error in jvm loop");
 				e.printStackTrace();
 			}
 		}
@@ -132,7 +133,7 @@ public class JVM extends Thread {
     }
     
 	public void kill(){
-		System.out.println("jvm is shutting down");
+		printIfDebug("jvm is shutting down");
 		running = false;
     	for (Server server : servers){
     		server.kill();

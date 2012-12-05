@@ -224,7 +224,8 @@ public class Server extends Thread
 	        try {
 	          status = messaging.checkReplicaStatus(new ReplicaID(branchID, replicaNum));
 	        } catch (MessagingException e) {
-	          e.printStackTrace();
+	          printIfDebug("error starting backup");
+	          //e.printStackTrace();
 	        }
 	        if (status == replicaState.running){
 	          printIfDebug("state of replica " + replicaNum + " is *running*");
@@ -237,10 +238,10 @@ public class Server extends Thread
       }
 
       if (this.backups.size() == 0){
-        //m.SendToClient(recordTransaction(rc));
         try {
           ResponseClient response = recordTransaction(rc);
           if (!(rc instanceof TransferDepositToRemoteBranch)){
+        	System.out.println("Transaction complete!");
             messaging.sendToClientNoResponse(branchID, response);
           }
           if (rc instanceof TransferRequest){
@@ -316,7 +317,6 @@ public class Server extends Thread
 
     public void run()
     {
-        System.out.println("Server starting up!");
         while (running) {
         	try {
         		Message mr = receiveMessage();
@@ -346,28 +346,27 @@ public class Server extends Thread
 	                    waiting_clients.remove(rc.GetSerialNumber());
 	                    ResponseClient responseClient = recordTransaction(rc);
 	                    if(!(rc instanceof TransferDepositToRemoteBranch)){
+	                    	System.out.println("Transaction complete!");
 	                    	messaging.sendToClientNoResponse(branchID, responseClient);
 	                    }
 	                    if(rc instanceof TransferRequest) {
 	                        TransferRequest request = (TransferRequest)rc;
 	                        if(request.GetDestBranch() != this.branchID){
 	                            //m.SendToBranch(getHead(request.GetDestBranch()),
-	                        	System.out.println("about to send to transfer recipient branch");
+	                        	printIfDebug("about to send to transfer recipient branch");
 	                            messaging.sendToPrimaryNoResponse(request.GetDestBranch(), new TransferDepositToRemoteBranch(request.GetDestAcnt(), request.GetAmt(), request.GetSerialNumber()));
 	                        }
 	                    }
 	                }
 
-
 	            } else {
-	                System.out.println("Don't know how to handle message");
+	            	printIfDebug("Don't know how to handle message");
 	            }
         	} catch (Exception e){
-        		System.out.println("error in server main loop");
-        		e.printStackTrace();
+        		printIfDebug("error in server main loop");
         	}
         }
-        System.out.println("Server has quit!");
+        printIfDebug("Server has quit!");
     }
 
     private boolean concurrentEquals(ConcurrentLinkedQueue<Integer> queue1, ConcurrentLinkedQueue<Integer> queue2) {

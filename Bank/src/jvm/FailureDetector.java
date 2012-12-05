@@ -31,6 +31,13 @@ public class FailureDetector extends Thread {
   ServerSocket ss = null;
   
   public volatile boolean running = true;
+  public boolean debug = false;
+  
+  public void printIfDebug(String s){
+  	if (debug){
+  		System.out.println(s);
+  	}
+  }
 
   public FailureDetector(Integer fid, Integer port) {
     this.fid = fid;
@@ -51,11 +58,11 @@ public class FailureDetector extends Thread {
     try {
       this.ss = new ServerSocket(port);
       ss.setReuseAddress(true);
-    } catch(Exception e) {System.out.println("ERROR: Could not create Failure Detector");}
+    } catch(Exception e) {printIfDebug("ERROR: Could not create Failure Detector");}
   }
 
   public void kill(){
-	  System.out.println("killing fds " + fid);
+	  printIfDebug("killing fds " + fid);
 	  running = false;
   }
   
@@ -73,15 +80,15 @@ public class FailureDetector extends Thread {
           this._stillAlive((Ping)o);
         else if(o instanceof StatusQuery)
           this._isAlive(s, (StatusQuery)o);
-      } catch(Exception e) {System.out.println("ERROR: " + e.toString()); e.printStackTrace();}
+      } catch(Exception e) {printIfDebug("ERROR: " + e.toString()); e.printStackTrace();}
     }
-    System.out.println("fds is exiting");
+    printIfDebug("fds is exiting");
   }
 
   private void _stillAlive(Ping o) {
     if(!this.rts.containsKey(o.jid)) /* Old pings from machines we've already considered failed */
       return;
-    //System.out.println("Got a ping from " + (o.rid != null ? "replica  " + (o.rid) : "FDS " + (o.fid)) + " on " + o.jid + " at " + System.currentTimeMillis());
+    //printIfDebug("Got a ping from " + (o.rid != null ? "replica  " + (o.rid) : "FDS " + (o.fid)) + " on " + o.jid + " at " + System.currentTimeMillis());
     if(o.rid != null) /*Replica has told us it's alive*/
       this.rts.get(o.jid).put(o.rid, new Long(System.currentTimeMillis()));
     else if(o.fid != null) /*FDS has told us it's alive*/
@@ -94,24 +101,24 @@ public class FailureDetector extends Thread {
 
     /*check if everything in jvm is alive*/
     if(!this.rts.containsKey(o.jvmOfInterest)) {
-      System.out.println("No record of jvm " + o.jvmOfInterest + " in map");
+      printIfDebug("No record of jvm " + o.jvmOfInterest + " in map");
       failed = true;
     } else {
       for(Map.Entry<ReplicaID, Long> entry : this.rts.get(o.jvmOfInterest).entrySet())
         if( entry.getValue() + 5*1000 < System.currentTimeMillis()) {
-          System.out.println("replica " + entry.getKey() +  "on " + o.jvmOfInterest + " is too slow; last timestamp is " + entry.getValue() + ", now is " + System.currentTimeMillis());
+          printIfDebug("replica " + entry.getKey() +  "on " + o.jvmOfInterest + " is too slow; last timestamp is " + entry.getValue() + ", now is " + System.currentTimeMillis());
           failed = true;
         }
     }
     if(!this.fts.containsKey(o.jvmOfInterest)) {
-      System.out.println("No record of FDS " + o.jvmOfInterest + " in map");
+      printIfDebug("No record of FDS " + o.jvmOfInterest + " in map");
       failed = true;
     } else if(this.fts.get(o.jvmOfInterest)+ 5*1000 < System.currentTimeMillis()) {
-      System.out.println("FDS on " +  o.jvmOfInterest + " is too slow");
+      printIfDebug("FDS on " +  o.jvmOfInterest + " is too slow");
       failed = true;
     }
 
-    System.out.println("FDS " + this.fid + " says " + o.jvmOfInterest +  " is " + (failed ? "failed" : "running"));
+    printIfDebug("FDS " + this.fid + " says " + o.jvmOfInterest +  " is " + (failed ? "failed" : "running"));
 
     if(!failed)
       new ObjectOutputStream(s.getOutputStream()).writeObject(new StatusQueryResponse(replicaState.running, o.jvmOfInterest));
