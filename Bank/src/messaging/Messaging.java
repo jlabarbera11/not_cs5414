@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import jvm.JVM;
 
@@ -34,7 +35,7 @@ public class Messaging {
 	public static String clientResolverFilename = "resolvers/clientResolver.txt";
 	public static String fdsResolverFilename = "resolvers/fdsResolver.txt";
 
-  public enum replicaState {running, failed}
+    public enum replicaState {running, failed}
 
     private HashMap<ReplicaID, ReplicaInfo> allReplicaInfo = new HashMap<ReplicaID, ReplicaInfo>();
 
@@ -47,9 +48,17 @@ public class Messaging {
     private HashMap<Integer, ReplicaInfo> fdsInfo = new HashMap<Integer, ReplicaInfo>();
 
     Map<Integer, Set<ReplicaID>> jvmInfo = new HashMap<Integer, Set<ReplicaID>>();
+    
+    public boolean debug = false;
+    
+    public void printIfDebug(String s){
+    	if (debug){
+    		System.out.println(s);
+    	}
+    }
 
     private void readFDSResolver(){
-		System.out.println("reading FDS resolver");
+		printIfDebug("reading FDS resolver");
         try {
             Scanner scanner = new Scanner(new File(fdsResolverFilename));
             while (scanner.hasNextLine()) {
@@ -61,8 +70,7 @@ public class Messaging {
             }
             scanner.close();
         } catch (Exception e) {
-        	System.out.println("reading FDS resolver failed");
-        	e.printStackTrace();
+        	printIfDebug("reading FDS resolver failed");
         	return;
         }
     }
@@ -92,8 +100,7 @@ public class Messaging {
             socket.close();
 
 		} catch (Exception e){
-			System.out.println("failure in send to sendToClientNoResponse");
-			//e.printStackTrace();
+			printIfDebug("failure in send to sendToClientNoResponse");
 			throw new MessagingException(MessagingException.Type.SEND_ERROR);
 		}
     }
@@ -104,18 +111,18 @@ public class Messaging {
     }
     
     public void sendShutdown(int jvmID){
-    	System.out.println("sending shutdown to fds " + jvmID);
+    	printIfDebug("sending SHUTDOWN to jvm " + jvmID);
     	ReplicaInfo info = JVM.readJvmResolver().get(jvmID);
     	try {
+    		printIfDebug("sending shutdown message to " + info.host  + " " + info.port);
     		Socket socket = new Socket(info.host, info.port);
     		ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
     		oos.writeObject(new ShutdownMessage());
     		oos.close();
     		socket.close();
-    		System.out.println("sent shutdown message");
+    		printIfDebug("sent shutdown message");
     	} catch (Exception e){
-    		System.out.println("error sending shutdown");
-    		//e.printStackTrace();
+    		printIfDebug("error sending shutdown");
     	}
     	
     }
@@ -128,11 +135,9 @@ public class Messaging {
     	for (ReplicaID currentID : replicasToFail){
     		setState(currentID, replicaState.failed);
     	}
-    	
     }
 
     public void recordPreviousPrimaryFailures(int branchID, int replicaID){
-    	//TODO
 		Set<Integer> notBackups = new HashSet<Integer>();
     	for (Map.Entry<ReplicaID, ReplicaInfo> entry : allReplicaInfo.entrySet())
     	{
@@ -165,7 +170,7 @@ public class Messaging {
     			return entry;
     		}
     	}
-    	System.out.println("error in getHead");
+    	printIfDebug("error in getHead");
     	return null;
     }
 
@@ -173,7 +178,7 @@ public class Messaging {
 	public void sendToReplicaNoResponse(ReplicaID replicaID, Message message) throws MessagingException{
 		ReplicaInfo replicaInfo = allReplicaInfo.get(replicaID);
 		try {
-			System.out.println("sending to port " + replicaInfo.port + " on " + replicaInfo.host);
+			printIfDebug("sending to port " + replicaInfo.port + " on " + replicaInfo.host);
 			Socket socket = new Socket(replicaInfo.host, replicaInfo.port);
 
 			socket.setSoTimeout(5 * 1000);
@@ -185,8 +190,7 @@ public class Messaging {
             socket.close();
 
 		} catch (Exception e){
-			System.out.println("failure in sendToReplicaNoResponse");
-			//e.printStackTrace();
+			printIfDebug("failure in sendToReplicaNoResponse");
 			throw new MessagingException(MessagingException.Type.SEND_ERROR);
 		}
 
@@ -195,12 +199,11 @@ public class Messaging {
 	public void sendToPrimaryNoResponse(int branchID, Message message) throws MessagingException{
 		//look up address, call above
 		ReplicaID headID = null;
-		//System.out.println("sendToPrimary got branchID " + branchID);
 		while(true){
 			headID = getHead(branchID);
 			replicaState status = checkReplicaStatus(headID);
 			if (status != replicaState.running){
-				System.out.println("old head FAILURE detected");
+				printIfDebug("old head FAILURE detected");
 				recordJvmFailure(headID);
 			} else {
 				break;
@@ -230,11 +233,10 @@ public class Messaging {
 				synchronized(responses){
 					int currentCount = responses.get(response.status);
 					responses.put(response.status, currentCount+1);
-					System.out.println("check status thread recorded status " + response.status);
+					printIfDebug("check status thread recorded status " + response.status);
 				}
 			} catch (Exception e){
-				System.out.println("error while waiting for response from FDS");
-				//e.printStackTrace();
+				printIfDebug("error while waiting for response from FDS");
 			}
 		}
 
@@ -249,7 +251,7 @@ public class Messaging {
 				}
 			}
 		}
-		System.out.println("ERROR: replicaID not found during getJvmID");
+		printIfDebug("ERROR: replicaID not found during getJvmID");
 		return -1;
 	}
 
@@ -261,8 +263,7 @@ public class Messaging {
     			oos.writeObject(message);
     			socket.close();
     		} catch (Exception e){
-    			//System.out.println("error sending to fds " + entry.getKey());
-    			//e.printStackTrace();
+    			//do nothing
     		}
     	}
 	}
@@ -276,45 +277,38 @@ public class Messaging {
     	ConcurrentHashMap<replicaState, Integer> responses = new ConcurrentHashMap<replicaState, Integer>();
     	responses.put(replicaState.failed, 0);
     	responses.put(replicaState.running, 0);
-    	System.out.println("checking status of replica " + replicaID.toString());
+    	printIfDebug("checking status of replica " + replicaID.toString());
     	for (Map.Entry<Integer, ReplicaInfo> entry: fdsInfo.entrySet()){
     		try {
     			Socket socket = new Socket(entry.getValue().host, entry.getValue().port);
-    			System.out.println("opened socket to " + entry.getValue().port);
+    			printIfDebug("opened socket to " + entry.getValue().port);
     			ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-    			System.out.println("1");
     			StatusQuery sq = new StatusQuery(getJvmID(replicaID));
-    			System.out.println("1");
     			oos.writeObject(sq);
-    			System.out.println("1");
     			CheckStatusThread thread = new CheckStatusThread(responses, socket);
-    			System.out.println("1");
     			thread.start();
-    			System.out.println("1");
     		} catch (Exception e){
-    			System.out.println("error sending to fds " + entry.getKey());
-    			//e.printStackTrace();
+    			printIfDebug("error sending to fds " + entry.getKey());
     		}
     	}
-    	System.out.println("between check replica status for loops");
     	//check responses in a loop. timeout at 5 seconds
     	for (int i=0; i<5; i++){
 			int numFailure = responses.get(replicaState.failed);
 			int numRunning = responses.get(replicaState.running);
 			if (numRunning > fdsInfo.size()/2){
-				System.out.println("check status is concluding that state is running");
+				printIfDebug("check status is concluding that state is running");
 				return replicaState.running;
 			} else if (numFailure > fdsInfo.size()/2){
-				System.out.println("check status is concluding that state is failed");
+				printIfDebug("check status is concluding that state is failed");
 				return replicaState.failed;
 			} else {
-				System.out.println("check status has not received enough responses. numfailed is " + numFailure + " and numRunning is " + numRunning);
-				System.out.println("num fds is " + fdsInfo.size());
+				printIfDebug("check status has not received enough responses. numfailed is " + numFailure + " and numRunning is " + numRunning);
+				printIfDebug("num fds is " + fdsInfo.size());
 			}
     		try {
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {
-				e.printStackTrace();
+				printIfDebug("error in checkReplicaStatus");
 			}
     	}
     	throw new MessagingException(Type.SEND_ERROR);
@@ -325,14 +319,13 @@ public class Messaging {
 		ReplicaInfo replicaInfo = allReplicaInfo.get(replicaID);
 		try {
 			Socket socket = new Socket(replicaInfo.host, replicaInfo.port);
-			System.out.println("sending to port " + replicaInfo.port + " and host " + replicaInfo.host);
+			printIfDebug("sending to port " + replicaInfo.port + " and host " + replicaInfo.host);
 			socket.setSoTimeout(1000);
 
             ObjectOutputStream o = new ObjectOutputStream(socket.getOutputStream());
             ObjectInputStream i = new ObjectInputStream(socket.getInputStream());
 
             o.writeObject(message);
-            System.out.println("written message");
             Message response = (Message)i.readObject();
 
             i.close();
@@ -342,8 +335,7 @@ public class Messaging {
             return response;
 
 		} catch (Exception e){
-			System.out.println("failure in sendToAddressAndReturnResult");
-			//e.printStackTrace();
+			printIfDebug("failure in sendToAddressAndReturnResult");
 			throw new MessagingException(MessagingException.Type.SEND_ERROR);
 		}
 
@@ -356,7 +348,7 @@ public class Messaging {
 			headID = getHead(branchID);
 			replicaState status = checkReplicaStatus(headID);
 			if (status != replicaState.running){
-				System.out.println("old head FAILURE detected");
+				printIfDebug("old head FAILURE detected");
 				recordJvmFailure(headID);
 			} else {
 				break;
@@ -367,7 +359,7 @@ public class Messaging {
 
 	//Do ALL initializing here
 	public Messaging(){
-		System.out.println("intitializing Messaging");
+		printIfDebug("intitializing Messaging");
 		readResolver();
 		readTopology();
 		readClientResolver();
@@ -376,7 +368,7 @@ public class Messaging {
 	}
 
 	public void readClientResolver(){
-		System.out.println("reading client resolver");
+		printIfDebug("reading client resolver");
         try {
             Scanner scanner = new Scanner(new File(clientResolverFilename));
             while (scanner.hasNextLine()) {
@@ -390,15 +382,14 @@ public class Messaging {
             }
             scanner.close();
         } catch (Exception e) {
-        	System.out.println("reading client resolver failed");
-        	e.printStackTrace();
+        	printIfDebug("reading client resolver failed");
         	return;
         }
 	}
 
 	//replicaResolver.txt format: 01.01 localhost 4441
 	public void readResolver(){
-		System.out.println("reading resolver");
+		printIfDebug("reading resolver");
         try {
             Scanner scanner = new Scanner(new File(resolverFilename));
             while (scanner.hasNextLine()) {
@@ -414,15 +405,14 @@ public class Messaging {
             }
             scanner.close();
         } catch (Exception e) {
-        	System.out.println("reading resolver failed");
-        	e.printStackTrace();
+        	printIfDebug("reading resolver failed");
         	return;
         }
 	}
 
 	//TODO
 	public void readTopology(){
-		System.out.println("reading topology");
+		printIfDebug("reading topology");
         try {
             Scanner scanner = new Scanner(new File(topologyFilename));
             while (scanner.hasNextLine()) {
@@ -443,8 +433,7 @@ public class Messaging {
             }
             scanner.close();
         } catch (Exception e) {
-            System.out.println("reading topology failed");
-            e.printStackTrace();
+            printIfDebug("reading topology failed");
         }
 
 	}
@@ -457,8 +446,8 @@ public class Messaging {
 		return clientInfo.get(clientNumber);
 	}
 
-	public Set<Integer> initBackups(int branchID, int replicaID) {
-		Set<Integer> output = new HashSet<Integer>();
+	public ConcurrentLinkedQueue<Integer> initBackups(int branchID, int replicaID) {
+		ConcurrentLinkedQueue<Integer> output = new ConcurrentLinkedQueue<Integer>();
     	for (Map.Entry<ReplicaID, ReplicaInfo> entry : allReplicaInfo.entrySet())
     	{
     	    if (entry.getKey().branchNum == branchID && entry.getKey().replicaNum > replicaID){

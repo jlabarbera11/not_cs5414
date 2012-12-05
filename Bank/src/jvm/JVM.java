@@ -31,7 +31,7 @@ public class JVM extends Thread {
 	private Messaging messaging;
 	Set<Server> servers = new HashSet<Server>();
 	private Map<Integer, ReplicaInfo> jvmResolver;
-	private volatile boolean running;
+	private volatile boolean running = true;
 	private FailureDetector fds;
 	
 	public static Map<Integer, ReplicaInfo> readJvmResolver(){
@@ -102,19 +102,26 @@ public class JVM extends Thread {
 		ServerSocket serversocket = null;
 		try {
 			 serversocket = new ServerSocket(jvmResolver.get(jvmID).port);
+			 System.out.println("jvm " + jvmID + " listening on " + jvmResolver.get(jvmID).port);
 		} catch (IOException e) {
+			System.out.println("error creating jvm serversocket");
 			e.printStackTrace();
 		}
 		while(running){
 			try {
+				System.out.println("jvm " + jvmID + "about to accept connections");
 				Socket socket = serversocket.accept();
+				System.out.println("jvm accepted connection");
 				ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+				System.out.println("jvm got input stream");
 				ShutdownMessage sm = (ShutdownMessage)ois.readObject();
+				System.out.println("jvm got shutdown message");
 				kill();
 				ois.close();
 				serversocket.close();
 			} catch (Exception e){
 				System.out.println("error in jvm loop");
+				e.printStackTrace();
 			}
 		}
 	}

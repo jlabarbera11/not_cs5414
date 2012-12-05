@@ -41,7 +41,7 @@ public class JVMTest {
 
     jvm1.kill();
     Thread.sleep(10000); /*Let timestamps expire*/
-    for(int i=1; i<=5; i++) {
+    for(int i=2; i<=5; i++) {
       Socket socket = new Socket("localhost", 7770+i);
       new ObjectOutputStream(socket.getOutputStream()).writeObject(new StatusQuery(1));
       StatusQueryResponse sqr = (StatusQueryResponse)(new ObjectInputStream(socket.getInputStream())).readObject();
