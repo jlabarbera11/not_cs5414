@@ -13,6 +13,13 @@ public class Pinger extends Thread {
   Object id;
   Messaging nm;
   volatile boolean running = true;
+  public boolean debug = false;
+  
+  public void printIfDebug(String s){
+  	if (debug){
+  		System.out.println(s);
+  	}
+  }
 
   public Pinger(Integer jid, ReplicaID rid) {
     nm = new Messaging();
@@ -27,7 +34,7 @@ public class Pinger extends Thread {
   }
   
   public void kill(){
-	  System.out.println("killing pinger");
+	  printIfDebug("killing pinger");
 	  running = false;
   }
 
@@ -38,7 +45,7 @@ public class Pinger extends Thread {
         Thread.sleep(1000);
       } catch(Exception e) {}
     }
-    System.out.println("pinger has quit!");
+    printIfDebug("pinger has quit!");
   }
 }
 
