@@ -5,14 +5,14 @@ import java.io.Serializable;
 public class Message implements Serializable {
 
     //These refer to the sender of the message
-    protected String branch;
-    protected String replica;
+    protected int branch;
+    protected int replica;
 
-    public String GetBranch() {
+    public int GetBranch() {
         return this.branch;
     }
 
-    public String GetReplica() {
+    public int GetReplica() {
         return this.replica;
     }
 

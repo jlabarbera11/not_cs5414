@@ -1,12 +1,18 @@
 package client.test;
 
 import static org.junit.Assert.*;
+
+import java.net.Socket;
+
+import jvm.JVM;
 import client.*;
 import server.*;
 
-
+import messaging.Message;
 import messaging.Messaging;
 import messaging.MessagingException;
+import messaging.Ping;
+import messaging.ReplicaID;
 
 import org.junit.Test;
 
@@ -27,19 +33,28 @@ public class ClientTest {
         }
         while (t1-t0<1000);
 	}
-
+	/**
+	 * This test assumes valid 5-jvm text files (topology, replicaResolver, jvmInfo, clientResolver, fdsResolver).
+	 * Valid is as defined in the documentation. Our submission contains a valid 5-jvm set of text files.
+	 * @throws InterruptedException
+	 * @throws MessagingException
+	 */
 	@Test
-	public void test() throws InterruptedException, MessagingException {
+	public void testOperations() throws InterruptedException, MessagingException {
 		
-		ServerTestThread thread = new ServerTestThread(1);
-		thread.start();
+		JVM jvm1 = new JVM(1);
+		JVM jvm2 = new JVM(2);
+		JVM jvm3 = new JVM(3);
+		JVM jvm4 = new JVM(4);
+		JVM jvm5 = new JVM(5);
 		
-		ServerTestThread thread2 = new ServerTestThread(2);
-		thread2.start();
+		jvm1.start();
+		jvm2.start();
+		jvm3.start();
+		jvm4.start();
+		jvm5.start();
 		
 		Client client = new Client(1);
-		client.messaging = new Messaging(new Integer(1), Messaging.Type.CLIENT);
-		client.messaging.connectToServer(new ClientSnapshot());
 		
 		//------------------ Test Deposit ---------------------------
 		
@@ -76,7 +91,7 @@ public class ClientTest {
 		client.depositSerial.setText("99999");
 		client.handleDeposit();
 		wait(1);
-		assertEquals(client.result1.getText(), "Invalid Serial Number");
+		assertEquals(client.result1.getText(), "Invalid serial number.");
 		assertEquals(client.result2.getText(), "");
 		
 		//messaging error
@@ -85,7 +100,7 @@ public class ClientTest {
 		client.depositSerial.setText(newSerial());
 		client.handleDeposit();
 		wait(1);
-		assertEquals(client.result1.getText(), "Cannot desposit to this branch");
+		assertEquals(client.result1.getText(), "Can only deposit to this branch.");
 		assertEquals(client.result2.getText(), "");
 		
 		
@@ -115,7 +130,7 @@ public class ClientTest {
 		client.withdrawalSerial.setText("99999");
 		client.handleWithdrawal();
 		wait(1);
-		assertEquals(client.result1.getText(), "Invalid Serial Number");
+		assertEquals(client.result1.getText(), "Invalid serial number.");
 		assertEquals(client.result2.getText(), "");
 		
 		//messaging error
@@ -124,7 +139,7 @@ public class ClientTest {
 		client.withdrawalSerial.setText(newSerial());
 		client.handleWithdrawal();
 		wait(1);
-		assertEquals(client.result1.getText(), "Cannot withdraw from this branch");
+		assertEquals(client.result1.getText(), "Can only withdraw from this branch.");
 		assertEquals(client.result2.getText(), "");
 		
 		//valid withdrawal
@@ -152,7 +167,7 @@ public class ClientTest {
 		client.querySerial.setText("99999");
 		client.handleQuery();
 		wait(1);
-		assertEquals(client.result1.getText(), "Invalid Serial Number");
+		assertEquals(client.result1.getText(), "Invalid serial number.");
 		assertEquals(client.result2.getText(), "");
 		
 		//messaging error
@@ -160,7 +175,7 @@ public class ClientTest {
 		client.querySerial.setText(newSerial());
 		client.handleQuery();
 		wait(1);
-		assertEquals(client.result1.getText(), "Cannot query account info from this branch");
+		assertEquals(client.result1.getText(), "Can only query accounts in this branch.");
 		assertEquals(client.result2.getText(), "");
 		
 		//valid query
@@ -211,7 +226,7 @@ public class ClientTest {
 		client.transferSerial.setText("99999");
 		client.handleTransfer();
 		wait(1);
-		assertEquals(client.result1.getText(), "Invalid Serial Number");
+		assertEquals(client.result1.getText(), "Invalid serial number.");
 		assertEquals(client.result2.getText(), "");
 		
 		//messaging error
@@ -221,7 +236,7 @@ public class ClientTest {
 		client.transferSerial.setText(newSerial());
 		client.handleTransfer();
 		wait(1);
-		assertEquals(client.result1.getText(), "Cannot transfer money from this branch");
+		assertEquals(client.result1.getText(), "Can only transfer from this branch.");
 		assertEquals(client.result2.getText(), "");
 		
 		//valid transfer
@@ -234,19 +249,15 @@ public class ClientTest {
 		assertEquals(client.result1.getText(), "Transfer successful");
 		assertEquals(client.result2.getText(), "Balance in source account: 25.0");
 		
+		System.out.println("Test operations passed, killing all JVMs");
 		
-		//------------------ Test Snapshot ---------------------------
-		
-		//valid withdrawal
-		client.handleSnapshot();
-		wait(1);
-		assertEquals(client.result1.getText(), "Taking a snapshot...");
-		assertEquals(client.result2.getText(), "");
-		
+		jvm1.kill();
+		jvm2.kill();
+		jvm3.kill();
+		jvm4.kill();
+		jvm5.kill();
+		wait(10);
 	}
-	
-	
-	
 
 }
 

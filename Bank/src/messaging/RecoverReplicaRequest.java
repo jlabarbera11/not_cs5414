@@ -1,7 +1,7 @@
 package messaging;
 
 public class RecoverReplicaRequest extends RequestReplica {
-    public RecoverReplicaRequest(String replica) {
+    public RecoverReplicaRequest(int replica) {
         this.replica = replica;
     }
 }

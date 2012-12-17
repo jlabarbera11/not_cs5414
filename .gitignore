@@ -2,4 +2,5 @@
 *.jar
 *.swp
 bin/*
+jars/*
 

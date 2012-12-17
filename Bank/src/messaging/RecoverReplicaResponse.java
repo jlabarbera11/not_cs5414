@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class RecoverReplicaResponse extends ResponseReplica {
-    private Set<String> backups;
+    private Set<Integer> backups;
     private Map<AccountNumber, BankAccount> bankaccounts;
     private Map<Integer, RequestClient> waiting_clients;
 
@@ -17,7 +17,7 @@ public class RecoverReplicaResponse extends ResponseReplica {
         this.waiting_clients = waiting_clients;
     }
 
-    public Set<String> GetBackups() {
+    public Set<Integer> GetBackups() {
         return this.backups;
     }
 

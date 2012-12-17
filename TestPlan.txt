@@ -1,7 +1,0 @@
-We used junit to test our implementation, which we have included in our
-submission.
-
-The client must interact with the server in performing its tests, so we feel
-that the client tests sufficiently test the server.
-
-The test cases can be found in client.test and messaging.test.

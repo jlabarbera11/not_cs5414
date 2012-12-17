@@ -1,2 +1,0 @@
-The topology contains the requirement that every node must be able to reach, by
-any number of hops, every other node.

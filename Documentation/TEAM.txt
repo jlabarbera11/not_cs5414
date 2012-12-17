@@ -1,0 +1,16 @@
+Ben Schoener
+bas265
+
+Ben first made a completely new Messaging.java class. The old class had become irreparably
+complex and bug-ridden. Ben then integrated the old server and java files with the new messaging
+class and fixed all errors from the project 3 submission. Ben wrote the JVM class and integrated
+the client and server with the failure detection service. He spent 35 hours on this project.
+
+Joe LaBarbera
+jyl76
+
+Joe worked on the protocol for Failure Detection, as well as the Failure Detectors. He 
+also contributed to the JVM and Server classes, spending about 20 hours in total.
+
+Kyle Hsu
+For the sake of clarity: Kyle Hsu was not a member of our group for this project.

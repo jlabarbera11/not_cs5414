@@ -1,11 +1,11 @@
 package messaging;
 
-public class TransferBranch extends RequestClient {
+public class TransferDepositToRemoteBranch extends RequestClient {
     
     private Integer acnt = null;
     private Float amt = null;
 
-    public TransferBranch(Integer acnt, Float amt, Integer serial_number) {
+    public TransferDepositToRemoteBranch(Integer acnt, Float amt, Integer serial_number) {
         this.acnt = acnt;
         this.amt = amt;
         this.serial_number = serial_number;
