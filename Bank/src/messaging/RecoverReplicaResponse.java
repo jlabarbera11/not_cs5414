@@ -10,7 +10,8 @@ public class RecoverReplicaResponse extends ResponseReplica {
     private Map<AccountNumber, BankAccount> bankaccounts;
     private Map<Integer, RequestClient> waiting_clients;
 
-    public RecoverReplicaResponse(Set<String> backups, Map<AccountNumber, BankAccount> bankaccounts, Map<Integer, RequestClient> waiting_clients) {
+    public RecoverReplicaResponse(String r, Set<String> backups, Map<AccountNumber, BankAccount> bankaccounts, Map<Integer, RequestClient> waiting_clients) {
+        this.replica = r;
         this.backups = backups;
         this.bankaccounts = bankaccounts;
         this.waiting_clients = waiting_clients;

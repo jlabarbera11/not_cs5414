@@ -229,8 +229,13 @@ public class Server
     public BankAccount getAccount(int accountID)
     {
         AccountNumber accountNumber = new AccountNumber(branchID, accountID);
+        System.out.println("Account number is " + accountNumber);
+        for(AccountNumber a : this.accounts.keySet())
+            System.out.println(a == accountNumber);
+        System.out.println("endtest");
 
         if (!accounts.containsKey(accountNumber)) {
+            System.out.println("wharewehere");
             BankAccount bankAccount = new BankAccount(accountNumber);
             accounts.put(accountNumber, bankAccount);
             return bankAccount;
@@ -340,12 +345,16 @@ public class Server
             
             } else if (mr instanceof RecoverReplicaRequest) {
                 RecoverReplicaRequest r = (RecoverReplicaRequest)mr;
-                m.SendToReplica(mr.GetReplica(), new RecoverReplicaResponse(this.backups, this.accounts, this.waiting_clients));
+                m.SendToReplica(mr.GetReplica(), new RecoverReplicaResponse(this.replicaID, this.backups, this.accounts, this.waiting_clients));
 
             } else if (mr instanceof RecoverReplicaResponse) {
                 RecoverReplicaResponse r = (RecoverReplicaResponse)mr;
                 this.backups = r.GetBackups();
+                this.backups.add(r.GetReplica());
+                this.backups.remove(this.replicaID);
                 this.accounts = r.GetBankAccounts();
+                for(BankAccount i : this.accounts.values())
+                    System.out.println("Have account number " + i.getAccountNumber().getAccount() + " with money " + i.getBalance());
                 for(RequestClient rc : r.GetWaitingClients().values()) {
                     recordTransaction(rc);
                     m.SendToReplica(r.GetReplica(), new ResponseBackup(this.replicaID, rc));

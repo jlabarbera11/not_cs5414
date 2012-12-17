@@ -42,7 +42,7 @@ public class AccountNumber implements Serializable
             return false;
 
         AccountNumber an = (AccountNumber) that;
-        return branch == an.branch && account == an.account;
+        return branch.equals(an.branch) && account == an.account;
     }
 
     @Override
